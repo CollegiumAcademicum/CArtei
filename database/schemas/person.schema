@@ -1,0 +1,30 @@
+                       Table "public.person"
+         Column          |  Type   | Collation | Nullable | Default 
+-------------------------+---------+-----------+----------+---------
+ ren_id                  | integer |           | not null | 
+ id                      | integer |           | not null | 
+ first_names             | text    |           |          | 
+ last_names              | text    |           |          | 
+ preferred_name          | text    |           |          | 
+ pronouns                | text    |           |          | 
+ date_of_birth           | date    |           |          | 
+ phone_number            | integer |           |          | 
+ email                   | text    |           |          | 
+ study_subject           | text    |           |          | 
+ educational_institution | text    |           |          | 
+ dat_id                  | integer |           |          | 
+ pho_id                  | integer |           |          | 
+Indexes:
+    "pk_person" PRIMARY KEY, btree (ren_id, id)
+    "person_pk" UNIQUE, btree (ren_id, id)
+Foreign-key constraints:
+    "fk_person_allows_ph_photoall" FOREIGN KEY (pho_id) REFERENCES photoallowance(id) ON UPDATE RESTRICT ON DELETE RESTRICT
+    "fk_person_issue_dat_datapriv" FOREIGN KEY (dat_id) REFERENCES dataprivstatement(id) ON UPDATE RESTRICT ON DELETE RESTRICT
+    "fk_person_renting_p_rentingp" FOREIGN KEY (ren_id) REFERENCES rentingparty(id) ON UPDATE RESTRICT ON DELETE RESTRICT
+Referenced by:
+    TABLE "dataprivstatement" CONSTRAINT "fk_datapriv_issue_dat_person" FOREIGN KEY (ren_id, per_id) REFERENCES person(ren_id, id) ON UPDATE RESTRICT ON DELETE RESTRICT
+    TABLE "maintenant" CONSTRAINT "fk_maintena_generaliz_person" FOREIGN KEY (ren_id, id) REFERENCES person(ren_id, id) ON UPDATE RESTRICT ON DELETE RESTRICT
+    TABLE "photoallowance" CONSTRAINT "fk_photoall_allows_ph_person" FOREIGN KEY (ren_id, per_id) REFERENCES person(ren_id, id) ON UPDATE RESTRICT ON DELETE RESTRICT
+    TABLE "secundarytenant" CONSTRAINT "fk_secundar_generaliz_person" FOREIGN KEY (per_ren_id, id) REFERENCES person(ren_id, id) ON UPDATE RESTRICT ON DELETE RESTRICT
+    TABLE "subtenant" CONSTRAINT "fk_subtenan_generaliz_person" FOREIGN KEY (ren_id, id) REFERENCES person(ren_id, id) ON UPDATE RESTRICT ON DELETE RESTRICT
+
