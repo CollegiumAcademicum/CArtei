@@ -1,0 +1,18 @@
+<!-- myapp/templates/myapp/profile.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Profile</title>
+</head>
+<body>
+    <h1>Welcome, {{ username }}!</h1>
+    <h2>Your LDAP Groups:</h2>
+    <ul>
+        {% for group in groups %}
+        <li>{{ group }}</li>
+        {% empty %}
+        <li>You are not a member of any LDAP groups.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
