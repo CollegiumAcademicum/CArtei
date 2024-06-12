@@ -4,11 +4,11 @@ import ldap
 from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
 
 # The URL of your LDAP server
-AUTH_LDAP_SERVER_URI = "ldap://ipa.intranet.ca-hd.de"
+AUTH_LDAP_SERVER_URI = "ldaps://ipa.intranet.ca-hd.de"
 
 # The DN and password to bind with (if needed)
-AUTH_LDAP_BIND_DN = 'uid=<service_user>,cn=users,cn=accounts,dc=intranet,dc=ca-hd,dc=de'
-AUTH_LDAP_BIND_PASSWORD = "<service_user_password>"
+AUTH_LDAP_BIND_DN = 'uid=service_cartei,cn=users,cn=accounts,dc=intranet,dc=ca-hd,dc=de'
+AUTH_LDAP_BIND_PASSWORD = "LvPqxZhGBuNYNqJJSLfnqf5BeESq72LxZSPxTFBj3E"
 
 
 # The base DN for searching for users
@@ -24,7 +24,7 @@ AUTH_LDAP_GROUP_TYPE = GroupOfNamesType()
 
 
 # Simple group restrictions
-AUTH_LDAP_REQUIRE_GROUP = "cn=ipausers,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
+AUTH_LDAP_REQUIRE_GROUP = "cn=admins,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
 #AUTH_LDAP_DENY_GROUP = None
 
 # Cache group memberships for an hour to minimize LDAP traffic

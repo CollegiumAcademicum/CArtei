@@ -16,6 +16,8 @@ RUN apt-get update \
        libldap2-dev \
        libsasl2-dev \
        libssl-dev \
+       ldap-utils \
+       ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -24,6 +26,14 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Copy project
 COPY . /code/
+
+# Copy CA certificate and update CA certificates
+COPY ca.cert /usr/local/share/ca-certificates/ca.crt
+RUN update-ca-certificates
+
+# Create ldap directory and configure LDAP to use the CA certificate
+RUN mkdir -p /etc/ldap
+RUN echo "TLS_CACERT /usr/local/share/ca-certificates/ca.crt" >> /etc/ldap/ldap.conf
 
 # Run the application
 # First run migrations and then start the application using Gunicorn
