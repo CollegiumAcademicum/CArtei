@@ -2,3 +2,4 @@ Django>=3.2,<4.0
 django-auth-ldap
 python-ldap
 gunicorn
+django-widget-tweaks
