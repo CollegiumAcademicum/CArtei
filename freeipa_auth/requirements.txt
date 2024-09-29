@@ -3,3 +3,5 @@ django-auth-ldap
 python-ldap
 gunicorn
 django-widget-tweaks
+psycopg2-binary
+python-dotenv

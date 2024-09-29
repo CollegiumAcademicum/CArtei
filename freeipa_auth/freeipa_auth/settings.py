@@ -1,8 +1,9 @@
 # settings.py
-
+from dotenv import load_dotenv
+import os
 import ldap
 from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
-
+load_dotenv()
 # The URL of your LDAP server
 AUTH_LDAP_SERVER_URI = "ldaps://ipa.intranet.ca-hd.de"
 
@@ -24,7 +25,7 @@ AUTH_LDAP_GROUP_TYPE = GroupOfNamesType()
 
 
 # Simple group restrictions
-AUTH_LDAP_REQUIRE_GROUP = "cn=admins,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
+AUTH_LDAP_REQUIRE_GROUP = "cn=ag.it,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
 #AUTH_LDAP_DENY_GROUP = None
 
 # Cache group memberships for an hour to minimize LDAP traffic
@@ -62,6 +63,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'widget_tweaks',
+    'freeipa_auth',
     # Add your other apps here
 ]
 
@@ -97,9 +99,17 @@ WSGI_APPLICATION = 'freeipa_auth.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DATABASE_NAME', 'postgres'),
+        'USER': os.getenv('DATABASE_USER', 'postgres'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+        'HOST': os.getenv('DATABASE_HOST', '10.10.33.14'),
+        'PORT': os.getenv('DATABASE_PORT', '5432'),
     }
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#    }
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -128,5 +138,6 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-LOGIN_REDIRECT_URL = '/profile/'
+LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'  # Redirect to the home page after logout
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

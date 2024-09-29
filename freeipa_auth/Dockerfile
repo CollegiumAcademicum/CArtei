@@ -22,6 +22,7 @@ RUN apt-get update \
 
 # Install Python dependencies
 COPY requirements.txt /code/
+COPY .env /code/
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Copy project
@@ -37,4 +38,8 @@ RUN echo "TLS_CACERT /usr/local/share/ca-certificates/ca.crt" >> /etc/ldap/ldap.
 
 # Run the application
 # First run migrations and then start the application using Gunicorn
-CMD ["sh", "-c", "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 freeipa_auth.wsgi:application"]
+RUN python manage.py makemigrations freeipa_auth
+RUN python manage.py migrate
+RUN python manage.py create_tiles
+
+CMD ["sh", "-c", "python manage.py makemigrations && python manage.py migrate && gunicorn --bind 0.0.0.0:8000 freeipa_auth.wsgi:application"]

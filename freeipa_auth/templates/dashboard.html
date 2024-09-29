@@ -1,0 +1,61 @@
+<!-- dashboard.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Dein Dashboard</h2>
+  <div id="tiles" class="row">
+    {% for user_tile in user_tiles %}
+      <div class="col-6 col-sm-4 col-md-3 mb-3">
+        <div class="tile card" data-id="{{ user_tile.tile.id }}">
+          <div class="card-body text-center">
+            <a href="{{ user_tile.tile.link }}" class="card-link">{{ user_tile.tile.title }}</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <button id="save-order-btn" class="btn btn-primary mt-3">Reihenfolge speichern</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+  <script>
+    // Initialisiere Sortable.js für die Kachel-Container
+    const sortable = new Sortable(document.getElementById('tiles'), {
+      animation: 150,
+    });
+
+    document.getElementById('save-order-btn').addEventListener('click', () => {
+  const order = [];
+  document.querySelectorAll('.tile').forEach(tile => {
+    order.push(tile.getAttribute('data-id'));
+  });
+
+  // Verwende `URLSearchParams` korrekt, um jedes Listenelement einzeln hinzuzufügen
+  const formData = new URLSearchParams();
+  order.forEach(id => formData.append('order[]', id));
+
+  // AJAX-Request zum Speichern der Reihenfolge
+  fetch("{% url 'save_tile_order' %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      alert('Reihenfolge erfolgreich gespeichert!');
+    } else {
+      alert('Speichern der Reihenfolge fehlgeschlagen!');
+    }
+  })
+  .catch(error => {
+    console.error('Fehler beim Speichern:', error);
+    alert('Speichern der Reihenfolge fehlgeschlagen!');
+  });
+});
+
+  </script>
+{% endblock %}
