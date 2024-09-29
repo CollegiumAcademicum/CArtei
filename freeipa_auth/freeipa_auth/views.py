@@ -28,6 +28,9 @@ def profile(request):
 
 @login_required
 def dashboard(request):
+    # Suchanfrage aus den GET-Parametern abrufen
+    query = request.GET.get('search', '')
+
     # Überprüfe, ob `UserTileSetting`-Einträge für den aktuellen Benutzer existieren
     existing_user_tiles = UserTileSetting.objects.filter(user=request.user)
     existing_tile_ids = existing_user_tiles.values_list('tile_id', flat=True)
@@ -38,10 +41,27 @@ def dashboard(request):
         for index, tile in enumerate(new_tiles, start=len(existing_user_tiles)):
             UserTileSetting.objects.create(user=request.user, tile=tile, position=index)
 
-    # Lade nur die `UserTileSetting`-Einträge für den aktuellen Benutzer
+    # Lade nur die `UserTileSetting`-Einträge für den aktuellen Benutzer und filtere nach der Suchanfrage
     user_tiles = UserTileSetting.objects.filter(user=request.user).order_by('position')
-    context = {'user_tiles': user_tiles}
+
+    # Filtern der `user_tiles` basierend auf dem Titel des Tiles, wenn eine Suchanfrage vorhanden ist
+    if query:
+        user_tiles = user_tiles.filter(tile__title__icontains=query)
+
+    context = {'user_tiles': user_tiles, 'query': query}
     return render(request, 'dashboard.html', context)
+
+@login_required
+def search_suggestions(request):
+    query = request.GET.get('q', '')
+    suggestions = []
+
+    if query:
+        # Suche alle `Tile`-Objekte, deren Titel die Anfrage enthalten
+        matching_tiles = Tile.objects.filter(title__icontains=query).values('id', 'title')
+        suggestions = list(matching_tiles)
+
+    return JsonResponse({'suggestions': suggestions})
 
 
 @login_required
