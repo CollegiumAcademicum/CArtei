@@ -1,0 +1,22 @@
+[project]
+name = "cartei"
+version = "2024.10.0"
+description = "Rental administration for the Collegium Academicum"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["rental-administration"]
+authors = [{ name = "Maurice Frank", email = "maurice.frank@posteo.de" }]
+maintainers = []
+
+
+dependencies = [
+    "django>=3.2",
+    "gunicorn>=23.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/CollegiumAcademicum/CArtei"
+
+[build-system]
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
