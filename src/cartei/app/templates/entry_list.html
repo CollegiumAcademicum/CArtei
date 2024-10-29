@@ -9,7 +9,12 @@
 <a href="{% url 'entry_create' %}" class="btn btn-success">Add New Entry</a>
 <a href="{% url 'populate_from_csv' %}" class="btn btn-secondary">Populate from CSV</a>
 <table class="table">
-
+    <tr>
+        <th>Name</th>
+        <th>E-Mail</th>
+        <th>Has certificate</th>
+        <th>Actions</th>
+    </tr>
     {% for entry in entries %}
     <tr>
 
@@ -29,5 +34,5 @@
         </td>
     </tr>
     {% endfor %}
-    </table>
+</table>
 {% endblock %}
