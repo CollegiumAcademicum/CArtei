@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}User{% endblock %}
+{% block content %}
+
+    <h1>Welcome, {{ username }}!</h1>
+    <h2>Your LDAP Groups:</h2>
+    <ul>
+        {% for group in groups %}
+        <li>{{ group }}</li>
+        {% empty %}
+        <li>You are not a member of any LDAP groups.</li>
+        {% endfor %}
+    </ul>
+    {% endblock %}
