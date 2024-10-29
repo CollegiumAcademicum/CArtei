@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "type": "debugpy",
+            "request": "launch",
+            "name": "Launch Django App",
+            "program": "${workspaceFolder}/src/cartei/manage.py",
+            "args": [
+                "runserver"
+            ],
+            "env": {
+                "LOCAL_DEV": "true"
+            },
+            "django": true,
+            "justMyCode": true,
+            "autoReload": {
+                "enable": true
+            }
+        }
+    ]
+}
