@@ -1,5 +1,4 @@
 # settings.py
-LOCAL_DEV = True
 import logging
 import os
 from pathlib import Path
@@ -9,6 +8,10 @@ from django_auth_ldap.config import GroupOfNamesType, LDAPSearch
 from dotenv import load_dotenv
 
 load_dotenv()
+
+LOCAL_DEV = os.getenv("LOCAL_DEV", "false") == "true"
+if LOCAL_DEV:
+    print("Running in LOCAL_DEV mode")
 
 # The URL of your LDAP server
 AUTH_LDAP_SERVER_URI = "ldaps://ipa.intranet.ca-hd.de"
@@ -39,10 +42,15 @@ AUTH_LDAP_CACHE_GROUPS = True
 AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
 
 # Enable LDAP authentication backend
-AUTHENTICATION_BACKENDS = (
-    "django_auth_ldap.backend.LDAPBackend",
-    "django.contrib.auth.backends.ModelBackend",
-)
+if LOCAL_DEV:
+    AUTHENTICATION_BACKENDS = [
+        "django.contrib.auth.backends.ModelBackend",  # Default authentication for dev
+    ]
+else:
+    AUTHENTICATION_BACKENDS = [
+        "django_auth_ldap.backend.LDAPBackend",  # LDAP for production
+        "django.contrib.auth.backends.ModelBackend",
+    ]
 
 
 # Logging configuration to help with debugging

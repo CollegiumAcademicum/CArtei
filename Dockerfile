@@ -38,7 +38,7 @@ RUN echo "TLS_CACERT /usr/local/share/ca-certificates/ca.crt" >> /etc/ldap/ldap.
 
 # Run the application
 # First run migrations and then start the application using Gunicorn
-RUN python manage.py makemigrations cartei
+RUN python manage.py makemigrations app
 RUN python manage.py migrate
 RUN python manage.py create_tiles
 
