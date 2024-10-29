@@ -12,6 +12,11 @@ maintainers = []
 dependencies = [
     "django>=3.2",
     "gunicorn>=23.0",
+    "django-auth-ldap",
+    "python-ldap",
+    "django-widget-tweaks",
+    "psycopg2-binary",
+    "python-dotenv",
 ]
 
 [project.urls]
