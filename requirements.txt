@@ -5,3 +5,5 @@ python-ldap
 django-widget-tweaks
 psycopg2-binary
 python-dotenv
+crispy_bootstrap5
+django_icons
