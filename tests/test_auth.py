@@ -129,3 +129,41 @@ def test_require_group_allows_correct_group():
     request.user = user
     response = protected_view(request)
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_ensure_tenant_creates_on_first_login():
+    from app.auth import CustomLDAPBackend
+    from app.models import Tenant
+
+    user = User.objects.create_user(username="greta", first_name="Greta", last_name="X", email="g@ca.de")
+    ldap_user = MagicMock()
+    # "not-a-uuid" is not a valid UUID → uuid.UUID("not-a-uuid") raises ValueError naturally
+    ldap_user.attrs.get = lambda key, default=None: [b"not-a-uuid"] if key == "ipaUniqueID" else (default or [])
+    user.ldap_user = ldap_user
+
+    backend = CustomLDAPBackend()
+    # UUID parsing fails → falls back to uuid4()
+    backend._ensure_tenant(user)
+
+    assert Tenant.objects.filter(intranet_username="greta").exists()
+
+
+@pytest.mark.django_db
+def test_ensure_tenant_skips_if_exists():
+    from app.auth import CustomLDAPBackend
+    from app.models import Tenant
+    import uuid
+
+    Tenant.objects.create(
+        first_name="Hanna", last_name="Y", email="h@ca.de",
+        intranet_username="hanna", intranet_uuid=uuid.uuid4(),
+    )
+    user = User.objects.create_user(username="hanna")
+    user.ldap_user = MagicMock()
+
+    backend = CustomLDAPBackend()
+    backend._ensure_tenant(user)
+
+    # Still only one Tenant record
+    assert Tenant.objects.filter(intranet_username="hanna").count() == 1

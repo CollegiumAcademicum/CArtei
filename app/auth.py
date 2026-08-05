@@ -59,13 +59,16 @@ class CustomLDAPBackend(LDAPBackend):
             uuid_raw = user.ldap_user.attrs.get("ipaUniqueID", [None])[0]
             if isinstance(uuid_raw, bytes):
                 uuid_raw = uuid_raw.decode()
-            intranet_uuid = uuid_module.UUID(uuid_raw) if uuid_raw else uuid_module.uuid4()
+            try:
+                intranet_uuid = uuid_module.UUID(uuid_raw)
+            except (ValueError, AttributeError):
+                intranet_uuid = None
             Tenant.objects.create(
                 first_name=user.first_name or "",
                 last_name=user.last_name or "",
                 email=user.email or "",
                 intranet_username=user.username,
-                intranet_uuid=intranet_uuid,
+                intranet_uuid=intranet_uuid or uuid_module.uuid4(),
             )
         except Exception as exc:
             logger.error(f"Failed to auto-create Tenant for {user.username!r}: {exc}")
