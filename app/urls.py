@@ -1,7 +1,12 @@
 from django.urls import path
 
-from app.views import admin_views
+from app.views import abfragen, admin_views
 
 urlpatterns = [
+    path("abfragen/", abfragen.abfragen_list, name="abfragen_list"),
+    path("abfragen/new/", abfragen.abfrage_new, name="abfrage_new"),
+    path("abfragen/<int:pk>/", abfragen.abfrage_detail, name="abfrage_detail"),
+    path("abfragen/<int:pk>/ag/<str:ag_name>/", abfragen.ag_edit, name="ag_edit"),
+    path("abfragen/<int:pk>/tenants/", abfragen.abfrage_tenants, name="abfrage_tenants"),
     path("admin/sync-from-ldap/", admin_views.sync_from_ldap, name="sync_from_ldap"),
 ]

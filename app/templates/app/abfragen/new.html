@@ -1,0 +1,15 @@
+{% extends "app/base.html" %}
+{% block title %}Neue Abfrage — CArtei{% endblock %}
+{% block content %}
+<h1>Neue Abfrage erstellen</h1>
+<form method="post">
+    {% csrf_token %}
+    <label>Datum: <input type="date" name="date" required></label>
+    <label>Bezeichnung (optional): <input type="text" name="label"></label>
+    <label>Offizielle Deadline (endet am): <input type="date" name="ends_at" required></label>
+    <label>Nachfrist bis: <input type="date" name="grace_ends_at" required></label>
+    <br>
+    <button type="submit">Erstellen</button>
+    <a href="{% url 'abfragen_list' %}">Abbrechen</a>
+</form>
+{% endblock %}

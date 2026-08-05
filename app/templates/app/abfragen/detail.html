@@ -1,0 +1,34 @@
+{% extends "app/base.html" %}
+{% block title %}{{ abfrage }} — CArtei{% endblock %}
+{% block content %}
+<h1>{{ abfrage }}</h1>
+<p>
+    Status: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
+    | Endet: {{ abfrage.ends_at }}
+    | Nachfrist: {{ abfrage.grace_ends_at }}
+</p>
+<p><a href="{% url 'abfrage_tenants' abfrage.pk %}">Alle Bewohner:innen anzeigen</a></p>
+
+<h2>Ergebnisse nach AG</h2>
+{% if by_ag %}
+<table>
+    <thead><tr><th>AG</th><th>Bewohner:in</th><th>Status</th><th>Notiz</th></tr></thead>
+    <tbody>
+    {% for ag_name, results in by_ag.items %}
+    {% for r in results %}
+    <tr>
+        {% if forloop.first %}
+        <td rowspan="{{ results|length }}"><a href="{% url 'ag_edit' abfrage.pk ag_name %}">{{ ag_name }}</a></td>
+        {% endif %}
+        <td>{{ r.tenant }}</td>
+        <td>{{ r.status }}</td>
+        <td>{{ r.note|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Noch keine Ergebnisse.</p>
+{% endif %}
+{% endblock %}

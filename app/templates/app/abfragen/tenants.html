@@ -1,0 +1,44 @@
+{% extends "app/base.html" %}
+{% block title %}Bewohner:innen — {{ abfrage }} — CArtei{% endblock %}
+{% block content %}
+<h1>Bewohner:innen — {{ abfrage }}</h1>
+<p><a href="{% url 'abfrage_detail' abfrage.pk %}">← Zur Übersicht</a></p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Ergebnis(se)</th>
+            <th>Ausreichend?</th>
+            <th>Cluster-Notiz</th>
+            <th>Notiz bearbeiten</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for row in rows %}
+    <tr>
+        <td>{{ row.tenant }}</td>
+        <td>{{ row.tenant.intranet_username }}</td>
+        <td>
+            {% for r in row.results %}
+            {{ r.ag_name }}: {{ r.status }}{% if not forloop.last %}<br>{% endif %}
+            {% empty %}—{% endfor %}
+        </td>
+        <td>{% if row.sufficient %}✓ Ja{% else %}✗ Nein{% endif %}</td>
+        <td>{{ row.note.note|default:"—" }}</td>
+        <td>
+            <form method="post" style="display:flex;gap:0.3rem">
+                {% csrf_token %}
+                <input type="hidden" name="note_tenant_id" value="{{ row.tenant.pk }}">
+                <input type="text" name="note_text" value="{{ row.note.note|default:'' }}" placeholder="Interne Notiz">
+                <button type="submit">OK</button>
+            </form>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">Keine aktiven Bewohner:innen.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

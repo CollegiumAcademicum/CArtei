@@ -1,0 +1,10 @@
+{% extends "app/base.html" %}
+{% block title %}Anmelden — CArtei{% endblock %}
+{% block content %}
+<h1>Anmelden</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Anmelden</button>
+</form>
+{% endblock %}
