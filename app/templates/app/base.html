@@ -28,7 +28,7 @@
     | <a href="{% url 'abfragen_list' %}">Abfragen</a>
     {% if request.user.is_authenticated %}
     | {{ request.user.get_full_name|default:request.user.username }}
-    | <a href="{% url 'logout' %}">Abmelden</a>
+    | <form action="{% url 'logout' %}" method="post" style="display:inline">{% csrf_token %}<button type="submit" style="background:none;border:none;padding:0;cursor:pointer;color:inherit;font:inherit">Abmelden</button></form>
     {% endif %}
 </nav>
 <main>

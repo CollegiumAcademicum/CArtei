@@ -4,6 +4,7 @@ These functions are only called from views that require cluster/admin access.
 In tests, patch `app.views.admin_views.ldap_utils.get_clearance_members` and `get_ag_members`.
 """
 import ldap
+import ldap.filter
 from django.conf import settings
 
 
@@ -46,7 +47,7 @@ def get_clearance_members() -> list[dict]:
 
 def get_ag_members(ag_name: str) -> list[dict]:
     """Return members of LDAP group cn=<ag_name>,<LDAP_GROUPS_BASE>."""
-    group_dn = f"cn={ag_name},{settings.LDAP_GROUPS_BASE}"
+    group_dn = f"cn={ldap.filter.escape_filter_chars(ag_name)},{settings.LDAP_GROUPS_BASE}"
     conn = _connect()
     results = conn.search_s(
         settings.LDAP_USER_SEARCH_BASE,
