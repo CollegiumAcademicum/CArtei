@@ -1,9 +1,0 @@
-django>=3.2
-gunicorn>=23.0
-django-auth-ldap
-python-ldap
-django-widget-tweaks
-psycopg2-binary
-python-dotenv
-crispy_bootstrap5
-django_icons

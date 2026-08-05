@@ -1,27 +1,31 @@
 [project]
 name = "cartei"
-version = "2024.10.0"
-description = "Rental administration for the Collegium Academicum"
-readme = "README.md"
-requires-python = ">=3.8"
-keywords = ["rental-administration"]
-authors = [{ name = "Maurice Frank", email = "maurice.frank@posteo.de" }]
-maintainers = []
-
-
+version = "0.1.0"
+description = "CArtei tenant management system"
+requires-python = ">=3.14"
 dependencies = [
-    "django>=3.2",
-    "gunicorn>=23.0",
-    "django-auth-ldap",
-    "python-ldap",
-    "django-widget-tweaks",
-    "psycopg2-binary",
-    "python-dotenv",
+    "django>=5.0",
+    "django-auth-ldap>=4.8",
+    "psycopg[binary]>=3.0",
+    "gunicorn>=22.0",
+    "python-dotenv>=1.0",
+    "whitenoise>=6.0",
 ]
 
-[project.urls]
-"Homepage" = "https://github.com/CollegiumAcademicum/CArtei"
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.9",
+]
 
 [build-system]
-requires = ["setuptools>=43.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+DJANGO_SETTINGS_MODULE = "cartei.settings_test"
