@@ -1,0 +1,139 @@
+/* Collegium Academicum — CArtei UI styles */
+
+:root {
+  --ca-teal: #35ADA4;
+  --ca-teal-dark: #2f9991;
+  --ca-text: #363636;
+}
+
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  background: #fcfcfc;
+  color: var(--ca-text);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Navbar ── */
+.ca-navbar {
+  background: white;
+  border-bottom: 3px solid var(--ca-teal);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+.ca-navbar-logo img { height: 36px; display: block; }
+.ca-navbar-right { display: flex; align-items: center; gap: 1rem; }
+.ca-navbar-user { font-size: 0.9rem; color: #7a7a7a; }
+.ca-logout {
+  font-size: 0.85rem; color: var(--ca-teal); border: 1px solid var(--ca-teal);
+  border-radius: 4px; padding: 4px 12px; cursor: pointer; background: white;
+  font-family: inherit; font-weight: 600;
+}
+.ca-logout:hover { background: var(--ca-teal); color: white; }
+.ca-navbar-admin {
+  font-size: 0.85rem; color: var(--ca-teal); font-weight: 600; text-decoration: none;
+}
+.ca-navbar-admin:hover { text-decoration: underline; }
+
+/* ── Main ── */
+.ca-main { flex: 1; padding: 0 1.5rem 3rem; }
+
+/* ── Card ── */
+.ca-card {
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 1.5rem auto 0;
+}
+
+/* ── Form elements ── */
+.ca-label {
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: #7a7a7a; margin-bottom: 0.5rem; display: block;
+}
+.ca-input, .ca-textarea {
+  width: 100%; border: 1px solid #dbdbdb; border-radius: 4px;
+  padding: 0.75rem; font-family: inherit; font-size: 1rem;
+  color: var(--ca-text); background: #fcfcfc;
+}
+.ca-textarea { resize: vertical; min-height: 120px; }
+.ca-input:focus, .ca-textarea:focus {
+  border-color: var(--ca-teal); outline: none;
+  box-shadow: 0 0 0 2px rgba(53,173,164,0.15);
+}
+
+/* ── Buttons ── */
+.ca-button {
+  background: var(--ca-teal); color: white; border: none; border-radius: 4px;
+  padding: 0.65rem 1.5rem; font-family: inherit; font-size: 1rem;
+  font-weight: 600; cursor: pointer;
+}
+.ca-button:hover { background: var(--ca-teal-dark); }
+.ca-button-outline {
+  background: white; color: var(--ca-teal); border: 1px solid var(--ca-teal);
+  border-radius: 4px; padding: 0.65rem 1.5rem; font-family: inherit;
+  font-size: 1rem; font-weight: 600; cursor: pointer;
+}
+.ca-button-outline:hover { background: #f0faf9; }
+
+/* ── Messages (Django flash messages) ── */
+.ca-messages { margin: 1rem auto 0; }
+.ca-message {
+  padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 0.5rem;
+  font-size: 0.9rem; font-weight: 600;
+}
+.ca-message.error { background: #fdecea; color: #B61B29; border: 1px solid #f5c6cb; }
+.ca-message.warning { background: #fff8e1; color: #7a5c00; border: 1px solid #ffe082; }
+.ca-message.success { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+.ca-message.info { background: #e3f2fd; color: #0d47a1; border: 1px solid #90caf9; }
+
+/* ── Divider ── */
+.ca-divider { border: none; border-top: 1px solid #efefef; margin: 1.5rem 0; }
+
+/* ── Status badges ── */
+.badge { padding: 2px 8px; border-radius: 3px; font-size: 0.82em; font-weight: 700; }
+.badge-open   { background: #d4edda; color: #155724; }
+.badge-grace  { background: #fff3cd; color: #856404; }
+.badge-closed { background: #f8d7da; color: #721c24; }
+
+/* ── Login page ── */
+.ca-login-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; flex: 1; padding: 2rem 1.5rem;
+}
+.ca-login-logo { margin-bottom: 1.5rem; }
+.ca-login-logo img { height: 60px; }
+.ca-login-card { background: white; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 2rem; width: 100%; max-width: 380px; }
+.ca-login-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center; color: var(--ca-teal); }
+.ca-field { margin-bottom: 1rem; }
+.ca-login-card .ca-button { width: 100%; margin-top: 0.5rem; }
+
+/* ── Footer ── */
+.ca-footer {
+  background: white; border-top: 3px solid var(--ca-teal);
+  padding: 1.25rem 1.5rem; display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;
+}
+.ca-footer-logo img { height: 28px; opacity: 0.7; }
+.ca-footer-links { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.ca-footer-links a {
+  font-size: 0.82rem; color: white; background: var(--ca-teal);
+  border-radius: 4px; padding: 3px 10px; text-decoration: none; font-weight: 600;
+}
+.ca-footer-links a:hover { background: var(--ca-teal-dark); }
+.ca-footer-email { font-size: 0.82rem; color: #7a7a7a; }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .ca-navbar { height: auto; flex-wrap: wrap; padding: 0.5rem 1rem; gap: 0.5rem; }
+  .ca-navbar-right { flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; }
+  .ca-main { padding: 0 0.75rem 2rem; }
+  .ca-card { padding: 1rem; }
+  .ca-card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}

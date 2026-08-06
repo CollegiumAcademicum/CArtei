@@ -1,34 +1,46 @@
 {% extends "app/base.html" %}
 {% block title %}{{ abfrage }} — CArtei{% endblock %}
 {% block content %}
-<h1>{{ abfrage }}</h1>
-<p>
-    Status: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
-    | Endet: {{ abfrage.ends_at }}
-    | Nachfrist: {{ abfrage.grace_ends_at }}
-</p>
-<p><a href="{% url 'abfrage_tenants' abfrage.pk %}">Alle Bewohner:innen anzeigen</a></p>
+<div class="ca-card">
+  <div style="margin-bottom:1.5rem;">
+    <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;">{{ abfrage }}</h1>
+    <p style="color:#7a7a7a;font-size:0.9rem;">
+      Status: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
+      &nbsp;·&nbsp; Endet: {{ abfrage.ends_at }}
+      &nbsp;·&nbsp; Nachfrist: {{ abfrage.grace_ends_at }}
+    </p>
+    <p style="margin-top:0.75rem;">
+      <a href="{% url 'abfrage_tenants' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Alle Bewohner:innen →</a>
+    </p>
+  </div>
 
-<h2>Ergebnisse nach AG</h2>
-{% if by_ag %}
-<table>
-    <thead><tr><th>AG</th><th>Bewohner:in</th><th>Status</th><th>Notiz</th></tr></thead>
-    <tbody>
-    {% for ag_name, results in by_ag.items %}
-    {% for r in results %}
-    <tr>
+  <hr class="ca-divider">
+
+  <h2 class="ca-label" style="font-size:1rem;margin-bottom:1rem;">Ergebnisse nach AG</h2>
+  {% if by_ag %}
+  <div style="overflow-x:auto;">
+    <table class="table is-fullwidth is-striped is-hoverable" style="font-size:0.9rem;">
+      <thead><tr><th>AG</th><th>Bewohner:in</th><th>Status</th><th>Notiz</th></tr></thead>
+      <tbody>
+      {% for ag_name, results in by_ag.items %}
+      {% for r in results %}
+      <tr>
         {% if forloop.first %}
-        <td rowspan="{{ results|length }}"><a href="{% url 'ag_edit' abfrage.pk ag_name %}">{{ ag_name }}</a></td>
+        <td rowspan="{{ results|length }}">
+          <a href="{% url 'ag_edit' abfrage.pk ag_name %}" style="color:var(--ca-teal);font-weight:600;">{{ ag_name }}</a>
+        </td>
         {% endif %}
         <td>{{ r.tenant }}</td>
         <td>{{ r.status }}</td>
         <td>{{ r.note|default:"—" }}</td>
-    </tr>
-    {% endfor %}
-    {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p>Noch keine Ergebnisse.</p>
-{% endif %}
+      </tr>
+      {% endfor %}
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:#7a7a7a;">Noch keine Ergebnisse.</p>
+  {% endif %}
+</div>
 {% endblock %}

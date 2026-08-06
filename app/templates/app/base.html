@@ -1,43 +1,56 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}CArtei{% endblock %}</title>
-    <style>
-        body { font-family: sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem; }
-        nav { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #ccc; }
-        nav a { margin-right: 0.5rem; }
-        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-        th, td { border: 1px solid #ddd; padding: 0.4rem 0.6rem; text-align: left; }
-        th { background: #f5f5f5; }
-        .badge { padding: 2px 6px; border-radius: 3px; font-size: 0.85em; font-weight: bold; }
-        .badge-open   { background: #d4edda; color: #155724; }
-        .badge-grace  { background: #fff3cd; color: #856404; }
-        .badge-closed { background: #f8d7da; color: #721c24; }
-        .messages { list-style: none; padding: 0; }
-        .messages li { padding: 0.5rem; margin: 0.5rem 0; border-radius: 3px; background: #e2e3e5; }
-        button, input[type=submit] { cursor: pointer; padding: 0.3rem 0.8rem; }
-        label { display: block; margin: 0.5rem 0; }
-        input, select, textarea { padding: 0.3rem; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CArtei{% endblock %} — Collegium Academicum</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'app/ca.css' %}">
+  <link rel="icon" href="https://collegiumacademicum.de/img/logo-small.png">
 </head>
 <body>
-<nav>
-    <strong>CArtei</strong>
-    | <a href="{% url 'abfragen_list' %}">Abfragen</a>
-    {% if request.user.is_authenticated %}
-    | {{ request.user.get_full_name|default:request.user.username }}
-    | <form action="{% url 'logout' %}" method="post" style="display:inline">{% csrf_token %}<button type="submit" style="background:none;border:none;padding:0;cursor:pointer;color:inherit;font:inherit">Abmelden</button></form>
-    {% endif %}
+
+<nav class="ca-navbar">
+  <a class="ca-navbar-logo" href="{% url 'abfragen_list' %}">
+    <img src="https://collegiumacademicum.de/img/logo-small.png" alt="Collegium Academicum">
+  </a>
+  {% if request.user.is_authenticated %}
+  <div class="ca-navbar-right">
+    <a href="{% url 'abfragen_list' %}" class="ca-navbar-admin">Abfragen</a>
+    <span class="ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</span>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="ca-logout">Abmelden</button>
+    </form>
+  </div>
+  {% endif %}
 </nav>
-<main>
-{% if messages %}
-<ul class="messages">
-{% for message in messages %}<li>{{ message }}</li>{% endfor %}
-</ul>
-{% endif %}
-{% block content %}{% endblock %}
-</main>
+
+<div class="ca-main">
+  {% if messages %}
+  <div class="ca-messages" style="max-width:1600px;margin:1rem auto 0;">
+    {% for msg in messages %}
+      <div class="ca-message {{ msg.tags }}">{{ msg }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% block content %}{% endblock %}
+</div>
+
+<footer class="ca-footer">
+  <div class="ca-footer-logo">
+    <img src="https://collegiumacademicum.de/img/logo-small.png" alt="Collegium Academicum">
+  </div>
+  <span class="ca-footer-email">kontakt@collegiumacademicum.de</span>
+  <div class="ca-footer-links">
+    <a href="https://collegiumacademicum.de/impressum" target="_blank">Impressum</a>
+    <a href="https://collegiumacademicum.de/datenschutz" target="_blank">Datenschutz</a>
+    <a href="https://collegiumacademicum.de/kontakt" target="_blank">Kontakt</a>
+  </div>
+</footer>
+
 </body>
 </html>

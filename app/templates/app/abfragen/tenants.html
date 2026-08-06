@@ -1,44 +1,57 @@
 {% extends "app/base.html" %}
 {% block title %}Bewohner:innen — {{ abfrage }} — CArtei{% endblock %}
 {% block content %}
-<h1>Bewohner:innen — {{ abfrage }}</h1>
-<p><a href="{% url 'abfrage_detail' abfrage.pk %}">← Zur Übersicht</a></p>
-
-<table>
-    <thead>
+<div class="ca-card">
+  <div style="margin-bottom:1.5rem;">
+    <p style="margin-bottom:0.5rem;">
+      <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">← Zur Übersicht</a>
+    </p>
+    <h1 style="font-size:1.4rem;font-weight:700;">Bewohner:innen — {{ abfrage }}</h1>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="table is-fullwidth is-striped is-hoverable" style="font-size:0.9rem;">
+      <thead>
         <tr>
-            <th>Name</th>
-            <th>Username</th>
-            <th>Ergebnis(se)</th>
-            <th>Ausreichend?</th>
-            <th>Cluster-Notiz</th>
-            <th>Notiz bearbeiten</th>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Ergebnis(se)</th>
+          <th>Ausreichend?</th>
+          <th>Cluster-Notiz</th>
+          <th>Notiz bearbeiten</th>
         </tr>
-    </thead>
-    <tbody>
-    {% for row in rows %}
-    <tr>
+      </thead>
+      <tbody>
+      {% for row in rows %}
+      <tr>
         <td>{{ row.tenant }}</td>
-        <td>{{ row.tenant.intranet_username }}</td>
+        <td style="color:#7a7a7a;">{{ row.tenant.intranet_username }}</td>
         <td>
-            {% for r in row.results %}
-            {{ r.ag_name }}: {{ r.status }}{% if not forloop.last %}<br>{% endif %}
-            {% empty %}—{% endfor %}
+          {% for r in row.results %}
+          <span style="display:inline-block;background:#e8f7f6;color:#2f9991;border-radius:3px;padding:1px 6px;font-size:0.8rem;margin:1px;">{{ r.ag_name }}: {{ r.status }}</span>
+          {% empty %}—{% endfor %}
         </td>
-        <td>{% if row.sufficient %}✓ Ja{% else %}✗ Nein{% endif %}</td>
+        <td>
+          {% if row.sufficient %}
+          <span style="color:#155724;font-weight:700;">✓ Ja</span>
+          {% else %}
+          <span style="color:#B61B29;font-weight:700;">✗ Nein</span>
+          {% endif %}
+        </td>
         <td>{{ row.note.note|default:"—" }}</td>
         <td>
-            <form method="post" style="display:flex;gap:0.3rem">
-                {% csrf_token %}
-                <input type="hidden" name="note_tenant_id" value="{{ row.tenant.pk }}">
-                <input type="text" name="note_text" value="{{ row.note.note|default:'' }}" placeholder="Interne Notiz">
-                <button type="submit">OK</button>
-            </form>
+          <form method="post" style="display:flex;gap:0.4rem;align-items:center;">
+            {% csrf_token %}
+            <input type="hidden" name="note_tenant_id" value="{{ row.tenant.pk }}">
+            <input class="input is-small" type="text" name="note_text" value="{{ row.note.note|default:'' }}" placeholder="Interne Notiz" style="width:160px;">
+            <button type="submit" class="ca-button" style="padding:0.3rem 0.75rem;font-size:0.85rem;">OK</button>
+          </form>
         </td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="6">Keine aktiven Bewohner:innen.</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="color:#7a7a7a;">Keine aktiven Bewohner:innen.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}
