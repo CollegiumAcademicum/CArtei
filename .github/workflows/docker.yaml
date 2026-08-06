@@ -25,4 +25,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: philippbtz/cartei-web:latest
+          tags: docker.io/philippbtz/cartei-web:latest
