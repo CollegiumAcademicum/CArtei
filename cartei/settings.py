@@ -100,6 +100,11 @@ try:
         "email": "mail",
     }
     AUTH_LDAP_GROUP_TYPE = MemberDNGroupType("member")
+    AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
+        os.environ.get("LDAP_GROUPS_BASE", "cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"),
+        ldap.SCOPE_SUBTREE,
+        "(objectClass=groupOfNames)",
+    )
     AUTH_LDAP_REQUIRE_GROUP = os.environ.get("LDAP_REQUIRE_GROUP", "")
     AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_REFERRALS: 0}
     _ca_cert = os.environ.get("LDAP_CA_CERT_PATH", "")
