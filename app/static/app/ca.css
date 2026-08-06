@@ -129,6 +129,18 @@ body {
 .ca-footer-links a:hover { background: var(--ca-teal-dark); }
 .ca-footer-email { font-size: 0.82rem; color: #7a7a7a; }
 
+/* ── Stat cards ── */
+.ca-stat-card {
+  background: #f5fffe;
+  border: 1px solid var(--ca-teal);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  min-width: 140px;
+  text-align: center;
+}
+.ca-stat-value { font-size: 2rem; font-weight: 700; color: var(--ca-teal); }
+.ca-stat-label { font-size: 0.82rem; color: #555; margin-top: 0.25rem; }
+
 /* ── Mobile ── */
 @media (max-width: 600px) {
   .ca-navbar { height: auto; flex-wrap: wrap; padding: 0.5rem 1rem; gap: 0.5rem; }

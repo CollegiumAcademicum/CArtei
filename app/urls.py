@@ -8,5 +8,6 @@ urlpatterns = [
     path("abfragen/<int:pk>/", abfragen.abfrage_detail, name="abfrage_detail"),
     path("abfragen/<int:pk>/ag/<str:ag_name>/", abfragen.ag_edit, name="ag_edit"),
     path("abfragen/<int:pk>/tenants/", abfragen.abfrage_tenants, name="abfrage_tenants"),
+    path("admin/", admin_views.admin_portal, name="admin_portal"),
     path("admin/sync-from-ldap/", admin_views.sync_from_ldap, name="sync_from_ldap"),
 ]

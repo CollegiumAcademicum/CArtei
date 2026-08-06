@@ -19,6 +19,7 @@
   {% if request.user.is_authenticated %}
   <div class="ca-navbar-right">
     <a href="{% url 'abfragen_list' %}" class="ca-navbar-admin">Abfragen</a>
+    <a href="{% url 'admin_portal' %}" class="ca-navbar-admin">Admin</a>
     <span class="ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</span>
     <form method="post" action="{% url 'logout' %}">
       {% csrf_token %}

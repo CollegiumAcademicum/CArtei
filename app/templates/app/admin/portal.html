@@ -1,0 +1,32 @@
+{% extends "app/base.html" %}
+{% block title %}Admin — CArtei{% endblock %}
+{% block content %}
+<div class="ca-card">
+  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">Admin-Portal</h1>
+
+  <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:2rem;">
+    <div class="ca-stat-card">
+      <div class="ca-stat-value">{{ total }}</div>
+      <div class="ca-stat-label">Mieter*innen gesamt</div>
+    </div>
+    <div class="ca-stat-card">
+      <div class="ca-stat-value">{{ flinta_quote }}%</div>
+      <div class="ca-stat-label">FLINTA-Quote</div>
+    </div>
+    <div class="ca-stat-card">
+      <div class="ca-stat-value">{{ azubi_quote }}%</div>
+      <div class="ca-stat-label">Azubi-Quote</div>
+    </div>
+  </div>
+
+  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">LDAP-Sync</h2>
+  <p style="color:#555;margin-bottom:1rem;">
+    Importiert neue Mitglieder aus der LDAP-Gruppe <code>confidentiality_clearance</code> als Mieter*innen.
+    Bestehende Einträge werden nicht überschrieben.
+  </p>
+  <form method="post" action="{% url 'sync_from_ldap' %}">
+    {% csrf_token %}
+    <button type="submit" class="ca-button">Sync starten</button>
+  </form>
+</div>
+{% endblock %}
