@@ -37,7 +37,7 @@ class CustomLDAPBackend(LDAPBackend):
                     desired.add("cluster")
                 else:
                     cn = _dn_to_cn(dn)
-                    if cn.startswith("ag."):
+                    if cn.startswith("ag.") or cn.startswith("in."):
                         desired.add(cn)
             current = set(user.groups.values_list("name", flat=True))
             for name in desired - current:

@@ -4,13 +4,22 @@
 <div class="ca-card">
   <div style="margin-bottom:1.5rem;">
     <p style="margin-bottom:0.5rem;">
+      {% if is_privileged %}
       <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">← Zur Übersicht</a>
+      {% else %}
+      <a href="{% url 'abfragen_list' %}" style="color:var(--ca-teal);font-weight:600;">← Zur Übersicht</a>
+      {% endif %}
     </p>
     <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;">{{ ag_name }} — {{ abfrage }}</h1>
     <p style="color:#7a7a7a;font-size:0.9rem;">
-      Status: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
-      &nbsp;·&nbsp; Deadline: {{ abfrage.ends_at }}
-      &nbsp;·&nbsp; Nachfrist: {{ abfrage.grace_ends_at }}
+      {% if is_privileged %}
+        Status: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
+        &nbsp;·&nbsp; Deadline: {{ abfrage.ends_at }}
+        &nbsp;·&nbsp; Nachfrist: {{ abfrage.grace_ends_at }}
+      {% else %}
+        Status: <span class="badge badge-{{ abfrage.user_state }}">{{ abfrage.user_state }}</span>
+        &nbsp;·&nbsp; Deadline: {{ abfrage.ends_at }}
+      {% endif %}
     </p>
   </div>
 
@@ -49,7 +58,7 @@
           {% endif %}
         </tr>
         {% empty %}
-        <tr><td colspan="3" style="color:#7a7a7a;">Keine AG-Mitglieder in LDAP gefunden.</td></tr>
+        <tr><td colspan="3" style="color:#7a7a7a;">Keine Mitglieder in LDAP gefunden.</td></tr>
         {% endfor %}
         </tbody>
       </table>

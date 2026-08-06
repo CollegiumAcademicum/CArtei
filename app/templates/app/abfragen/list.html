@@ -11,17 +11,46 @@
   <div style="overflow-x:auto;">
     <table class="table is-fullwidth is-striped is-hoverable" style="font-size:0.9rem;">
       <thead>
-        <tr><th>Datum</th><th>Bezeichnung</th><th>Status</th><th>Endet am</th><th>Nachfrist bis</th><th></th></tr>
+        <tr>
+          <th>Datum</th>
+          <th>Bezeichnung</th>
+          <th>Status</th>
+          <th>Endet am</th>
+          {% if is_privileged %}<th>Nachfrist bis</th>{% endif %}
+          {% if not is_privileged and user_groups %}<th>Meine Gruppen</th>{% endif %}
+          <th></th>
+        </tr>
       </thead>
       <tbody>
       {% for abfrage in abfragen %}
       <tr>
         <td>{{ abfrage.date }}</td>
         <td>{{ abfrage.label|default:"—" }}</td>
-        <td><span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span></td>
+        <td>
+          {% if is_privileged %}
+            <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
+          {% else %}
+            <span class="badge badge-{{ abfrage.user_state }}">{{ abfrage.user_state }}</span>
+          {% endif %}
+        </td>
         <td>{{ abfrage.ends_at }}</td>
-        <td>{{ abfrage.grace_ends_at }}</td>
-        <td><a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Details</a></td>
+        {% if is_privileged %}<td>{{ abfrage.grace_ends_at }}</td>{% endif %}
+        {% if not is_privileged and user_groups %}
+        <td>
+          {% if abfrage.user_state == "open" %}
+            {% for g in user_groups %}
+              <a href="{% url 'ag_edit' abfrage.pk g %}" style="color:var(--ca-teal);font-weight:600;display:block;">{{ g }}</a>
+            {% endfor %}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        {% endif %}
+        <td>
+          {% if is_privileged %}
+            <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Details</a>
+          {% endif %}
+        </td>
       </tr>
       {% empty %}
       <tr><td colspan="6" style="color:#7a7a7a;">Keine Abfragen vorhanden.</td></tr>

@@ -71,6 +71,10 @@ class AGAbfrage(models.Model):
             return "grace"
         return "closed"
 
+    @property
+    def user_state(self) -> str:
+        return "open" if self.state in ("open", "grace") else "closed"
+
     def can_ag_edit(self) -> bool:
         return self.state in ("open", "grace")
 

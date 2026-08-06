@@ -16,13 +16,21 @@ _STATUS_CHOICES = [
 ]
 
 
+_SYSTEM_GROUPS = {"admins", "cluster"}
+
+
 @login_required
 def abfragen_list(request: HttpRequest):
     abfragen = AGAbfrage.objects.all()
     is_privileged = request.user.groups.filter(name__in=["admins", "cluster"]).exists()
+    user_groups = sorted(
+        g for g in request.user.groups.values_list("name", flat=True)
+        if g not in _SYSTEM_GROUPS
+    )
     return render(request, "app/abfragen/list.html", {
         "abfragen": abfragen,
         "is_privileged": is_privileged,
+        "user_groups": user_groups,
     })
 
 
@@ -67,6 +75,7 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
             "ag_name": ag_name,
             "closed": True,
             "rows": [],
+            "is_privileged": False,
         })
 
     members = ldap_utils.get_ag_members(ag_name)
@@ -110,6 +119,7 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
         "rows": rows,
         "status_choices": _STATUS_CHOICES,
         "closed": False,
+        "is_privileged": is_privileged,
     })
 
 

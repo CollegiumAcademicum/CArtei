@@ -144,6 +144,30 @@ def test_ag_edit_post_saves_result():
 
 
 @pytest.mark.django_db
+def test_initiative_edit_allowed():
+    abfrage = _open_abfrage()
+    user = _user_in_group("in_user", "in.gemeinschaft")
+    client = Client()
+    client.force_login(user)
+    fake_members = [{"username": "in_user", "first_name": "I", "last_name": "N", "email": "i@ca.de", "uuid": str(uuid.uuid4())}]
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=fake_members):
+        response = client.get(f"/abfragen/{abfrage.pk}/ag/in.gemeinschaft/")
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_list_shows_user_groups_for_open_abfrage():
+    _open_abfrage()
+    user = _user_in_group("multi_user", "ag.kueche", "in.gemeinschaft")
+    client = Client()
+    client.force_login(user)
+    response = client.get("/abfragen/")
+    assert response.status_code == 200
+    assert b"ag.kueche" in response.content
+    assert b"in.gemeinschaft" in response.content
+
+
+@pytest.mark.django_db
 def test_tenants_view_requires_privileged():
     abfrage = _open_abfrage()
     user = User.objects.create_user(username="nobody2")
