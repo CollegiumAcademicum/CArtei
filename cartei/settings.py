@@ -84,7 +84,7 @@ LOGOUT_REDIRECT_URL = "/login/"
 # LDAP — skipped gracefully if python-ldap not installed
 try:
     import ldap
-    from django_auth_ldap.config import LDAPSearch
+    from django_auth_ldap.config import LDAPSearch, MemberDNGroupType
 
     AUTH_LDAP_SERVER_URI = os.environ.get("LDAP_SERVER_URI", "ldap://localhost")
     AUTH_LDAP_BIND_DN = os.environ.get("LDAP_BIND_DN", "")
@@ -99,6 +99,7 @@ try:
         "last_name": "sn",
         "email": "mail",
     }
+    AUTH_LDAP_GROUP_TYPE = MemberDNGroupType()
     AUTH_LDAP_REQUIRE_GROUP = os.environ.get("LDAP_REQUIRE_GROUP", "")
     AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_REFERRALS: 0}
     _ca_cert = os.environ.get("LDAP_CA_CERT_PATH", "")
