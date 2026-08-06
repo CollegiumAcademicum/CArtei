@@ -17,7 +17,7 @@
           <th>Status</th>
           <th>Endet am</th>
           {% if is_privileged %}<th>Nachfrist bis</th>{% endif %}
-          {% if not is_privileged and user_groups %}<th>Meine Gruppen</th>{% endif %}
+          {% if user_groups %}<th>Meine Gruppen</th>{% endif %}
           <th></th>
         </tr>
       </thead>
@@ -35,7 +35,7 @@
         </td>
         <td>{{ abfrage.ends_at }}</td>
         {% if is_privileged %}<td>{{ abfrage.grace_ends_at }}</td>{% endif %}
-        {% if not is_privileged and user_groups %}
+        {% if user_groups %}
         <td>
           {% if abfrage.user_state == "open" %}
             {% for g in user_groups %}
