@@ -25,7 +25,7 @@
       {% for abfrage in abfragen %}
       <tr>
         <td>{{ abfrage.date }}</td>
-        <td>{{ abfrage.label|default:"—" }}</td>
+        <td>{{ abfrage }}</td>
         <td>
           {% if is_privileged %}
             <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
