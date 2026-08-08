@@ -89,7 +89,6 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
         for username, tenant in tenants_by_username.items():
             key = f"status_{tenant.pk}"
             if key in request.POST:
-                # ponytail: last-write-wins; unique constraint on (abfrage,ag,tenant) would prevent races
                 AGAbfrageResult.objects.update_or_create(
                     abfrage=abfrage,
                     ag_name=ag_name,
