@@ -16,8 +16,21 @@
     </div>
     <form method="post" action="{% url 'abfrage_delete' abfrage.pk %}">
       {% csrf_token %}
-      <button type="submit" class="ca-logout" style="color:#B61B29;border-color:#B61B29;" onclick="return confirm('Abfrage &quot;{{ abfrage }}&quot; wirklich löschen? Alle Ergebnisse werden ebenfalls gelöscht.')">Abfrage löschen</button>
+      <p style="font-size:0.8rem;color:#7a7a7a;margin-bottom:0.3rem;">Zur Bestätigung <strong>{{ abfrage }}</strong> eingeben:</p>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <input type="text" id="delete-confirm" class="input is-small" style="width:180px;" placeholder="{{ abfrage|escapejs }}" autocomplete="off">
+        <button type="submit" id="delete-btn" class="ca-logout" style="color:#B61B29;border-color:#B61B29;opacity:0.4;cursor:not-allowed;" disabled>Löschen</button>
+      </div>
     </form>
+    <script>
+      document.getElementById('delete-confirm').addEventListener('input', function() {
+        var ok = this.value === '{{ abfrage|escapejs }}';
+        var btn = document.getElementById('delete-btn');
+        btn.disabled = !ok;
+        btn.style.opacity = ok ? '1' : '0.4';
+        btn.style.cursor = ok ? 'pointer' : 'not-allowed';
+      });
+    </script>
   </div>
 
   <hr class="ca-divider">
