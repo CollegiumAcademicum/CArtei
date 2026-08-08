@@ -2,16 +2,22 @@
 {% block title %}{{ abfrage }} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
-  <div style="margin-bottom:1.5rem;">
-    <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;">{{ abfrage }}</h1>
-    <p style="color:#7a7a7a;font-size:0.9rem;">
-      Status: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
-      &nbsp;·&nbsp; Endet: {{ abfrage.ends_at }}
-      &nbsp;·&nbsp; Nachfrist: {{ abfrage.grace_ends_at }}
-    </p>
-    <p style="margin-top:0.75rem;">
-      <a href="{% url 'abfrage_tenants' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Alle Bewohner:innen →</a>
-    </p>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;">
+    <div>
+      <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;">{{ abfrage }}</h1>
+      <p style="color:#7a7a7a;font-size:0.9rem;">
+        Status: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
+        &nbsp;·&nbsp; Endet: {{ abfrage.ends_at }}
+        &nbsp;·&nbsp; Nachfrist: {{ abfrage.grace_ends_at }}
+      </p>
+      <p style="margin-top:0.75rem;">
+        <a href="{% url 'abfrage_tenants' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Alle Bewohner:innen →</a>
+      </p>
+    </div>
+    <form method="post" action="{% url 'abfrage_delete' abfrage.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="ca-logout" style="color:#B61B29;border-color:#B61B29;" onclick="return confirm('Abfrage &quot;{{ abfrage }}&quot; wirklich löschen? Alle Ergebnisse werden ebenfalls gelöscht.')">Abfrage löschen</button>
+    </form>
   </div>
 
   <hr class="ca-divider">
@@ -42,11 +48,5 @@
   {% else %}
   <p style="color:#7a7a7a;">Noch keine Ergebnisse.</p>
   {% endif %}
-
-  <hr class="ca-divider">
-  <form method="post" action="{% url 'abfrage_delete' abfrage.pk %}">
-    {% csrf_token %}
-    <button type="submit" class="ca-logout" style="color:#B61B29;border-color:#B61B29;" onclick="return confirm('Abfrage „{{ abfrage }}" wirklich löschen? Alle Ergebnisse werden ebenfalls gelöscht.')">Abfrage löschen</button>
-  </form>
 </div>
 {% endblock %}
