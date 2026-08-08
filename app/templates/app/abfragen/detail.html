@@ -14,14 +14,23 @@
         <a href="{% url 'abfrage_tenants' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Alle Bewohner:innen →</a>
       </p>
     </div>
-    <form method="post" action="{% url 'abfrage_delete' abfrage.pk %}">
-      {% csrf_token %}
-      <p style="font-size:0.8rem;color:#7a7a7a;margin-bottom:0.3rem;">Zur Bestätigung <strong>{{ abfrage }}</strong> eingeben:</p>
-      <div style="display:flex;gap:0.5rem;align-items:center;">
-        <input type="text" id="delete-confirm" class="input is-small" style="width:180px;" placeholder="{{ abfrage|escapejs }}" autocomplete="off">
-        <button type="submit" id="delete-btn" class="ca-logout" style="color:#B61B29;border-color:#B61B29;opacity:0.4;cursor:not-allowed;" disabled>Löschen</button>
-      </div>
-    </form>
+    <button type="button" class="ca-logout" style="color:#B61B29;border-color:#B61B29;" onclick="document.getElementById('delete-dialog').showModal()">Löschen</button>
+
+    <dialog id="delete-dialog" style="border:none;border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,0.18);padding:2rem;max-width:420px;width:100%;">
+      <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Abfrage löschen</h2>
+      <p style="font-size:0.9rem;color:#7a7a7a;margin-bottom:1rem;">
+        Diese Aktion löscht die Abfrage und alle zugehörigen Ergebnisse unwiderruflich.<br>
+        Zur Bestätigung bitte <strong>{{ abfrage }}</strong> eingeben:
+      </p>
+      <form method="post" action="{% url 'abfrage_delete' abfrage.pk %}">
+        {% csrf_token %}
+        <input type="text" id="delete-confirm" class="input" style="margin-bottom:1rem;" placeholder="{{ abfrage|escapejs }}" autocomplete="off">
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+          <button type="button" class="ca-button-outline" onclick="document.getElementById('delete-dialog').close();document.getElementById('delete-confirm').value='';document.getElementById('delete-btn').disabled=true;document.getElementById('delete-btn').style.opacity='0.4';">Abbrechen</button>
+          <button type="submit" id="delete-btn" class="ca-logout" style="color:#B61B29;border-color:#B61B29;opacity:0.4;cursor:not-allowed;" disabled>Endgültig löschen</button>
+        </div>
+      </form>
+    </dialog>
     <script>
       document.getElementById('delete-confirm').addEventListener('input', function() {
         var ok = this.value === '{{ abfrage|escapejs }}';
