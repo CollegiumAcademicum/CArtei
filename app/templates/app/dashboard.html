@@ -26,23 +26,23 @@
   </div>
 
   <div style="flex:1;">
-    {% if active_abfrage %}
+    {% for abfrage in active_abfragen %}
       <div class="ca-card">
         <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;">Aktive Engagement-Abfrage</h2>
-        <p>{{ active_abfrage.label|default:active_abfrage.date }} — endet am {{ active_abfrage.ends_at }}</p>
+        <p>{{ abfrage.label|default:abfrage.date }} — endet am {{ abfrage.ends_at }}</p>
         {% if user_groups %}
           <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
             {% for g in user_groups %}
-              <a href="{% url 'ag_edit' active_abfrage.pk g %}" class="ca-button" style="text-decoration:none;">{{ g }} ausfüllen</a>
+              <a href="{% url 'ag_edit' abfrage.pk g %}" class="ca-button" style="text-decoration:none;">{{ g }} ausfüllen</a>
             {% endfor %}
           </div>
         {% endif %}
       </div>
-    {% else %}
+    {% empty %}
       <div class="ca-card" style="color:#7a7a7a;">
         Keine aktive Abfrage.
       </div>
-    {% endif %}
+    {% endfor %}
   </div>
 
 </div>

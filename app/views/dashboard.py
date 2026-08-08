@@ -18,11 +18,10 @@ def dashboard(request):
         if g not in _SYSTEM_GROUPS
     )
 
-    latest = AGAbfrage.objects.order_by("-date").first()
-    active_abfrage = latest if latest and latest.state in ("open", "grace") else None
+    active_abfragen = AGAbfrage.objects.filter(state__in=("open", "grace")).order_by("-date")
 
     return render(request, "app/dashboard.html", {
         "tenant": tenant,
         "user_groups": user_groups,
-        "active_abfrage": active_abfrage,
+        "active_abfragen": active_abfragen,
     })
