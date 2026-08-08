@@ -1,0 +1,49 @@
+{% extends "app/base.html" %}
+{% block title %}Dashboard — CArtei{% endblock %}
+{% block content %}
+<div style="display:flex;gap:1.5rem;align-items:flex-start;">
+
+  <div class="ca-card" style="width:260px;flex-shrink:0;">
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">Mein Profil</h2>
+    <p style="font-weight:600;">
+      {% if tenant %}
+        {{ tenant.preferred_name|default:tenant.first_name }} {{ tenant.last_name }}
+      {% else %}
+        {{ request.user.username }}
+      {% endif %}
+    </p>
+    {% if tenant.pronouns %}
+      <p style="font-size:0.85rem;color:#7a7a7a;">{{ tenant.pronouns }}</p>
+    {% endif %}
+    {% if user_groups %}
+      <div style="margin-top:1rem;">
+        <p style="font-size:0.85rem;font-weight:600;color:#7a7a7a;margin-bottom:0.5rem;">Meine AGs</p>
+        {% for g in user_groups %}
+          <span style="display:block;font-size:0.9rem;">{{ g }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <div style="flex:1;">
+    {% if active_abfrage %}
+      <div class="ca-card">
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;">Aktive Engagement-Abfrage</h2>
+        <p>{{ active_abfrage.label|default:active_abfrage.date }} — endet am {{ active_abfrage.ends_at }}</p>
+        {% if user_groups %}
+          <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+            {% for g in user_groups %}
+              <a href="{% url 'ag_edit' active_abfrage.pk g %}" class="ca-button" style="text-decoration:none;">{{ g }} ausfüllen</a>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="ca-card" style="color:#7a7a7a;">
+        Keine aktive Abfrage.
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
