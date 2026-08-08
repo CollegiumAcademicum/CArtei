@@ -42,10 +42,13 @@
           </td>
           {% if row.tenant %}
           <td>
+            {% if row.result %}
+            <span class="badge badge-{{ row.result.status }}" style="display:block;margin-bottom:4px;">{{ row.result.get_status_display }}</span>
+            {% endif %}
             <div class="select is-small">
               <select name="status_{{ row.tenant.pk }}" required>
               {% for val, label in status_choices %}
-              <option value="{{ val }}"{% if row.result and row.result.status == val %} selected{% endif %}>{{ label }}</option>
+              <option value="{{ val }}"{% if row.result and row.result.status == val %} selected{% elif not row.result and val == "INAKTIV" %} selected{% endif %}>{{ label }}</option>
               {% endfor %}
               </select>
             </div>

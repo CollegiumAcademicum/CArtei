@@ -4,9 +4,11 @@ from django.db import models
 
 
 class AGStatus(models.TextChoices):
-    ACTIVE = "ACTIVE", "Active"
-    NOT_ACTIVE_ENOUGH = "NOT_ACTIVE_ENOUGH", "Not active enough"
-    EXEMPT = "EXEMPT", "Exempt"
+    ZU_AKTIV = "ZU_AKTIV", "zu aktiv"
+    AKTIV = "AKTIV", "aktiv"
+    NICHT_AUSREICHEND = "NICHT_AUSREICHEND", "nicht ausreichend"
+    IM_GESPRAECH = "IM_GESPRAECH", "im Gespräch"
+    INAKTIV = "INAKTIV", "inaktiv"
 
 
 class Tenant(models.Model):

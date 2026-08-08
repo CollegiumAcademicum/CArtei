@@ -31,7 +31,7 @@
         </td>
         {% endif %}
         <td>{{ r.tenant }}</td>
-        <td>{{ r.status }}</td>
+        <td><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
         <td>{{ r.note|default:"—" }}</td>
       </tr>
       {% endfor %}

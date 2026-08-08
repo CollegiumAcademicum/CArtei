@@ -10,9 +10,11 @@ from app.decorators import require_group
 from app.models import AGAbfrage, AGAbfrageResult, ClusterNote, Tenant
 
 _STATUS_CHOICES = [
-    ("ACTIVE", "Aktiv"),
-    ("NOT_ACTIVE_ENOUGH", "Nicht aktiv genug"),
-    ("EXEMPT", "Befreit"),
+    ("ZU_AKTIV", "zu aktiv"),
+    ("AKTIV", "aktiv"),
+    ("NICHT_AUSREICHEND", "nicht ausreichend"),
+    ("IM_GESPRAECH", "im Gespräch"),
+    ("INAKTIV", "inaktiv"),
 ]
 
 
@@ -152,7 +154,7 @@ def abfrage_tenants(request: HttpRequest, pk: int):
         {
             "tenant": t,
             "results": results_by_tenant.get(t.pk, []),
-            "sufficient": any(r.status == "ACTIVE" for r in results_by_tenant.get(t.pk, [])),
+            "sufficient": any(r.status in ("AKTIV", "ZU_AKTIV") for r in results_by_tenant.get(t.pk, [])),
             "note": notes.get(t.pk),
         }
         for t in tenants
