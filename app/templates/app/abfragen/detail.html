@@ -42,5 +42,11 @@
   {% else %}
   <p style="color:#7a7a7a;">Noch keine Ergebnisse.</p>
   {% endif %}
+
+  <hr class="ca-divider">
+  <form method="post" action="{% url 'abfrage_delete' abfrage.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="ca-logout" style="color:#B61B29;border-color:#B61B29;" onclick="return confirm('Abfrage „{{ abfrage }}" wirklich löschen? Alle Ergebnisse werden ebenfalls gelöscht.')">Abfrage löschen</button>
+  </form>
 </div>
 {% endblock %}

@@ -46,9 +46,13 @@
           {% endif %}
         </td>
         {% endif %}
-        <td>
+        <td style="white-space:nowrap;">
           {% if is_privileged %}
             <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Details</a>
+            <form method="post" action="{% url 'abfrage_delete' abfrage.pk %}" style="display:inline;margin-left:0.75rem;">
+              {% csrf_token %}
+              <button type="submit" class="ca-logout" style="color:#B61B29;border-color:#B61B29;" onclick="return confirm('Abfrage „{{ abfrage }}" wirklich löschen? Alle Ergebnisse werden ebenfalls gelöscht.')">Löschen</button>
+            </form>
           {% endif %}
         </td>
       </tr>

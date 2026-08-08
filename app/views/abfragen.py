@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from app import ldap_utils
 from app.decorators import require_group
@@ -163,3 +165,15 @@ def abfrage_tenants(request: HttpRequest, pk: int):
         "abfrage": abfrage,
         "rows": rows,
     })
+
+
+@require_POST
+@require_group("admins", "cluster")
+def abfrage_delete(request: HttpRequest, pk: int):
+    abfrage = get_object_or_404(AGAbfrage, pk=pk)
+    label = str(abfrage)
+    ClusterNote.objects.filter(abfrage=abfrage).delete()
+    AGAbfrageResult.objects.filter(abfrage=abfrage).delete()
+    abfrage.delete()
+    messages.success(request, f'Abfrage "{label}" wurde gelöscht.')
+    return redirect("abfragen_list")
