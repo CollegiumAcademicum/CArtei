@@ -14,6 +14,7 @@
         <a href="{% url 'abfrage_tenants' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Alle Bewohner:innen →</a>
       </p>
     </div>
+    {% if is_privileged %}
     <button type="button" class="ca-logout" style="color:#B61B29;border-color:#B61B29;" onclick="document.getElementById('delete-dialog').showModal()">Löschen</button>
 
     <dialog id="delete-dialog" style="border:none;border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,0.18);padding:2rem;max-width:420px;width:100%;">
@@ -40,6 +41,7 @@
         btn.style.cursor = ok ? 'pointer' : 'not-allowed';
       });
     </script>
+    {% endif %}
   </div>
 
   <hr class="ca-divider">

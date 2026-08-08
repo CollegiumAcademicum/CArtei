@@ -58,9 +58,11 @@ def abfrage_detail(request: HttpRequest, pk: int):
     by_ag: dict[str, list] = {}
     for r in results:
         by_ag.setdefault(r.ag_name, []).append(r)
+    is_privileged = request.user.groups.filter(name__in=["admins", "cluster"]).exists()
     return render(request, "app/abfragen/detail.html", {
         "abfrage": abfrage,
         "by_ag": by_ag,
+        "is_privileged": is_privileged,
     })
 
 
