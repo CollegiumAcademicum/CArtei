@@ -27,4 +27,13 @@
     </div>
   </form>
 </div>
+<script>
+  function isoDate(d) { return d.toISOString().slice(0, 10); }
+  var today = new Date();
+  var ends = new Date(today); ends.setDate(ends.getDate() + 14);
+  var grace = new Date(ends); grace.setDate(grace.getDate() + 5);
+  document.getElementById('id_date').value = isoDate(today);
+  document.getElementById('id_ends_at').value = isoDate(ends);
+  document.getElementById('id_grace_ends_at').value = isoDate(grace);
+</script>
 {% endblock %}
