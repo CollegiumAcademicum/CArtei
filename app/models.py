@@ -61,7 +61,7 @@ class AGAbfrage(models.Model):
         ordering = ["-date"]
 
     def __str__(self) -> str:
-        return self.label or str(self.date)
+        return self.label or f"Abfrage {self.ends_at}"
 
     @property
     def state(self) -> str:
