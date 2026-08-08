@@ -42,9 +42,6 @@
           </td>
           {% if row.tenant %}
           <td>
-            {% if row.result %}
-            <span class="badge badge-{{ row.result.status }}" style="display:block;margin-bottom:4px;">{{ row.result.get_status_display }}</span>
-            {% endif %}
             <div class="select is-small">
               <select name="status_{{ row.tenant.pk }}" required>
               {% for val, label in status_choices %}
