@@ -148,6 +148,31 @@ body {
 .ca-stat-value { font-size: 2rem; font-weight: 700; color: var(--ca-teal); }
 .ca-stat-label { font-size: 0.82rem; color: #555; margin-top: 0.25rem; }
 
+/* ── Cluster row colors (Belegium) ── */
+.cluster-row-0A { background: hsl(0,   55%, 94%) !important; }
+.cluster-row-0B { background: hsl(26,  55%, 94%) !important; }
+.cluster-row-1A { background: hsl(51,  55%, 94%) !important; }
+.cluster-row-1B { background: hsl(77,  55%, 94%) !important; }
+.cluster-row-1C { background: hsl(103, 55%, 94%) !important; }
+.cluster-row-1D { background: hsl(128, 55%, 94%) !important; }
+.cluster-row-2A { background: hsl(154, 55%, 94%) !important; }
+.cluster-row-2B { background: hsl(180, 55%, 94%) !important; }
+.cluster-row-2C { background: hsl(205, 55%, 94%) !important; }
+.cluster-row-2D { background: hsl(231, 55%, 94%) !important; }
+.cluster-row-3A { background: hsl(257, 55%, 94%) !important; }
+.cluster-row-3B { background: hsl(282, 55%, 94%) !important; }
+.cluster-row-3C { background: hsl(308, 55%, 94%) !important; }
+.cluster-row-3D { background: hsl(334, 55%, 94%) !important; }
+.cluster-chip {
+  display: inline-block; padding: 1px 7px; border-radius: 3px;
+  font-size: 0.82em; font-weight: 700;
+}
+.sort-btn {
+  background: none; border: none; cursor: pointer; font-weight: 700;
+  font-family: inherit; font-size: inherit; padding: 0; color: inherit;
+}
+.sort-btn:hover { color: var(--ca-teal); }
+
 /* ── Mobile ── */
 @media (max-width: 600px) {
   .ca-navbar { height: auto; flex-wrap: wrap; padding: 0.5rem 1rem; gap: 0.5rem; }

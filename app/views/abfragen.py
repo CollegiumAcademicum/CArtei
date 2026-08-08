@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db import connection
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -166,6 +167,64 @@ def abfrage_tenants(request: HttpRequest, pk: int):
     return render(request, "app/abfragen/tenants.html", {
         "abfrage": abfrage,
         "rows": rows,
+    })
+
+
+@require_group("admins", "cluster")
+def belegium(request: HttpRequest):
+    abfragen = list(AGAbfrage.objects.all())
+    selected_ids = {int(x) for x in request.GET.getlist("surveys") if x.isdigit()}
+
+    with connection.cursor() as c:
+        c.execute("""
+            SELECT tra.tenant_id, w.cluster
+            FROM tenant_room_assignment tra
+            JOIN room r ON r.id = tra.room_id
+            JOIN wg w ON w.id = r.wg_id
+            WHERE tra.moved_out IS NULL AND w.cluster IS NOT NULL
+        """)
+        cluster_by_tenant = dict(c.fetchall())
+
+    all_clusters = sorted(set(cluster_by_tenant.values()))
+    selected_clusters = set(request.GET.getlist("clusters")) or set(all_clusters)
+
+    selected_abfragen = [a for a in abfragen if a.pk in selected_ids]
+
+    results_by_tenant: dict[int, dict[int, list]] = {}
+    if selected_ids:
+        for r in AGAbfrageResult.objects.filter(abfrage_id__in=selected_ids):
+            results_by_tenant.setdefault(r.tenant_id, {}).setdefault(r.abfrage_id, []).append(r)
+
+    sort = request.GET.get("sort", "name")
+    sort_dir = request.GET.get("dir", "asc")
+    reverse = sort_dir == "desc"
+
+    rows = []
+    for t in Tenant.objects.filter(move_out__isnull=True, pk__in=cluster_by_tenant):
+        c = cluster_by_tenant.get(t.pk)
+        if not c or c not in selected_clusters:
+            continue
+        tenant_results = results_by_tenant.get(t.pk, {})
+        rows.append({
+            "tenant": t,
+            "cluster": c,
+            "survey_results": [(a, tenant_results.get(a.pk, [])) for a in selected_abfragen],
+        })
+
+    if sort == "cluster":
+        rows.sort(key=lambda r: r["cluster"], reverse=reverse)
+    else:
+        rows.sort(key=lambda r: (r["tenant"].last_name, r["tenant"].first_name), reverse=reverse)
+
+    return render(request, "app/abfragen/belegium.html", {
+        "abfragen": abfragen,
+        "selected_ids": selected_ids,
+        "selected_abfragen": selected_abfragen,
+        "all_clusters": all_clusters,
+        "selected_clusters": selected_clusters,
+        "rows": rows,
+        "sort": sort,
+        "sort_dir": sort_dir,
     })
 
 
