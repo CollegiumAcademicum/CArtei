@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
@@ -18,7 +20,7 @@ def dashboard(request):
         if g not in _SYSTEM_GROUPS
     )
 
-    active_abfragen = AGAbfrage.objects.filter(state__in=("open", "grace")).order_by("-date")
+    active_abfragen = AGAbfrage.objects.filter(grace_ends_at__gte=date.today()).order_by("-date")
 
     return render(request, "app/dashboard.html", {
         "tenant": tenant,
