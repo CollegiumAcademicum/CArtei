@@ -1,8 +1,9 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views
+from app.views import abfragen, admin_views, dashboard
 
 urlpatterns = [
+    path("dashboard/", dashboard.dashboard, name="dashboard"),
     path("abfragen/", abfragen.abfragen_list, name="abfragen_list"),
     path("abfragen/new/", abfragen.abfrage_new, name="abfrage_new"),
     path("abfragen/<int:pk>/", abfragen.abfrage_detail, name="abfrage_detail"),

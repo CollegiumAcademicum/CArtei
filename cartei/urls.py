@@ -4,7 +4,7 @@ from django.urls import include, path
 
 
 def _root(request):
-    return redirect("abfragen_list")
+    return redirect("dashboard")
 
 
 urlpatterns = [
