@@ -27,7 +27,7 @@
         <td style="color:#7a7a7a;">{{ row.tenant.intranet_username }}</td>
         <td>
           {% for r in row.results %}
-          <span style="display:inline-block;background:#e8f7f6;color:#2f9991;border-radius:3px;padding:1px 6px;font-size:0.8rem;margin:1px;">{{ r.ag_name }}: {{ r.status }}</span>
+          <span class="badge badge-{{ r.status }}" style="display:inline-block;margin:1px;">{{ r.ag_name }}: {{ r.get_status_display }}</span>
           {% empty %}—{% endfor %}
         </td>
         <td>

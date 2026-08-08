@@ -134,12 +134,12 @@ def test_ag_edit_post_saves_result():
     with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=fake_members):
         response = client.post(
             f"/abfragen/{abfrage.pk}/ag/ag.kueche/",
-            {f"status_{tenant.pk}": "ACTIVE", f"note_{tenant.pk}": "Good work"},
+            {f"status_{tenant.pk}": "AKTIV", f"note_{tenant.pk}": "Good work"},
         )
 
     assert response.status_code == 302
     result = AGAbfrageResult.objects.get(abfrage=abfrage, tenant=tenant, ag_name="ag.kueche")
-    assert result.status == "ACTIVE"
+    assert result.status == "AKTIV"
     assert result.note == "Good work"
 
 
