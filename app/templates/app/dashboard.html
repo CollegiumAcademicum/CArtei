@@ -4,10 +4,12 @@
 <div style="display:flex;gap:1.5rem;align-items:flex-start;">
 
   <div class="ca-card" style="width:260px;flex-shrink:0;">
-    <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">Mein Profil</h2>
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">
+      {% if tenant %}<a href="{% url 'tenant_detail' tenant.pk %}" style="color:var(--ca-teal);">Mein Profil</a>{% else %}Mein Profil{% endif %}
+    </h2>
     <p style="font-weight:600;">
       {% if tenant %}
-        {{ tenant.preferred_name|default:tenant.first_name }} {{ tenant.last_name }}
+        <a href="{% url 'tenant_detail' tenant.pk %}" style="color:var(--ca-teal);">{{ tenant.preferred_name|default:tenant.first_name }} {{ tenant.last_name }}</a>
       {% else %}
         {{ request.user.username }}
       {% endif %}
