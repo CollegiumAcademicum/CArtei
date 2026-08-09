@@ -60,7 +60,7 @@
           <a href="{% url 'ag_edit' abfrage.pk ag_name %}" style="color:var(--ca-teal);font-weight:600;">{{ ag_name }}</a>
         </td>
         {% endif %}
-        <td>{{ r.tenant }}</td>
+        <td><a href="{% url 'tenant_detail' r.tenant.pk %}" style="color:var(--ca-teal);">{{ r.tenant }}</a></td>
         <td><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
         <td>{{ r.note|default:"—" }}</td>
       </tr>

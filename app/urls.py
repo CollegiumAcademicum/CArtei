@@ -1,6 +1,6 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, dashboard
+from app.views import abfragen, admin_views, dashboard, tenant
 
 urlpatterns = [
     path("dashboard/", dashboard.dashboard, name="dashboard"),
@@ -11,6 +11,7 @@ urlpatterns = [
     path("abfragen/<int:pk>/tenants/", abfragen.abfrage_tenants, name="abfrage_tenants"),
     path("abfragen/<int:pk>/delete/", abfragen.abfrage_delete, name="abfrage_delete"),
     path("belegium/", abfragen.belegium, name="belegium"),
+    path("tenants/<int:pk>/", tenant.tenant_detail, name="tenant_detail"),
     path("admin/", admin_views.admin_portal, name="admin_portal"),
     path("admin/sync-from-ldap/", admin_views.sync_from_ldap, name="sync_from_ldap"),
 ]

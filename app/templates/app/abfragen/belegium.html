@@ -85,7 +85,7 @@
         </tr>
         {% endifchanged %}{% endif %}
         <tr class="cluster-row-{{ row.cluster }}">
-          <td>{{ row.tenant }}</td>
+          <td><a href="{% url 'tenant_detail' row.tenant.pk %}" style="color:var(--ca-teal);">{{ row.tenant }}</a></td>
           <td>{% if row.cluster %}<span class="cluster-chip cluster-row-{{ row.cluster }}">{{ row.cluster }}</span>{% else %}<span style="color:#7a7a7a;">—</span>{% endif %}</td>
           {% for a, results in row.survey_results %}
           <td>

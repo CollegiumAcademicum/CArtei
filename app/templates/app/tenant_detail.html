@@ -1,0 +1,9 @@
+{% extends "app/base.html" %}
+{% block title %}{{ tenant.preferred_name|default:tenant.first_name }} {{ tenant.last_name }} — CArtei{% endblock %}
+{% block content %}
+<div class="ca-card">
+  <h1 style="font-size:1.4rem;font-weight:700;">
+    {{ tenant.preferred_name|default:tenant.first_name }} {{ tenant.last_name }}
+  </h1>
+</div>
+{% endblock %}

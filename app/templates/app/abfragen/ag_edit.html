@@ -37,8 +37,7 @@
         {% for row in rows %}
         <tr>
           <td>
-            {{ row.member.first_name }} {{ row.member.last_name }}
-            {% if not row.tenant %}<br><em style="color:#999;font-size:0.8rem;">(kein Eintrag im System)</em>{% endif %}
+            {% if row.tenant %}<a href="{% url 'tenant_detail' row.tenant.pk %}" style="color:var(--ca-teal);">{{ row.member.first_name }} {{ row.member.last_name }}</a>{% else %}{{ row.member.first_name }} {{ row.member.last_name }}<br><em style="color:#999;font-size:0.8rem;">(kein Eintrag im System)</em>{% endif %}
           </td>
           {% if row.tenant %}
           <td>
