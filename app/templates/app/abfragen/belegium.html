@@ -31,6 +31,10 @@
           <span class="cluster-chip cluster-row-{{ c }}">{{ c }}</span>
         </label>
         {% endfor %}
+        <label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
+          <input type="checkbox" name="clusters" value="" {% if no_cluster_selected %}checked{% endif %}>
+          <span style="color:#7a7a7a;">kein Cluster</span>
+        </label>
       </div>
     </div>
 
@@ -64,9 +68,25 @@
       </thead>
       <tbody>
         {% for row in rows %}
+        {% if group_by_cluster %}{% ifchanged row.cluster_key %}
+        <tr class="cluster-row-{{ row.cluster }}">
+          <td colspan="{{ col_count }}" style="font-weight:700;">
+            {% if row.cluster %}Cluster {{ row.cluster }}{% else %}kein Cluster{% endif %}
+            <span style="color:#7a7a7a;font-weight:400;">— {{ row.stats.count }} Bewohner:innen</span>
+            {% for s in row.stats.surveys %}
+            <div style="font-weight:400;margin-top:0.2rem;">
+              <span style="color:#7a7a7a;">{{ s.abfrage }}:</span>
+              {% for b in s.badges %}
+              <span class="badge badge-{{ b.status }}" style="margin-left:0.2rem;">{{ b.label }}: {{ b.count }}</span>
+              {% empty %}<span style="color:#7a7a7a;">—</span>{% endfor %}
+            </div>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endifchanged %}{% endif %}
         <tr class="cluster-row-{{ row.cluster }}">
           <td>{{ row.tenant }}</td>
-          <td><span class="cluster-chip cluster-row-{{ row.cluster }}">{{ row.cluster }}</span></td>
+          <td>{% if row.cluster %}<span class="cluster-chip cluster-row-{{ row.cluster }}">{{ row.cluster }}</span>{% else %}<span style="color:#7a7a7a;">—</span>{% endif %}</td>
           {% for a, results in row.survey_results %}
           <td>
             {% for r in results %}

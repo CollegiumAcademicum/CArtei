@@ -186,7 +186,10 @@ def belegium(request: HttpRequest):
         cluster_by_tenant = dict(c.fetchall())
 
     all_clusters = sorted(set(cluster_by_tenant.values()))
-    selected_clusters = set(request.GET.getlist("clusters")) or set(all_clusters)
+    # "" is the bucket for residents whose WG has no cluster; residents no longer
+    # require a cluster to show up — it's just a filter now.
+    cluster_keys = all_clusters + [""]
+    selected_clusters = set(request.GET.getlist("clusters")) or set(cluster_keys)
 
     selected_abfragen = [a for a in abfragen if a.pk in selected_ids]
 
@@ -200,21 +203,51 @@ def belegium(request: HttpRequest):
     reverse = sort_dir == "desc"
 
     rows = []
-    for t in Tenant.objects.filter(move_out__isnull=True, pk__in=cluster_by_tenant):
-        c = cluster_by_tenant.get(t.pk)
-        if not c or c not in selected_clusters:
+    for t in Tenant.objects.filter(move_out__isnull=True):
+        cluster = cluster_by_tenant.get(t.pk)  # None when WG has no cluster
+        key = cluster or ""
+        if key not in selected_clusters:
             continue
         tenant_results = results_by_tenant.get(t.pk, {})
         rows.append({
             "tenant": t,
-            "cluster": c,
+            "cluster": cluster,
+            "cluster_key": key,
             "survey_results": [(a, tenant_results.get(a.pk, [])) for a in selected_abfragen],
         })
 
     if sort == "cluster":
-        rows.sort(key=lambda r: r["cluster"], reverse=reverse)
+        rows.sort(key=lambda r: (r["cluster_key"], r["tenant"].last_name, r["tenant"].first_name), reverse=reverse)
     else:
         rows.sort(key=lambda r: (r["tenant"].last_name, r["tenant"].first_name), reverse=reverse)
+
+    # per-cluster group stats, broken down per selected survey (rendered as a
+    # header row when sorting by cluster)
+    status_label = dict(_STATUS_CHOICES)
+    cluster_stats: dict[str, dict] = {}
+    for row in rows:
+        st = cluster_stats.setdefault(
+            row["cluster_key"],
+            {"count": 0, "counts": {a.pk: {} for a in selected_abfragen}},
+        )
+        st["count"] += 1
+        for a, results in row["survey_results"]:
+            counts = st["counts"][a.pk]
+            for r in results:
+                counts[r.status] = counts.get(r.status, 0) + 1
+    for st in cluster_stats.values():
+        st["surveys"] = [
+            {
+                "abfrage": a,
+                "badges": [
+                    {"status": s, "label": status_label.get(s, s), "count": st["counts"][a.pk][s]}
+                    for s, _l in _STATUS_CHOICES if s in st["counts"][a.pk]
+                ],
+            }
+            for a in selected_abfragen
+        ]
+    for row in rows:
+        row["stats"] = cluster_stats[row["cluster_key"]]
 
     return render(request, "app/abfragen/belegium.html", {
         "abfragen": abfragen,
@@ -222,7 +255,10 @@ def belegium(request: HttpRequest):
         "selected_abfragen": selected_abfragen,
         "all_clusters": all_clusters,
         "selected_clusters": selected_clusters,
+        "no_cluster_selected": "" in selected_clusters,
         "rows": rows,
+        "group_by_cluster": sort == "cluster",
+        "col_count": 2 + (len(selected_abfragen) or 1),
         "sort": sort,
         "sort_dir": sort_dir,
     })

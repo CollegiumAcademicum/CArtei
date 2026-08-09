@@ -28,7 +28,7 @@
   <div style="flex:1;">
     {% if active_abfragen %}
       <div class="ca-card">
-        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;">Aktive Engagement-Abfragen</h2>
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;"><a href="{% url 'abfragen_list' %}">Engagement-Abfragen</a></h2>
         {% for abfrage in active_abfragen %}
           <div style="{% if not forloop.first %}margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;{% endif %}">
             <p>{{ abfrage.label|default:abfrage.date }} — endet am {{ abfrage.ends_at }}</p>
