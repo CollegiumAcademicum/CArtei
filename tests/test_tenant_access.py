@@ -59,3 +59,10 @@ def test_editable_columns_are_real_tenant_fields():
     from app.models import Tenant
     names = {f.name for f in Tenant._meta.get_fields()}
     assert set(EDITABLE_COLUMNS) <= names
+
+
+def test_sublet_of_editable_by_mietverwaltung():
+    assert "sublet_of_tenant" in visible_fields({"public", "mietverwaltung"})
+    assert "sublet_of_tenant" in editable_fields({"public", "mietverwaltung"})
+    assert "sublet_of_tenant" not in visible_fields({"public"})       # not public
+    assert "sublet_of_tenant" not in editable_fields({"public", "owner"})  # owner cannot

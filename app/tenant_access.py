@@ -37,6 +37,7 @@ SECTIONS = [
     ]),
     Section("housing", "Wohnen", [
         _f("is_sublet", "Untermiete", _MV, _MV),
+        _f("sublet_of_tenant", "Untervermietet von", _MV, _MV),
         _f("sublet_from", "Untermiete von", _MV, _MV),
         _f("sublet_to", "Untermiete bis", _MV, _MV),
         _f("mailbox_key", "Briefkastenschlüssel", _MV, _MV),

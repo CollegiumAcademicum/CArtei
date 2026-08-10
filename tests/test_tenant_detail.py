@@ -96,3 +96,13 @@ def test_mietverwaltung_can_edit_dob(settings):
     _login(c, "mv", groups=["ag.mietverwaltung"])
     body = c.get(f"/tenants/{t.pk}/").content.decode()
     assert 'name="date_of_birth"' in body  # editable input for MV
+
+
+@pytest.mark.django_db
+def test_mietverwaltung_sees_sublet_of_picker(settings):
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    t = _tenant("subj")
+    c = Client()
+    _login(c, "mv2", groups=["ag.mietverwaltung"])
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert 'name="sublet_of_tenant"' in body
