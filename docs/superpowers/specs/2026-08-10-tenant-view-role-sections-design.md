@@ -107,11 +107,11 @@ pronouns (the "public card").
     trust which fields the form posted), instantiate `TenantForm` trimmed to
     that set, validate, save. Re-render with success/error.
 
-**Audit gap (known):** `Historized` snapshots `entity_history` via SQLAlchemy
-event listeners in `cartei_db`. CArtei writes via Django ORM, which bypasses
-SQLAlchemy entirely — so edits made here are **not** recorded in
-`entity_history`. Setting `changed_by_var` would have no effect. Accepted for
-this build; wiring CArtei writes through cartei_db for audit is future work.
+**Auditing:** handled at the DB level by the audit-trigger project
+(`cartei_db/docs/superpowers/specs/2026-08-10-db-level-audit-triggers-design.md`).
+Once that ships, `AuditActorMiddleware` sets the actor per request and a Postgres
+trigger records every Django write to `tenant` in `entity_history` — no
+view-level audit code needed here. **This feature depends on that project.**
 
 ### Form
 

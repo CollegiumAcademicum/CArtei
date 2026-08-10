@@ -16,7 +16,7 @@
 - Admin override: admin sees every field and edits every field **except** `intranet_username` and `intranet_uuid`.
 - Effective roles = `{public} ∪ ({owner} if own profile) ∪ matched group roles ∪ ({admin} if admin)`. No self-view suppression.
 - Server-side editable set is the trust boundary — recompute it on POST; never trust which fields were submitted.
-- **Audit gap (accepted):** Django writes bypass `cartei_db`'s SQLAlchemy `Historized` listeners, so edits are not recorded in `entity_history`. Do not attempt to set `changed_by_var`.
+- **Auditing is external:** handled by the DB-level audit-trigger project (`cartei_db/docs/superpowers/plans/2026-08-10-db-level-audit-triggers.md`) — ship that first. Once its `AuditActorMiddleware` + Postgres trigger are in place, every Django write to `tenant` is recorded in `entity_history` automatically. Add no audit code in this feature; do not set `changed_by_var` (ineffective from Django).
 - Tests reuse the existing `tests/conftest.py` `django_db_setup` fixture (flips `managed=False` models to managed). Mark DB tests with `@pytest.mark.django_db`.
 
 ---
