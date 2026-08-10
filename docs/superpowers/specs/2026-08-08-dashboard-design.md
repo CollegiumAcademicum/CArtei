@@ -1,4 +1,4 @@
-# Dashboard Landing Page — Design Spec
+    # Dashboard Landing Page — Design Spec
 
 **Date:** 2026-08-08  
 **Status:** Approved

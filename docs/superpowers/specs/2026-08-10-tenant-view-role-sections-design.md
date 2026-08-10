@@ -68,6 +68,11 @@ form/upload flow — deferred):
 
 The editable set therefore = Tenant scalar columns only.
 
+**Mirror models needed:** `Room`, `WG`, `Building`, `TenantRoomAssignment`,
+`EnrollmentProof` exist in `cartei_db` but are not yet mirrored in
+`app/models.py`. Add `managed=False` mirrors (matching `db_table`/columns, FKs
+`DO_NOTHING`/`db_constraint=False`) to query them. Not a schema change.
+
 ## Sections (UI)
 
 Collapsible via native `<details>`/`<summary>` — no JS library.
@@ -100,9 +105,13 @@ pronouns (the "public card").
     as an editable input or static text.
   - **POST**: recompute the editable set server-side (trust boundary — never
     trust which fields the form posted), instantiate `TenantForm` trimmed to
-    that set, validate, save. Set `changed_by_var` / `change_source_var`
-    contextvars to `request.user.username` before save so `Historized` records
-    the actor. Re-render with success/error.
+    that set, validate, save. Re-render with success/error.
+
+**Audit gap (known):** `Historized` snapshots `entity_history` via SQLAlchemy
+event listeners in `cartei_db`. CArtei writes via Django ORM, which bypasses
+SQLAlchemy entirely — so edits made here are **not** recorded in
+`entity_history`. Setting `changed_by_var` would have no effect. Accepted for
+this build; wiring CArtei writes through cartei_db for audit is future work.
 
 ### Form
 
