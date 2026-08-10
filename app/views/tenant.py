@@ -65,10 +65,10 @@ def tenant_detail(request: HttpRequest, pk: int):
         "roles": roles,
     }
     # Relational read-only blocks, gated by role.
-    if "housing" in {s["key"] for s in ctx["sections"]} or "mietverwaltung" in roles or "admin" in roles:
+    if {"mietverwaltung", "admin"} & roles:
         ctx["room_assignments"] = list(
             TenantRoomAssignment.objects.filter(tenant=tenant).select_related("room__wg__building")
-        ) if ("mietverwaltung" in roles or "admin" in roles) else []
+        )
     else:
         ctx["room_assignments"] = []
     if {"owner", "mietverwaltung", "admin"} & roles:

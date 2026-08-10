@@ -13,8 +13,6 @@ _OWNER = frozenset({"owner"})
 _OWN_MV = frozenset({"owner", "mietverwaltung"})
 _MV = frozenset({"mietverwaltung"})
 _ADMIN = frozenset({"admin"})
-_OWN_CLU = frozenset({"owner", "cluster"})
-
 
 def _f(name, label, visible_to, editable_by):
     return Field(name, label, frozenset(visible_to), frozenset(editable_by))
