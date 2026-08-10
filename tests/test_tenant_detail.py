@@ -106,3 +106,18 @@ def test_mietverwaltung_sees_sublet_of_picker(settings):
     _login(c, "mv2", groups=["ag.mietverwaltung"])
     body = c.get(f"/tenants/{t.pk}/").content.decode()
     assert 'name="sublet_of_tenant"' in body
+
+
+@pytest.mark.django_db
+def test_date_fields_use_native_picker_and_iso_roundtrip(settings):
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    t = _tenant("dsubj")
+    c = Client()
+    _login(c, "mvd", groups=["ag.mietverwaltung"])
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert 'type="date"' in body  # native browser date picker
+    # ISO submission parses and saves despite the de-de locale
+    resp = c.post(f"/tenants/{t.pk}/", {"email": "x@ca.de", "date_of_birth": "1990-05-01"})
+    assert resp.status_code in (200, 302)
+    t.refresh_from_db()
+    assert str(t.date_of_birth) == "1990-05-01"
