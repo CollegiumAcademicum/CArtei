@@ -63,6 +63,28 @@ body {
   color: var(--ca-text); background: #fcfcfc;
 }
 .ca-textarea { resize: vertical; min-height: 120px; }
+
+/* ── Tenant profile field grid (tiled, side-by-side) ── */
+.ca-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem 1.25rem;
+  margin-top: 0.85rem;
+}
+.ca-field { display: flex; flex-direction: column; min-width: 0; }
+.ca-field-label {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: #7a7a7a; margin-bottom: 0.3rem;
+}
+.ca-field-value { font-size: 0.95rem; color: var(--ca-text); word-break: break-word; }
+.ca-field input, .ca-field select, .ca-field textarea {
+  width: 100%; box-sizing: border-box; border: 1px solid #dbdbdb; border-radius: 4px;
+  padding: 0.5rem 0.6rem; font-family: inherit; font-size: 0.95rem;
+  color: var(--ca-text); background: #fcfcfc;
+}
+.ca-field input[type="checkbox"] { width: auto; align-self: start; }
+.ca-field textarea { resize: vertical; min-height: 90px; }
+.ca-field:has(textarea) { grid-column: 1 / -1; }  /* long text spans the full row */
 .ca-input:focus, .ca-textarea:focus {
   border-color: var(--ca-teal); outline: none;
   box-shadow: 0 0 0 2px rgba(53,173,164,0.15);
