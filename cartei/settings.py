@@ -147,6 +147,14 @@ LDAP_GROUPS_BASE = os.environ.get(
 )
 LDAP_REQUIRE_GROUP = os.environ.get("LDAP_REQUIRE_GROUP", "")
 
+# Maps a section role to the LDAP-synced Django group name(s) that grant it.
+# cn suffixes are placeholders — adjust to the real intranet group names.
+TENANT_ROLE_GROUPS = {
+    "cluster": ["cluster"],
+    "mietverwaltung": ["ag.mietverwaltung"],
+    "finanzierung": ["ag.finanzierung"],
+}
+
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "false").lower() == "true"

@@ -1,0 +1,89 @@
+from collections import namedtuple
+
+from django.conf import settings
+
+Field = namedtuple("Field", "name label visible_to editable_by")
+Section = namedtuple("Section", "key title fields")
+
+SYSTEM_ID_FIELDS = frozenset({"intranet_username", "intranet_uuid"})
+
+# Role shorthands
+_PUBLIC = frozenset({"public"})
+_OWNER = frozenset({"owner"})
+_OWN_MV = frozenset({"owner", "mietverwaltung"})
+_MV = frozenset({"mietverwaltung"})
+_ADMIN = frozenset({"admin"})
+_OWN_CLU = frozenset({"owner", "cluster"})
+
+
+def _f(name, label, visible_to, editable_by):
+    return Field(name, label, frozenset(visible_to), frozenset(editable_by))
+
+
+SECTIONS = [
+    Section("personal", "Persönliche Informationen", [
+        _f("preferred_name", "Rufname", _PUBLIC, _OWNER),
+        _f("pronouns", "Pronomen", _PUBLIC, _OWNER),
+        _f("first_name", "Vorname", _OWN_MV, _ADMIN),
+        _f("last_name", "Nachname", _OWN_MV, _ADMIN),
+        _f("email", "E-Mail", _OWN_MV, _OWN_MV),
+        _f("phone", "Telefon", _OWN_MV, _OWN_MV),
+        _f("is_flinta", "FLINTA", _OWN_MV, _OWN_MV),
+        _f("mailbox_list_opt_in", "Briefkastenabfrage", _OWN_MV, _OWN_MV),
+        _f("date_of_birth", "Geburtsdatum", _OWN_MV, _MV),
+    ]),
+    Section("education", "Ausbildung & Studium", [
+        _f("study_subject", "Studienfach", _OWN_MV, _MV),
+        _f("apprenticeship_field", "Ausbildungsbereich", _OWN_MV, _MV),
+        _f("educational_institution", "Bildungseinrichtung", _OWN_MV, _MV),
+    ]),
+    Section("housing", "Wohnen", [
+        _f("is_sublet", "Untermiete", _MV, _MV),
+        _f("sublet_from", "Untermiete von", _MV, _MV),
+        _f("sublet_to", "Untermiete bis", _MV, _MV),
+        _f("mailbox_key", "Briefkastenschlüssel", _MV, _MV),
+        _f("move_in", "Einzug", _OWN_MV, _MV),
+        _f("move_out", "Auszug", _OWN_MV, _MV),
+    ]),
+    Section("legal", "Rechtliches", [
+        _f("data_priv_signed_at", "Datenschutz unterschrieben", _OWN_MV, _MV),
+        _f("photo_allowance_signed_at", "Fotoerlaubnis unterschrieben", _OWN_MV, _MV),
+        _f("barrier_free_needed", "Barrierefreiheit benötigt", _OWN_MV, _MV),
+        _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _ADMIN, _ADMIN),
+        _f("comments", "Interne Kommentare", _ADMIN, _ADMIN),
+    ]),
+]
+
+# All Tenant columns that any role may edit (admin override edits these too).
+EDITABLE_COLUMNS = sorted({
+    f.name for s in SECTIONS for f in s.fields if f.editable_by
+})
+
+_ALL_FIELDS = [f for s in SECTIONS for f in s.fields]
+
+
+def viewer_roles(user, tenant, current_tenant) -> set[str]:
+    roles = {"public"}
+    if current_tenant is not None and current_tenant.pk == tenant.pk:
+        roles.add("owner")
+    group_names = set(user.groups.values_list("name", flat=True))
+    if "admins" in group_names:
+        roles.add("admin")
+    for role, cns in settings.TENANT_ROLE_GROUPS.items():
+        if group_names.intersection(cns):
+            roles.add(role)
+    return roles
+
+
+def visible_fields(roles: set[str]) -> set[str]:
+    if "admin" in roles:
+        return {f.name for f in _ALL_FIELDS}
+    r = frozenset(roles)
+    return {f.name for f in _ALL_FIELDS if r & f.visible_to}
+
+
+def editable_fields(roles: set[str]) -> set[str]:
+    if "admin" in roles:
+        return {f.name for f in _ALL_FIELDS} - SYSTEM_ID_FIELDS
+    r = frozenset(roles)
+    return {f.name for f in _ALL_FIELDS if r & f.editable_by}
