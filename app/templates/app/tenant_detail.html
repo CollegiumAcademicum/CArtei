@@ -1,9 +1,78 @@
 {% extends "app/base.html" %}
-{% block title %}{{ tenant.preferred_name|default:tenant.first_name }} {{ tenant.last_name }} — CArtei{% endblock %}
+{% block title %}{{ display_name }} — CArtei{% endblock %}
 {% block content %}
-<div class="ca-card">
-  <h1 style="font-size:1.4rem;font-weight:700;">
-    {{ tenant.preferred_name|default:tenant.first_name }} {{ tenant.last_name }}
+<div class="ca-card" style="max-width:900px;margin:1.5rem auto;">
+  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1rem;">
+    {{ display_name }}
   </h1>
+
+  <form method="post">
+    {% csrf_token %}
+    {% for section in sections %}
+    <details open style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+      <summary style="font-weight:600;cursor:pointer;">{{ section.title }}</summary>
+      <dl style="margin-top:.75rem;">
+        {% for row in section.rows %}
+        <dt style="font-weight:500;">{{ row.label }}</dt>
+        <dd style="margin:0 0 .75rem 0;">
+          {% if row.field %}
+            {{ row.field }}
+            {% if row.field.errors %}<div style="color:#b00;font-size:.85rem;">{{ row.field.errors }}</div>{% endif %}
+          {% else %}
+            {{ row.value|default:"—" }}
+          {% endif %}
+        </dd>
+        {% endfor %}
+      </dl>
+    </details>
+    {% endfor %}
+
+    {% if can_edit %}
+    <button type="submit" class="ca-btn" style="margin-top:.5rem;">Speichern</button>
+    {% endif %}
+  </form>
+
+  {% if enrollment_proofs %}
+  <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+    <summary style="font-weight:600;cursor:pointer;">Immatrikulationsnachweise</summary>
+    <ul>
+      {% for p in enrollment_proofs %}
+      <li>{{ p.enrollment_name }} ({{ p.enrollment_type }}) — gültig bis {{ p.valid_until }}</li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+
+  {% if room_assignments %}
+  <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+    <summary style="font-weight:600;cursor:pointer;">Zimmerzuordnung</summary>
+    <ul>
+      {% for a in room_assignments %}
+      <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · Zimmer {{ a.room.name }}
+          — {{ a.moved_in }}{% if a.moved_out %} bis {{ a.moved_out }}{% endif %}
+          {% if a.key_handed_over %}· Schlüssel übergeben{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+
+  {% if engagement %}
+  <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+    <summary style="font-weight:600;cursor:pointer;">Engagement</summary>
+    <ul>
+      {% for r in engagement %}
+      <li>{{ r.abfrage }} · {{ r.ag_name }} · {{ r.status }}</li>
+      {% endfor %}
+    </ul>
+    {% if cluster_notes %}
+    <p style="font-weight:500;margin-top:.75rem;">Interne Notizen (Belegium)</p>
+    <ul>
+      {% for n in cluster_notes %}
+      <li>{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by }}: {{ n.note }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </details>
+  {% endif %}
 </div>
 {% endblock %}
