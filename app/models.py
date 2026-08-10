@@ -103,3 +103,71 @@ class ClusterNote(models.Model):
     class Meta:
         managed = False
         db_table = "cluster_note"
+
+
+class Building(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+    class Meta:
+        managed = False
+        db_table = "building"
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class WG(models.Model):
+    building = models.ForeignKey(Building, on_delete=models.DO_NOTHING, db_constraint=False)
+    name = models.CharField(max_length=255)
+    cluster = models.CharField(max_length=3, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "wg"
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Room(models.Model):
+    wg = models.ForeignKey(WG, on_delete=models.DO_NOTHING, db_constraint=False)
+    name = models.CharField(max_length=255)
+    size_sqm = models.DecimalField(max_digits=8, decimal_places=2)
+    has_mattress = models.BooleanField(default=False)
+    has_bed = models.BooleanField(default=False)
+    has_table = models.BooleanField(default=False)
+    has_closet = models.BooleanField(default=False)
+    freifinanziert = models.BooleanField(default=False)
+
+    class Meta:
+        managed = False
+        db_table = "room"
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class TenantRoomAssignment(models.Model):
+    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False)
+    room = models.ForeignKey(Room, on_delete=models.DO_NOTHING, db_constraint=False)
+    moved_in = models.DateField()
+    moved_out = models.DateField(null=True, blank=True)
+    key_handed_over = models.BooleanField(default=False)
+    deposit_iban = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "tenant_room_assignment"
+
+
+class EnrollmentProof(models.Model):
+    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False)
+    enrollment_type = models.CharField(max_length=50)
+    enrollment_name = models.CharField(max_length=255)
+    file_name = models.CharField(max_length=255)
+    submitted_at = models.DateTimeField()
+    valid_until = models.DateField()
+
+    class Meta:
+        managed = False
+        db_table = "enrollment_proof"
