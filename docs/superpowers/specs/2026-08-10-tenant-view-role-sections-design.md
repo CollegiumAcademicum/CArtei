@@ -41,7 +41,13 @@ system identity columns `intranet_username` and `intranet_uuid`.
 | Field | Visible to | Editable by |
 |---|---|---|
 | `preferred_name`, `pronouns` | public | owner |
-| `first_name`, `last_name` | owner | admin |
+| `first_name`, `last_name` | owner, mietverwaltung | admin |
+
+**Heading name:** the page `<h1>`/`<title>` show `preferred_name` for everyone
+when it is set — the real name is then private (visible only in the Personal
+section to owner/mietverwaltung/admin). When no `preferred_name` is set, the
+heading falls back to `first_name last_name` for all viewers (no alternative to
+show). Computed as `display_name` in the view.
 | `email`, `phone`, `is_flinta`, `mailbox_list_opt_in` | owner, mietverwaltung | owner, mietverwaltung |
 | `date_of_birth` | owner, mietverwaltung | mietverwaltung |
 | `study_subject`, `apprenticeship_field`, `educational_institution` | owner, mietverwaltung | mietverwaltung |

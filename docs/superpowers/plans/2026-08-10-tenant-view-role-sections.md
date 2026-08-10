@@ -289,8 +289,8 @@ SECTIONS = [
     Section("personal", "Persönliche Informationen", [
         _f("preferred_name", "Rufname", _PUBLIC, _OWNER),
         _f("pronouns", "Pronomen", _PUBLIC, _OWNER),
-        _f("first_name", "Vorname", _OWNER, _ADMIN),
-        _f("last_name", "Nachname", _OWNER, _ADMIN),
+        _f("first_name", "Vorname", _OWN_MV, _ADMIN),
+        _f("last_name", "Nachname", _OWN_MV, _ADMIN),
         _f("email", "E-Mail", _OWN_MV, _OWN_MV),
         _f("phone", "Telefon", _OWN_MV, _OWN_MV),
         _f("is_flinta", "FLINTA", _OWN_MV, _OWN_MV),
@@ -472,7 +472,7 @@ git commit -m "feat: dynamic TenantForm trimmed to editable fields"
 
 **Interfaces:**
 - Consumes: `viewer_roles`, `visible_fields`, `editable_fields`, `SECTIONS` from `app.tenant_access`; `TenantForm`; mirror models from Task 1.
-- Produces: `tenant_detail(request, pk)` handling GET + POST; context keys `tenant`, `sections`, `form`, `can_edit`, `room_assignments`, `enrollment_proofs`, `engagement`, `cluster_notes`.
+- Produces: `tenant_detail(request, pk)` handling GET + POST; context keys `tenant`, `display_name`, `sections`, `form`, `can_edit`, `room_assignments`, `enrollment_proofs`, `engagement`, `cluster_notes`.
 
 Context-building helper: build `sections` for the template as a list of dicts
 `{"key", "title", "rows": [{"label", "name", "value", "editable"}]}`, skipping
@@ -530,7 +530,17 @@ def test_stranger_sees_only_public_card():
     body = c.get(f"/tenants/{t.pk}/").content.decode()
     assert "Owzy" in body and "sie/ihr" in body
     assert "owner@ca.de" not in body  # email not visible to strangers
+    assert "Test" not in body  # real last name is private once a preferred_name is set
     assert 'name="preferred_name"' not in body  # no edit inputs
+
+
+@pytest.mark.django_db
+def test_heading_falls_back_to_real_name_without_preferred():
+    t = _tenant("np", preferred_name="")  # no preferred name set
+    c = Client()
+    _login(c, "stranger2")
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert "Owner" in body and "Test" in body  # heading falls back to real name for everyone
 
 
 @pytest.mark.django_db
@@ -634,8 +644,14 @@ def tenant_detail(request: HttpRequest, pk: int):
     else:
         form = TenantForm(instance=tenant, allowed_fields=editable)
 
+    # Heading name: preferred_name for everyone if set (real name is then private,
+    # shown only in the Personal section to owner/mietverwaltung/admin); otherwise
+    # fall back to the real name since there is no alternative to display.
+    display_name = tenant.preferred_name or f"{tenant.first_name} {tenant.last_name}".strip()
+
     ctx = {
         "tenant": tenant,
+        "display_name": display_name,
         "sections": _build_sections(tenant, form, visible, editable),
         "form": form,
         "can_edit": bool(editable),
@@ -693,11 +709,11 @@ git commit -m "feat: role-scoped tenant_detail view with edit handling"
 
 ```html
 {% extends "app/base.html" %}
-{% block title %}{{ tenant.preferred_name|default:tenant.first_name }} {{ tenant.last_name }} — CArtei{% endblock %}
+{% block title %}{{ display_name }} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card" style="max-width:900px;margin:1.5rem auto;">
   <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1rem;">
-    {{ tenant.preferred_name|default:tenant.first_name }} {{ tenant.last_name }}
+    {{ display_name }}
   </h1>
 
   <form method="post">
