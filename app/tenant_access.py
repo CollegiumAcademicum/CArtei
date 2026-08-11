@@ -44,11 +44,11 @@ SECTIONS = [
         _f("mailbox_key", "Briefkastenschlüssel", _MV, _MV),
         _f("move_in", "Einzug", _OWN_MV, _MV),
         _f("move_out", "Auszug", _OWN_MV, _MV),
+        _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _ADMIN, _ADMIN),
     ]),
     Section("legal", "Rechtliches", [
         _f("data_priv_signed_at", "Datenschutz unterschrieben", _OWN_MV, _MV),
         _f("photo_allowance_signed_at", "Fotoerlaubnis unterschrieben", _OWN_MV, _MV),
-        _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _ADMIN, _ADMIN),
         _f("comments", "Interne Kommentare", _ADMIN, _ADMIN),
     ]),
 ]
