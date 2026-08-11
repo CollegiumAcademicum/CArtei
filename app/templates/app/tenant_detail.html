@@ -30,10 +30,22 @@
         </div>
         {% endfor %}
       </div>
-      {% if section.key == "housing" and room_form %}
-      <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
-      <p style="font-weight:500;margin:.25rem 0 .4rem;">{% if active_assignment %}Aktuelles Zimmer{% else %}Zimmer zuordnen{% endif %}</p>
-      <div class="ca-field-grid">
+    </details>
+    {% endfor %}
+
+    {% if can_edit %}
+    <button type="submit" class="ca-button" style="margin-top:.5rem;">Speichern</button>
+    {% endif %}
+  </form>
+
+  {% if room_form %}
+  <form method="post" style="margin-bottom:1rem;">
+    {% csrf_token %}
+    <input type="hidden" name="room_action" value="1">
+    {% if active_assignment %}<input type="hidden" name="assignment_id" value="{{ active_assignment.pk }}">{% endif %}
+    <details open style="border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+      <summary style="font-weight:600;cursor:pointer;">{% if active_assignment %}Aktuelles Zimmer{% else %}Zimmer zuordnen{% endif %}</summary>
+      <div class="ca-field-grid" style="margin-top:.5rem;">
         <div class="ca-field">
           <span class="ca-field-label">Zimmer</span>
           {{ room_form.room }}
@@ -57,7 +69,7 @@
           {{ room_form.deposit_iban }}
         </div>
       </div>
-      <button type="submit" form="room-assign-form" class="ca-button" style="margin-top:.5rem;">Zimmer speichern</button>
+      <button type="submit" class="ca-button" style="margin-top:.5rem;">Zimmer speichern</button>
       {% if past_assignments %}
       <p style="font-weight:500;margin:.75rem 0 .25rem;">Frühere Zimmer</p>
       <ul>
@@ -68,14 +80,9 @@
         {% endfor %}
       </ul>
       {% endif %}
-      {% endif %}
     </details>
-    {% endfor %}
-
-    {% if can_edit %}
-    <button type="submit" class="ca-button" style="margin-top:.5rem;">Speichern</button>
-    {% endif %}
   </form>
+  {% endif %}
 
   {% if enrollment_proofs %}
   <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
@@ -86,14 +93,6 @@
       {% endfor %}
     </ul>
   </details>
-  {% endif %}
-
-  {% if room_form %}
-  <form id="room-assign-form" method="post" style="display:none;">
-    {% csrf_token %}
-    <input type="hidden" name="room_action" value="1">
-    {% if active_assignment %}<input type="hidden" name="assignment_id" value="{{ active_assignment.pk }}">{% endif %}
-  </form>
   {% endif %}
 
   {% if engagement %}
