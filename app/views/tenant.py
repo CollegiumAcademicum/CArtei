@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
@@ -103,8 +105,9 @@ def tenant_detail(request: HttpRequest, pk: int):
             .select_related("room__wg__building")
             .order_by("-moved_in")
         )
-        active_assignments = [a for a in assignments if not a.moved_out]
-        ctx["past_assignments"] = [a for a in assignments if a.moved_out]
+        today = date.today()
+        active_assignments = [a for a in assignments if not a.moved_out or a.moved_out > today]
+        ctx["past_assignments"] = [a for a in assignments if a.moved_out and a.moved_out <= today]
     else:
         active_assignments = []
         ctx["past_assignments"] = []

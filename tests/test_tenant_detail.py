@@ -124,6 +124,24 @@ def test_date_fields_use_native_picker_and_iso_roundtrip(settings):
 
 
 @pytest.mark.django_db
+def test_future_moved_out_shows_as_active_room(settings):
+    """An assignment with a future moved_out date must appear as an active (editable) room."""
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    t = _tenant("mvfuture")
+    b = Building.objects.create(name="BauF")
+    wg = WG.objects.create(building=b, name="WGF", cluster="OG2")
+    room = Room.objects.create(wg=wg, name="201", size_sqm=14)
+    future_date = datetime.date.today() + datetime.timedelta(days=30)
+    TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=datetime.date(2024, 1, 1), moved_out=future_date)
+    c = Client()
+    _login(c, "mvf", groups=["ag.mietverwaltung"])
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert 'name="assignment_ids"' in body, "Future-dated assignment must appear as editable, not past"
+
+
+@pytest.mark.django_db
 def test_housing_post_saves_without_new_room(settings):
     """Housing section should save existing assignment changes even when new-room form is blank."""
     import datetime
