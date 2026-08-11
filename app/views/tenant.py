@@ -61,7 +61,10 @@ def tenant_detail(request: HttpRequest, pk: int):
             if not editable:
                 messages.error(request, "Keine Berechtigung zum Bearbeiten.")
                 return redirect("tenant_detail", pk=pk)
-            form = TenantForm(request.POST, instance=tenant, allowed_fields=editable)
+            section_key = request.POST.get("section")
+            section_fields = {f.name for s in SECTIONS if s.key == section_key for f in s.fields}
+            allowed = editable & section_fields if section_key else editable
+            form = TenantForm(request.POST, instance=tenant, allowed_fields=allowed)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Gespeichert.")

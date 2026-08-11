@@ -17,6 +17,7 @@
     </summary>
     <form id="form-{{ section.key }}" method="post">
       {% csrf_token %}
+      <input type="hidden" name="section" value="{{ section.key }}">
       <div class="ca-field-grid">
         {% for row in section.rows %}
         <div class="ca-field" data-field="{{ row.name }}">
