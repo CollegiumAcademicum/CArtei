@@ -17,7 +17,7 @@
     </summary>
 
     {% if section.key == "housing" %}
-    <form id="form-housing" method="post">
+    <form id="form-housing" method="post" novalidate>
       {% csrf_token %}
       <input type="hidden" name="section" value="housing">
       {% for assignment, aform in active_assignment_forms %}
