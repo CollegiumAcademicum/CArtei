@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
-from app.forms import TenantForm
+from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
     AGAbfrageResult, ClusterNote, EnrollmentProof, Tenant, TenantRoomAssignment,
 )
@@ -38,16 +38,34 @@ def tenant_detail(request: HttpRequest, pk: int):
     roles = viewer_roles(request.user, tenant, _current_tenant(request))
     visible = visible_fields(roles)
     editable = editable_fields(roles)
+    can_manage_room = bool({"mietverwaltung", "admin"} & roles)
+
+    room_form = None
 
     if request.method == "POST":
-        if not editable:
-            messages.error(request, "Keine Berechtigung zum Bearbeiten.")
-            return redirect("tenant_detail", pk=pk)
-        form = TenantForm(request.POST, instance=tenant, allowed_fields=editable)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Gespeichert.")
-            return redirect("tenant_detail", pk=pk)
+        if "room_action" in request.POST and can_manage_room:
+            assignment_id = request.POST.get("assignment_id") or None
+            instance = (
+                TenantRoomAssignment.objects.filter(pk=assignment_id, tenant=tenant).first()
+                if assignment_id else None
+            )
+            room_form = TenantRoomAssignmentForm(request.POST, instance=instance)
+            if room_form.is_valid():
+                obj = room_form.save(commit=False)
+                obj.tenant = tenant
+                obj.save()
+                messages.success(request, "Zimmerzuordnung gespeichert.")
+                return redirect("tenant_detail", pk=pk)
+            form = TenantForm(instance=tenant, allowed_fields=editable)
+        else:
+            if not editable:
+                messages.error(request, "Keine Berechtigung zum Bearbeiten.")
+                return redirect("tenant_detail", pk=pk)
+            form = TenantForm(request.POST, instance=tenant, allowed_fields=editable)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Gespeichert.")
+                return redirect("tenant_detail", pk=pk)
     else:
         form = TenantForm(instance=tenant, allowed_fields=editable)
 
@@ -64,13 +82,22 @@ def tenant_detail(request: HttpRequest, pk: int):
         "can_edit": bool(editable),
         "roles": roles,
     }
-    # Relational read-only blocks, gated by role.
-    if {"mietverwaltung", "admin"} & roles:
-        ctx["room_assignments"] = list(
-            TenantRoomAssignment.objects.filter(tenant=tenant).select_related("room__wg__building")
+    # Relational blocks, gated by role.
+    if can_manage_room:
+        assignments = list(
+            TenantRoomAssignment.objects.filter(tenant=tenant)
+            .select_related("room__wg__building")
+            .order_by("-moved_in")
         )
+        active = next((a for a in assignments if not a.moved_out), None)
+        ctx["active_assignment"] = active
+        ctx["past_assignments"] = [a for a in assignments if a.moved_out]
+        if room_form is None:
+            room_form = TenantRoomAssignmentForm(instance=active)
+        ctx["room_form"] = room_form
     else:
-        ctx["room_assignments"] = []
+        ctx["active_assignment"] = None
+        ctx["past_assignments"] = []
     if {"owner", "mietverwaltung", "admin"} & roles:
         ctx["enrollment_proofs"] = list(EnrollmentProof.objects.filter(tenant=tenant))
     else:

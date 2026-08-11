@@ -9,8 +9,14 @@
   <form method="post">
     {% csrf_token %}
     {% for section in sections %}
-    <details open style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-      <summary style="font-weight:600;cursor:pointer;">{{ section.title }}</summary>
+    <details open class="ca-section" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+      <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
+        <span>{{ section.title }}</span>
+        <span class="section-actions" style="display:none;margin-left:auto;gap:.4rem;align-items:center;">
+          <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
+          <button type="button" class="revert-btn ca-button-outline" style="padding:.2rem .75rem;font-size:.82rem;">Zurücksetzen</button>
+        </span>
+      </summary>
       <div class="ca-field-grid">
         {% for row in section.rows %}
         <div class="ca-field">
@@ -24,11 +30,17 @@
         </div>
         {% endfor %}
       </div>
+      {% if can_edit %}
+      <div class="section-actions-bottom" style="display:none;margin-top:.75rem;gap:.4rem;">
+        <button type="submit" class="ca-button" style="padding:.4rem 1rem;font-size:.9rem;">Speichern</button>
+        <button type="button" class="revert-btn ca-button-outline" style="padding:.4rem 1rem;font-size:.9rem;">Zurücksetzen</button>
+      </div>
+      {% endif %}
     </details>
     {% endfor %}
 
     {% if can_edit %}
-    <button type="submit" class="ca-btn" style="margin-top:.5rem;">Speichern</button>
+    <button type="submit" class="ca-button" style="margin-top:.5rem;">Speichern</button>
     {% endif %}
   </form>
 
@@ -43,16 +55,54 @@
   </details>
   {% endif %}
 
-  {% if room_assignments %}
+  {% if room_form or past_assignments %}
   <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;">Zimmerzuordnung</summary>
+
+    {% if room_form %}
+    <p style="font-weight:500;margin:.75rem 0 .4rem;">{% if active_assignment %}Aktuelles Zimmer{% else %}Zimmer zuordnen{% endif %}</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="room_action" value="1">
+      {% if active_assignment %}<input type="hidden" name="assignment_id" value="{{ active_assignment.pk }}">{% endif %}
+      <div class="ca-field-grid">
+        <div class="ca-field">
+          <span class="ca-field-label">Zimmer</span>
+          {{ room_form.room }}
+          {% if room_form.room.errors %}<div style="color:#b00;font-size:.85rem;">{{ room_form.room.errors }}</div>{% endif %}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Eingezogen</span>
+          {{ room_form.moved_in }}
+          {% if room_form.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ room_form.moved_in.errors }}</div>{% endif %}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Ausgezogen</span>
+          {{ room_form.moved_out }}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Schlüssel übergeben</span>
+          {{ room_form.key_handed_over }}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Kaution IBAN</span>
+          {{ room_form.deposit_iban }}
+        </div>
+      </div>
+      <button type="submit" class="ca-button" style="margin-top:.5rem;">Speichern</button>
+    </form>
+    {% endif %}
+
+    {% if past_assignments %}
+    <p style="font-weight:500;margin:.75rem 0 .25rem;">Frühere Zimmer</p>
     <ul>
-      {% for a in room_assignments %}
-      <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · Zimmer {{ a.room.name }}
-          — {{ a.moved_in }}{% if a.moved_out %} bis {{ a.moved_out }}{% endif %}
+      {% for a in past_assignments %}
+      <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
+          — {{ a.moved_in }} bis {{ a.moved_out }}
           {% if a.key_handed_over %}· Schlüssel übergeben{% endif %}</li>
       {% endfor %}
     </ul>
+    {% endif %}
   </details>
   {% endif %}
 
@@ -75,4 +125,44 @@
   </details>
   {% endif %}
 </div>
+
+<script>
+document.querySelectorAll('details.ca-section').forEach(function(section) {
+  var fields = section.querySelectorAll('input, select, textarea');
+  var origValues = {};
+  fields.forEach(function(f) {
+    var key = f.name + '|' + f.id;
+    origValues[key] = f.type === 'checkbox' ? f.checked : f.value;
+  });
+
+  var actionSpans = section.querySelectorAll('.section-actions, .section-actions-bottom');
+
+  function checkDirty() {
+    var dirty = false;
+    fields.forEach(function(f) {
+      var key = f.name + '|' + f.id;
+      var cur = f.type === 'checkbox' ? f.checked : f.value;
+      if (origValues[key] !== cur) dirty = true;
+    });
+    section.classList.toggle('is-dirty', dirty);
+    actionSpans.forEach(function(el) { el.style.display = dirty ? 'flex' : 'none'; });
+  }
+
+  fields.forEach(function(f) {
+    f.addEventListener('input', checkDirty);
+    f.addEventListener('change', checkDirty);
+  });
+
+  section.querySelectorAll('.revert-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      fields.forEach(function(f) {
+        var key = f.name + '|' + f.id;
+        if (f.type === 'checkbox') f.checked = origValues[key];
+        else f.value = origValues[key];
+      });
+      checkDirty();
+    });
+  });
+});
+</script>
 {% endblock %}
