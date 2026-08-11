@@ -32,38 +32,70 @@
         {% endfor %}
       </div>
     </form>
-    {% if section.key == "housing" and room_form %}
+    {% if section.key == "housing" and can_manage_room %}
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    {% for assignment, aform in active_assignment_forms %}
+    <p style="font-weight:500;margin:.25rem 0 .4rem;">Aktuelles Zimmer</p>
     <form method="post">
       {% csrf_token %}
       <input type="hidden" name="room_action" value="1">
-      {% if active_assignment %}<input type="hidden" name="assignment_id" value="{{ active_assignment.pk }}">{% endif %}
-      <p style="font-weight:500;margin:.25rem 0 .4rem;">{% if active_assignment %}Aktuelles Zimmer{% else %}Zimmer zuordnen{% endif %}</p>
+      <input type="hidden" name="assignment_id" value="{{ assignment.pk }}">
       <div class="ca-field-grid">
         <div class="ca-field">
           <span class="ca-field-label">Zimmer</span>
-          {{ room_form.room }}
-          {% if room_form.room.errors %}<div style="color:#b00;font-size:.85rem;">{{ room_form.room.errors }}</div>{% endif %}
+          {{ aform.room }}
+          {% if aform.room.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.room.errors }}</div>{% endif %}
         </div>
         <div class="ca-field">
           <span class="ca-field-label">Eingezogen</span>
-          {{ room_form.moved_in }}
-          {% if room_form.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ room_form.moved_in.errors }}</div>{% endif %}
+          {{ aform.moved_in }}
+          {% if aform.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.moved_in.errors }}</div>{% endif %}
         </div>
         <div class="ca-field">
           <span class="ca-field-label">Ausgezogen</span>
-          {{ room_form.moved_out }}
+          {{ aform.moved_out }}
         </div>
         <div class="ca-field">
           <span class="ca-field-label">Schlüssel übergeben</span>
-          {{ room_form.key_handed_over }}
+          {{ aform.key_handed_over }}
         </div>
         <div class="ca-field">
           <span class="ca-field-label">Kaution IBAN</span>
-          {{ room_form.deposit_iban }}
+          {{ aform.deposit_iban }}
         </div>
       </div>
       <button type="submit" class="ca-button" style="margin-top:.5rem;">Zimmer speichern</button>
+    </form>
+    {% endfor %}
+    <p style="font-weight:500;margin:.75rem 0 .4rem;">Zimmer zuordnen</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="room_action" value="1">
+      <div class="ca-field-grid">
+        <div class="ca-field">
+          <span class="ca-field-label">Zimmer</span>
+          {{ new_room_form.room }}
+          {% if new_room_form.room.errors %}<div style="color:#b00;font-size:.85rem;">{{ new_room_form.room.errors }}</div>{% endif %}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Eingezogen</span>
+          {{ new_room_form.moved_in }}
+          {% if new_room_form.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ new_room_form.moved_in.errors }}</div>{% endif %}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Ausgezogen</span>
+          {{ new_room_form.moved_out }}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Schlüssel übergeben</span>
+          {{ new_room_form.key_handed_over }}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Kaution IBAN</span>
+          {{ new_room_form.deposit_iban }}
+        </div>
+      </div>
+      <button type="submit" class="ca-button" style="margin-top:.5rem;">Zimmer zuordnen</button>
     </form>
     {% if past_assignments %}
     <p style="font-weight:500;margin:.75rem 0 .25rem;">Frühere Zimmer</p>
