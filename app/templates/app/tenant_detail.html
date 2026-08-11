@@ -69,12 +69,6 @@
       </ul>
       {% endif %}
       {% endif %}
-      {% if can_edit %}
-      <div class="section-actions-bottom" style="display:none;margin-top:.75rem;gap:.4rem;">
-        <button type="submit" class="ca-button" style="padding:.4rem 1rem;font-size:.9rem;">Speichern</button>
-        <button type="button" class="revert-btn ca-button-outline" style="padding:.4rem 1rem;font-size:.9rem;">Zurücksetzen</button>
-      </div>
-      {% endif %}
     </details>
     {% endfor %}
 
@@ -131,7 +125,7 @@ document.querySelectorAll('details.ca-section').forEach(function(section) {
     origValues[key] = f.type === 'checkbox' ? f.checked : f.value;
   });
 
-  var actionSpans = section.querySelectorAll('.section-actions, .section-actions-bottom');
+  var actionSpans = section.querySelectorAll('.section-actions');
 
   function checkDirty() {
     var dirty = false;
