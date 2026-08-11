@@ -21,13 +21,13 @@ _STATUS_CHOICES = [
 ]
 
 
-_SYSTEM_GROUPS = {"admins", "cluster"}
+_SYSTEM_GROUPS = {"admins", "gr.cluster"}
 
 
 @login_required
 def abfragen_list(request: HttpRequest):
     abfragen = AGAbfrage.objects.all()
-    is_privileged = request.user.groups.filter(name__in=["admins", "cluster"]).exists()
+    is_privileged = request.user.groups.filter(name__in=["admins", "gr.cluster"]).exists()
     user_groups = sorted(
         g for g in request.user.groups.values_list("name", flat=True)
         if g not in _SYSTEM_GROUPS
@@ -39,7 +39,7 @@ def abfragen_list(request: HttpRequest):
     })
 
 
-@require_group("admins", "cluster")
+@require_group("admins", "gr.cluster")
 def abfrage_new(request: HttpRequest):
     if request.method == "POST":
         abfrage = AGAbfrage.objects.create(
@@ -52,14 +52,14 @@ def abfrage_new(request: HttpRequest):
     return render(request, "app/abfragen/new.html")
 
 
-@require_group("admins", "cluster")
+@require_group("admins", "gr.cluster")
 def abfrage_detail(request: HttpRequest, pk: int):
     abfrage = get_object_or_404(AGAbfrage, pk=pk)
     results = AGAbfrageResult.objects.filter(abfrage=abfrage).select_related("tenant")
     by_ag: dict[str, list] = {}
     for r in results:
         by_ag.setdefault(r.ag_name, []).append(r)
-    is_privileged = request.user.groups.filter(name__in=["admins", "cluster"]).exists()
+    is_privileged = request.user.groups.filter(name__in=["admins", "gr.cluster"]).exists()
     return render(request, "app/abfragen/detail.html", {
         "abfrage": abfrage,
         "by_ag": by_ag,
@@ -71,7 +71,7 @@ def abfrage_detail(request: HttpRequest, pk: int):
 def ag_edit(request: HttpRequest, pk: int, ag_name: str):
     abfrage = get_object_or_404(AGAbfrage, pk=pk)
     user_groups = set(request.user.groups.values_list("name", flat=True))
-    is_privileged = bool(user_groups & {"admins", "cluster"})
+    is_privileged = bool(user_groups & {"admins", "gr.cluster"})
 
     if not is_privileged and ag_name not in user_groups:
         raise PermissionDenied
@@ -129,7 +129,7 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
     })
 
 
-@require_group("admins", "cluster")
+@require_group("admins", "gr.cluster")
 def abfrage_tenants(request: HttpRequest, pk: int):
     abfrage = get_object_or_404(AGAbfrage, pk=pk)
     tenants = Tenant.objects.filter(move_out__isnull=True)
@@ -170,7 +170,7 @@ def abfrage_tenants(request: HttpRequest, pk: int):
     })
 
 
-@require_group("admins", "cluster")
+@require_group("admins", "gr.cluster")
 def belegium(request: HttpRequest):
     abfragen = list(AGAbfrage.objects.all())
     selected_ids = {int(x) for x in request.GET.getlist("surveys") if x.isdigit()}
@@ -265,7 +265,7 @@ def belegium(request: HttpRequest):
 
 
 @require_POST
-@require_group("admins", "cluster")
+@require_group("admins", "gr.cluster")
 def abfrage_delete(request: HttpRequest, pk: int):
     abfrage = get_object_or_404(AGAbfrage, pk=pk)
     label = str(abfrage)

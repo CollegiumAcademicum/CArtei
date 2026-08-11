@@ -36,7 +36,7 @@ def test_sync_groups_adds_admins(settings):
     group_names = list(user.groups.values_list("name", flat=True))
     assert "admins" in group_names
     assert "ag.kueche" in group_names
-    assert "cluster" not in group_names
+    assert "gr.cluster" not in group_names
 
 
 @pytest.mark.django_db
@@ -52,7 +52,7 @@ def test_sync_groups_adds_cluster(settings):
     backend = CustomLDAPBackend()
     backend._sync_groups(user)
 
-    assert user.groups.filter(name="cluster").exists()
+    assert user.groups.filter(name="gr.cluster").exists()
 
 
 @pytest.mark.django_db

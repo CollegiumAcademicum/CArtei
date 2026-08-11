@@ -46,7 +46,7 @@ LDAP_GROUPS_BASE = "cn=groups,dc=test"
 LDAP_REQUIRE_GROUP = "cn=clearance,dc=test"
 LDAP_USER_SEARCH_BASE = "cn=users,dc=test"
 TENANT_ROLE_GROUPS = {
-    "cluster": ["cluster"],
+    "cluster": ["gr.cluster"],
     "mietverwaltung": ["ag.mietverwaltung"],
     "finanzierung": ["ag.finanzierung"],
 }

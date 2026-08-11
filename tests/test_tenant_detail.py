@@ -90,7 +90,7 @@ def test_owner_post_bad_email_rejected():
 
 @pytest.mark.django_db
 def test_mietverwaltung_can_edit_dob(settings):
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
     t = _tenant("someone")
     c = Client()
     _login(c, "mv", groups=["ag.mietverwaltung"])
@@ -100,7 +100,7 @@ def test_mietverwaltung_can_edit_dob(settings):
 
 @pytest.mark.django_db
 def test_mietverwaltung_sees_sublet_of_picker(settings):
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
     t = _tenant("subj")
     c = Client()
     _login(c, "mv2", groups=["ag.mietverwaltung"])
@@ -110,7 +110,7 @@ def test_mietverwaltung_sees_sublet_of_picker(settings):
 
 @pytest.mark.django_db
 def test_date_fields_use_native_picker_and_iso_roundtrip(settings):
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
     t = _tenant("dsubj")
     c = Client()
     _login(c, "mvd", groups=["ag.mietverwaltung"])

@@ -148,11 +148,18 @@ LDAP_GROUPS_BASE = os.environ.get(
 LDAP_REQUIRE_GROUP = os.environ.get("LDAP_REQUIRE_GROUP", "")
 
 # Maps a section role to the LDAP-synced Django group name(s) that grant it.
-# cn suffixes are placeholders — adjust to the real intranet group names.
+# These are the Django group names produced by app/auth.CustomLDAPBackend:
+# the cluster LDAP group is synced as "gr.cluster"; AG groups keep their raw cn.
+# Override per role via env with a comma-separated list, e.g.
+#   TENANT_GROUP_MIETVERWALTUNG=ag.mietverwaltung,ag.hausverwaltung
+def _group_list(env_key: str, default: str) -> list[str]:
+    return [g.strip() for g in os.environ.get(env_key, default).split(",") if g.strip()]
+
+
 TENANT_ROLE_GROUPS = {
-    "cluster": ["cluster"],
-    "mietverwaltung": ["ag.mietverwaltung"],
-    "finanzierung": ["ag.finanzierung"],
+    "cluster": _group_list("TENANT_GROUP_CLUSTER", "gr.cluster"),
+    "mietverwaltung": _group_list("TENANT_GROUP_MIETVERWALTUNG", "ag.mietverwaltung"),
+    "finanzierung": _group_list("TENANT_GROUP_FINANZIERUNG", "ag.finanzierung"),
 }
 
 USE_X_FORWARDED_HOST = True

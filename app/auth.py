@@ -34,7 +34,7 @@ class CustomLDAPBackend(LDAPBackend):
                 if dn_l == admin_dn:
                     desired.add("admins")
                 elif dn_l == cluster_dn:
-                    desired.add("cluster")
+                    desired.add("gr.cluster")
                 else:
                     cn = _dn_to_cn(dn)
                     if cn.startswith("ag.") or cn.startswith("in."):

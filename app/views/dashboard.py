@@ -5,7 +5,7 @@ from django.shortcuts import render
 
 from app.models import AGAbfrage, Tenant
 
-_SYSTEM_GROUPS = {"admins", "cluster"}
+_SYSTEM_GROUPS = {"admins", "gr.cluster"}
 
 
 @login_required

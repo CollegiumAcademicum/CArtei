@@ -69,7 +69,7 @@ def test_new_abfrage_requires_privileged():
 @pytest.mark.django_db
 def test_new_abfrage_creates_and_redirects():
     client = Client()
-    client.force_login(_user_in_group("clusteruser", "cluster"))
+    client.force_login(_user_in_group("clusteruser", "gr.cluster"))
     response = client.post("/abfragen/new/", {
         "date": "2024-09-01",
         "label": "Q3 2024",
