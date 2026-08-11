@@ -6,17 +6,17 @@
     {{ display_name }}
   </h1>
 
-  <form method="post">
-    {% csrf_token %}
-    {% for section in sections %}
-    <details open class="ca-section" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-      <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
-        <span>{{ section.title }}</span>
-        <span class="section-actions" style="display:none;margin-left:auto;gap:.4rem;align-items:center;">
-          <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
-          <button type="button" class="revert-btn ca-button-outline" style="padding:.2rem .75rem;font-size:.82rem;">Zurücksetzen</button>
-        </span>
-      </summary>
+  {% for section in sections %}
+  <details open class="ca-section" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
+      <span>{{ section.title }}</span>
+      <span class="section-actions" style="display:none;margin-left:auto;gap:.4rem;align-items:center;">
+        <button type="submit" form="form-{{ section.key }}" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
+        <button type="button" class="revert-btn ca-button-outline" style="padding:.2rem .75rem;font-size:.82rem;">Zurücksetzen</button>
+      </span>
+    </summary>
+    <form id="form-{{ section.key }}" method="post">
+      {% csrf_token %}
       <div class="ca-field-grid">
         {% for row in section.rows %}
         <div class="ca-field" data-field="{{ row.name }}">
@@ -30,22 +30,15 @@
         </div>
         {% endfor %}
       </div>
-    </details>
-    {% endfor %}
-
-    {% if can_edit %}
-    <button type="submit" class="ca-button" style="margin-top:.5rem;">Speichern</button>
-    {% endif %}
-  </form>
-
-  {% if room_form %}
-  <form method="post" style="margin-bottom:1rem;">
-    {% csrf_token %}
-    <input type="hidden" name="room_action" value="1">
-    {% if active_assignment %}<input type="hidden" name="assignment_id" value="{{ active_assignment.pk }}">{% endif %}
-    <details open style="border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-      <summary style="font-weight:600;cursor:pointer;">{% if active_assignment %}Aktuelles Zimmer{% else %}Zimmer zuordnen{% endif %}</summary>
-      <div class="ca-field-grid" style="margin-top:.5rem;">
+    </form>
+    {% if section.key == "housing" and room_form %}
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="room_action" value="1">
+      {% if active_assignment %}<input type="hidden" name="assignment_id" value="{{ active_assignment.pk }}">{% endif %}
+      <p style="font-weight:500;margin:.25rem 0 .4rem;">{% if active_assignment %}Aktuelles Zimmer{% else %}Zimmer zuordnen{% endif %}</p>
+      <div class="ca-field-grid">
         <div class="ca-field">
           <span class="ca-field-label">Zimmer</span>
           {{ room_form.room }}
@@ -70,19 +63,20 @@
         </div>
       </div>
       <button type="submit" class="ca-button" style="margin-top:.5rem;">Zimmer speichern</button>
-      {% if past_assignments %}
-      <p style="font-weight:500;margin:.75rem 0 .25rem;">Frühere Zimmer</p>
-      <ul>
-        {% for a in past_assignments %}
-        <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
-            — {{ a.moved_in }} bis {{ a.moved_out }}
-            {% if a.key_handed_over %}· Schlüssel übergeben{% endif %}</li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-    </details>
-  </form>
-  {% endif %}
+    </form>
+    {% if past_assignments %}
+    <p style="font-weight:500;margin:.75rem 0 .25rem;">Frühere Zimmer</p>
+    <ul>
+      {% for a in past_assignments %}
+      <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
+          — {{ a.moved_in }} bis {{ a.moved_out }}
+          {% if a.key_handed_over %}· Schlüssel übergeben{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% endif %}
+  </details>
+  {% endfor %}
 
   {% if enrollment_proofs %}
   <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
