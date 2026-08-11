@@ -40,73 +40,85 @@ def tenant_detail(request: HttpRequest, pk: int):
     editable = editable_fields(roles)
     can_manage_room = bool({"mietverwaltung", "admin"} & roles)
 
-    room_form = None
+    # Bound room forms from a failed POST — carried into context-building below.
+    failed_assignment_forms = None
+    failed_new_room_form = None
 
     if request.method == "POST":
-        if "room_action" in request.POST and can_manage_room:
-            assignment_id = request.POST.get("assignment_id") or None
-            instance = (
-                TenantRoomAssignment.objects.filter(pk=assignment_id, tenant=tenant).first()
-                if assignment_id else None
-            )
-            room_form = TenantRoomAssignmentForm(request.POST, instance=instance)
-            if room_form.is_valid():
-                obj = room_form.save(commit=False)
+        section_key = request.POST.get("section")
+        section_fields = {f.name for s in SECTIONS if s.key == section_key for f in s.fields}
+        allowed = editable & section_fields if section_key else editable
+
+        if not allowed:
+            messages.error(request, "Keine Berechtigung zum Bearbeiten.")
+            return redirect("tenant_detail", pk=pk)
+
+        form = TenantForm(request.POST, instance=tenant, allowed_fields=allowed)
+
+        # Build room forms when the housing section is submitted.
+        a_forms = []
+        new_rf = None
+        if section_key == "housing" and can_manage_room:
+            for pk_str in request.POST.getlist("assignment_ids"):
+                a = TenantRoomAssignment.objects.filter(pk=pk_str, tenant=tenant).first()
+                if a:
+                    rf = TenantRoomAssignmentForm(request.POST, instance=a, prefix=f"room_{a.pk}")
+                    a_forms.append((a, rf))
+            new_rf = TenantRoomAssignmentForm(request.POST, prefix="new_room")
+
+        if form.is_valid() and all(rf.is_valid() for _, rf in a_forms):
+            form.save()
+            for _, rf in a_forms:
+                rf.save()
+            if new_rf and request.POST.get("new_room-room") and new_rf.is_valid():
+                obj = new_rf.save(commit=False)
                 obj.tenant = tenant
                 obj.save()
-                messages.success(request, "Zimmerzuordnung gespeichert.")
-                return redirect("tenant_detail", pk=pk)
-            form = TenantForm(instance=tenant, allowed_fields=editable)
-        else:
-            if not editable:
-                messages.error(request, "Keine Berechtigung zum Bearbeiten.")
-                return redirect("tenant_detail", pk=pk)
-            section_key = request.POST.get("section")
-            section_fields = {f.name for s in SECTIONS if s.key == section_key for f in s.fields}
-            allowed = editable & section_fields if section_key else editable
-            form = TenantForm(request.POST, instance=tenant, allowed_fields=allowed)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Gespeichert.")
-                return redirect("tenant_detail", pk=pk)
+            messages.success(request, "Gespeichert.")
+            return redirect("tenant_detail", pk=pk)
+
+        failed_assignment_forms = a_forms
+        failed_new_room_form = new_rf
     else:
         form = TenantForm(instance=tenant, allowed_fields=editable)
 
-    # Heading name: preferred_name for everyone if set (real name is then private,
-    # shown only in the Personal section to owner/mietverwaltung/admin); otherwise
-    # fall back to the real name since there is no alternative to display.
     display_name = tenant.preferred_name or f"{tenant.first_name} {tenant.last_name}".strip()
 
     ctx = {
         "tenant": tenant,
         "display_name": display_name,
         "sections": _build_sections(tenant, form, visible, editable),
-        "form": form,
         "can_edit": bool(editable),
         "roles": roles,
+        "can_manage_room": can_manage_room,
     }
-    # Relational blocks, gated by role.
-    ctx["can_manage_room"] = can_manage_room
+
+    # Room assignments — fetch for owners, mietverwaltung, admins.
     if {"owner", "mietverwaltung", "admin"} & roles:
         assignments = list(
             TenantRoomAssignment.objects.filter(tenant=tenant)
             .select_related("room__wg__building")
             .order_by("-moved_in")
         )
+        active_assignments = [a for a in assignments if not a.moved_out]
         ctx["past_assignments"] = [a for a in assignments if a.moved_out]
     else:
-        assignments = []
+        active_assignments = []
         ctx["past_assignments"] = []
+
     if can_manage_room:
-        active_assignments = [a for a in assignments if not a.moved_out]
-        edited_id = str(request.POST.get("assignment_id", "")) if room_form else ""
-        ctx["active_assignment_forms"] = [
-            (a, room_form if str(a.pk) == edited_id else TenantRoomAssignmentForm(instance=a))
-            for a in active_assignments
-        ]
-        ctx["new_room_form"] = room_form if (room_form and not edited_id) else TenantRoomAssignmentForm()
+        if failed_assignment_forms is not None:
+            ctx["active_assignment_forms"] = failed_assignment_forms
+            ctx["new_room_form"] = failed_new_room_form or TenantRoomAssignmentForm(prefix="new_room")
+        else:
+            ctx["active_assignment_forms"] = [
+                (a, TenantRoomAssignmentForm(instance=a, prefix=f"room_{a.pk}"))
+                for a in active_assignments
+            ]
+            ctx["new_room_form"] = TenantRoomAssignmentForm(prefix="new_room")
     else:
         ctx["active_assignment_forms"] = []
+
     if {"owner", "mietverwaltung", "admin"} & roles:
         ctx["enrollment_proofs"] = list(EnrollmentProof.objects.filter(tenant=tenant))
     else:
