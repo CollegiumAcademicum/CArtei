@@ -87,14 +87,18 @@ def tenant_detail(request: HttpRequest, pk: int):
     }
     # Relational blocks, gated by role.
     ctx["can_manage_room"] = can_manage_room
-    if can_manage_room:
+    if {"owner", "mietverwaltung", "admin"} & roles:
         assignments = list(
             TenantRoomAssignment.objects.filter(tenant=tenant)
             .select_related("room__wg__building")
             .order_by("-moved_in")
         )
-        active_assignments = [a for a in assignments if not a.moved_out]
         ctx["past_assignments"] = [a for a in assignments if a.moved_out]
+    else:
+        assignments = []
+        ctx["past_assignments"] = []
+    if can_manage_room:
+        active_assignments = [a for a in assignments if not a.moved_out]
         edited_id = str(request.POST.get("assignment_id", "")) if room_form else ""
         ctx["active_assignment_forms"] = [
             (a, room_form if str(a.pk) == edited_id else TenantRoomAssignmentForm(instance=a))
@@ -103,7 +107,6 @@ def tenant_detail(request: HttpRequest, pk: int):
         ctx["new_room_form"] = room_form if (room_form and not edited_id) else TenantRoomAssignmentForm()
     else:
         ctx["active_assignment_forms"] = []
-        ctx["past_assignments"] = []
     if {"owner", "mietverwaltung", "admin"} & roles:
         ctx["enrollment_proofs"] = list(EnrollmentProof.objects.filter(tenant=tenant))
     else:

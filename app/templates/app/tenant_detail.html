@@ -97,8 +97,10 @@
       </div>
       <button type="submit" class="ca-button" style="margin-top:.5rem;">Zimmer zuordnen</button>
     </form>
-    {% if past_assignments %}
-    <p style="font-weight:500;margin:.75rem 0 .25rem;">Frühere Zimmer</p>
+    {% endif %}
+    {% if section.key == "housing" and past_assignments %}
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    <p style="font-weight:500;margin:.25rem 0 .25rem;">Frühere Zimmer</p>
     <ul>
       {% for a in past_assignments %}
       <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
@@ -106,7 +108,6 @@
           {% if a.key_handed_over %}· Schlüssel übergeben{% endif %}</li>
       {% endfor %}
     </ul>
-    {% endif %}
     {% endif %}
   </details>
   {% endfor %}
