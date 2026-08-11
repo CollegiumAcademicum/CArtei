@@ -29,6 +29,7 @@ SECTIONS = [
         _f("is_flinta", "FLINTA", _OWN_MV, _OWN_MV),
         _f("mailbox_list_opt_in", "Briefkastenabfrage", _OWN_MV, _OWN_MV),
         _f("date_of_birth", "Geburtsdatum", _OWN_MV, _MV),
+        _f("barrier_free_needed", "Barrierefreiheit benötigt", _OWN_MV, _MV),
     ]),
     Section("education", "Ausbildung & Studium", [
         _f("study_subject", "Studienfach", _OWN_MV, _MV),
@@ -47,7 +48,6 @@ SECTIONS = [
     Section("legal", "Rechtliches", [
         _f("data_priv_signed_at", "Datenschutz unterschrieben", _OWN_MV, _MV),
         _f("photo_allowance_signed_at", "Fotoerlaubnis unterschrieben", _OWN_MV, _MV),
-        _f("barrier_free_needed", "Barrierefreiheit benötigt", _OWN_MV, _MV),
         _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _ADMIN, _ADMIN),
         _f("comments", "Interne Kommentare", _ADMIN, _ADMIN),
     ]),
