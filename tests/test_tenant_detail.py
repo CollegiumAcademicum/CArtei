@@ -170,3 +170,48 @@ def test_housing_post_saves_without_new_room(settings):
     assert resp.status_code == 302, f"Expected redirect, got 200. Check printed errors above."
     a.refresh_from_db()
     assert str(a.moved_out) == "2025-12-31"
+
+
+@pytest.mark.django_db
+def test_housing_post_with_all_browser_fields(settings):
+    """Browser sends tenant housing fields too — ensure those don't block room assignment save."""
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    t = _tenant("mvtest3")
+    b = Building.objects.create(name="Bau2")
+    wg = WG.objects.create(building=b, name="WG2", cluster="OG1")
+    room = Room.objects.create(wg=wg, name="202", size_sqm=14)
+    a = TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=datetime.date(2024, 3, 1))
+    c = Client()
+    _login(c, "mv3test", groups=["ag.mietverwaltung"])
+    resp = c.post(f"/tenants/{t.pk}/", {
+        "section": "housing",
+        "assignment_ids": str(a.pk),
+        f"room_{a.pk}-room": str(room.pk),
+        f"room_{a.pk}-moved_in": "2024-03-01",
+        f"room_{a.pk}-moved_out": "2026-01-01",
+        # Tenant housing fields that the browser also sends
+        "is_sublet": "",
+        "sublet_of_tenant": "",
+        "sublet_from": "",
+        "sublet_to": "",
+        "mailbox_key": "",
+        "move_in": "",
+        "move_out": "",
+        # New room form empty
+        "new_room-room": "",
+        "new_room-moved_in": "",
+        "new_room-moved_out": "",
+        "new_room-deposit_iban": "",
+    })
+    if resp.status_code == 200 and hasattr(resp, 'context') and resp.context:
+        form = resp.context.get('form')
+        if form: print("TenantForm errors:", form.errors)
+        for aa, af in resp.context.get('active_assignment_forms', []):
+            if af.errors: print(f"Assign {aa.pk} errors:", af.errors)
+        nf = resp.context.get('new_room_form')
+        if nf and nf.errors: print("new_room errors:", nf.errors)
+    assert resp.status_code == 302, "Expected redirect on save"
+    a.refresh_from_db()
+    assert str(a.moved_out) == "2026-01-01"

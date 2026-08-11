@@ -200,6 +200,17 @@ document.querySelectorAll('details.ca-section').forEach(function(section) {
       checkDirty();
     });
   });
+
+  // Buttons inside <summary> may not trigger form submission reliably in all
+  // browsers when using the `form` attribute. Fire it explicitly via JS.
+  section.querySelectorAll('button[type="submit"][form]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var target = document.getElementById(btn.getAttribute('form'));
+      if (target) target.requestSubmit(btn);
+    });
+  });
 });
 
 // Sublet field visibility: dependent fields only visible when is_sublet is checked.
