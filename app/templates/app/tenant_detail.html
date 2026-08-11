@@ -30,6 +30,45 @@
         </div>
         {% endfor %}
       </div>
+      {% if section.key == "housing" and room_form %}
+      <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+      <p style="font-weight:500;margin:.25rem 0 .4rem;">{% if active_assignment %}Aktuelles Zimmer{% else %}Zimmer zuordnen{% endif %}</p>
+      <div class="ca-field-grid">
+        <div class="ca-field">
+          <span class="ca-field-label">Zimmer</span>
+          {{ room_form.room }}
+          {% if room_form.room.errors %}<div style="color:#b00;font-size:.85rem;">{{ room_form.room.errors }}</div>{% endif %}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Eingezogen</span>
+          {{ room_form.moved_in }}
+          {% if room_form.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ room_form.moved_in.errors }}</div>{% endif %}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Ausgezogen</span>
+          {{ room_form.moved_out }}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Schlüssel übergeben</span>
+          {{ room_form.key_handed_over }}
+        </div>
+        <div class="ca-field">
+          <span class="ca-field-label">Kaution IBAN</span>
+          {{ room_form.deposit_iban }}
+        </div>
+      </div>
+      <button type="submit" form="room-assign-form" class="ca-button" style="margin-top:.5rem;">Zimmer speichern</button>
+      {% if past_assignments %}
+      <p style="font-weight:500;margin:.75rem 0 .25rem;">Frühere Zimmer</p>
+      <ul>
+        {% for a in past_assignments %}
+        <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
+            — {{ a.moved_in }} bis {{ a.moved_out }}
+            {% if a.key_handed_over %}· Schlüssel übergeben{% endif %}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% endif %}
       {% if can_edit %}
       <div class="section-actions-bottom" style="display:none;margin-top:.75rem;gap:.4rem;">
         <button type="submit" class="ca-button" style="padding:.4rem 1rem;font-size:.9rem;">Speichern</button>
@@ -55,55 +94,12 @@
   </details>
   {% endif %}
 
-  {% if room_form or past_assignments %}
-  <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="font-weight:600;cursor:pointer;">Zimmerzuordnung</summary>
-
-    {% if room_form %}
-    <p style="font-weight:500;margin:.75rem 0 .4rem;">{% if active_assignment %}Aktuelles Zimmer{% else %}Zimmer zuordnen{% endif %}</p>
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="room_action" value="1">
-      {% if active_assignment %}<input type="hidden" name="assignment_id" value="{{ active_assignment.pk }}">{% endif %}
-      <div class="ca-field-grid">
-        <div class="ca-field">
-          <span class="ca-field-label">Zimmer</span>
-          {{ room_form.room }}
-          {% if room_form.room.errors %}<div style="color:#b00;font-size:.85rem;">{{ room_form.room.errors }}</div>{% endif %}
-        </div>
-        <div class="ca-field">
-          <span class="ca-field-label">Eingezogen</span>
-          {{ room_form.moved_in }}
-          {% if room_form.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ room_form.moved_in.errors }}</div>{% endif %}
-        </div>
-        <div class="ca-field">
-          <span class="ca-field-label">Ausgezogen</span>
-          {{ room_form.moved_out }}
-        </div>
-        <div class="ca-field">
-          <span class="ca-field-label">Schlüssel übergeben</span>
-          {{ room_form.key_handed_over }}
-        </div>
-        <div class="ca-field">
-          <span class="ca-field-label">Kaution IBAN</span>
-          {{ room_form.deposit_iban }}
-        </div>
-      </div>
-      <button type="submit" class="ca-button" style="margin-top:.5rem;">Speichern</button>
-    </form>
-    {% endif %}
-
-    {% if past_assignments %}
-    <p style="font-weight:500;margin:.75rem 0 .25rem;">Frühere Zimmer</p>
-    <ul>
-      {% for a in past_assignments %}
-      <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
-          — {{ a.moved_in }} bis {{ a.moved_out }}
-          {% if a.key_handed_over %}· Schlüssel übergeben{% endif %}</li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-  </details>
+  {% if room_form %}
+  <form id="room-assign-form" method="post" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="room_action" value="1">
+    {% if active_assignment %}<input type="hidden" name="assignment_id" value="{{ active_assignment.pk }}">{% endif %}
+  </form>
   {% endif %}
 
   {% if engagement %}

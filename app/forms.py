@@ -47,3 +47,5 @@ class TenantRoomAssignmentForm(forms.ModelForm):
                 field.input_formats = ["%Y-%m-%d"]
             elif hasattr(field, "widget") and not isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.setdefault("class", "ca-input")
+        for field in self.fields.values():
+            field.widget.attrs["form"] = "room-assign-form"
