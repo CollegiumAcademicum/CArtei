@@ -66,11 +66,14 @@ def tenant_detail(request: HttpRequest, pk: int):
                     a_forms.append((a, rf))
             new_rf = TenantRoomAssignmentForm(request.POST, prefix="new_room")
 
-        if form.is_valid() and all(rf.is_valid() for _, rf in a_forms):
+        new_room_selected = bool(new_rf and request.POST.get("new_room-room"))
+        new_rf_ok = not new_room_selected or new_rf.is_valid()
+
+        if form.is_valid() and all(rf.is_valid() for _, rf in a_forms) and new_rf_ok:
             form.save()
             for _, rf in a_forms:
                 rf.save()
-            if new_rf and request.POST.get("new_room-room") and new_rf.is_valid():
+            if new_room_selected:
                 obj = new_rf.save(commit=False)
                 obj.tenant = tenant
                 obj.save()

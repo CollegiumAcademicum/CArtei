@@ -121,3 +121,34 @@ def test_date_fields_use_native_picker_and_iso_roundtrip(settings):
     assert resp.status_code in (200, 302)
     t.refresh_from_db()
     assert str(t.date_of_birth) == "1990-05-01"
+
+
+@pytest.mark.django_db
+def test_housing_post_saves_without_new_room(settings):
+    """Housing section should save existing assignment changes even when new-room form is blank."""
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    t = _tenant("mvtest2")
+    b = Building.objects.create(name="Bau")
+    wg = WG.objects.create(building=b, name="WG1", cluster="OG1")
+    room = Room.objects.create(wg=wg, name="101", size_sqm=12)
+    a = TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=datetime.date(2024, 1, 1))
+    c = Client()
+    _login(c, "mv2test", groups=["ag.mietverwaltung"])
+    resp = c.post(f"/tenants/{t.pk}/", {
+        "section": "housing",
+        "assignment_ids": str(a.pk),
+        f"room_{a.pk}-room": str(room.pk),
+        f"room_{a.pk}-moved_in": "2024-01-01",
+        f"room_{a.pk}-moved_out": "2025-12-31",
+        "new_room-room": "",
+        "new_room-moved_in": "",
+    })
+    if resp.status_code == 200 and hasattr(resp, 'context') and resp.context:
+        print("TenantForm errors:", resp.context.get('form', {}).errors if resp.context.get('form') else 'no form')
+        for aa, af in resp.context.get('active_assignment_forms', []):
+            print(f"Assignment {aa.pk} form errors:", af.errors)
+    assert resp.status_code == 302, f"Expected redirect, got 200. Check printed errors above."
+    a.refresh_from_db()
+    assert str(a.moved_out) == "2025-12-31"
