@@ -23,7 +23,7 @@
       <tbody>
       {% for row in rows %}
       <tr>
-        <td>{{ row.tenant }}</td>
+        <td><a href="{% url 'tenant_detail' row.tenant.pk %}" style="color:var(--ca-teal);">{{ row.tenant }}</a></td>
         <td style="color:#7a7a7a;">{{ row.tenant.intranet_username }}</td>
         <td>
           {% for r in row.results %}
