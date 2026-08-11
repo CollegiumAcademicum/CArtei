@@ -49,7 +49,7 @@ SECTIONS = [
     Section("legal", "Rechtliches", [
         _f("data_priv_signed_at", "Datenschutz unterschrieben", _OWN_MV, _MV),
         _f("photo_allowance_signed_at", "Fotoerlaubnis unterschrieben", _OWN_MV, _MV),
-        _f("comments", "Interne Kommentare", _ADMIN, _ADMIN),
+        _f("comments", "Admin-Kommentare", _ADMIN, _ADMIN),
     ]),
 ]
 
