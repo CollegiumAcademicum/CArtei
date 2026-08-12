@@ -141,6 +141,37 @@
       {% endfor %}
     </ul>
     {% endif %}
+
+    {% if section.key == "housing" and can_write_mv %}
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    <p style="font-weight:500;margin:.25rem 0 .4rem;">Interne Notizen (Mietverwaltung)</p>
+    {% if mv_notes %}
+    <ul style="font-size:.9rem;margin:.25rem 0 .75rem;">
+      {% for n in mv_notes %}
+      <li style="margin-bottom:.25rem;display:flex;align-items:baseline;gap:.5rem;">
+        <span style="color:#7a7a7a;white-space:nowrap;">{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by.first_name }} {{ n.created_by.last_name }}:</span>
+        <span>{{ n.body }}</span>
+        <form method="post" action="{% url 'note_delete' n.pk %}" style="margin-left:auto;">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button type="submit" style="background:none;border:none;color:#b00;cursor:pointer;font-size:.8rem;padding:0;">✕</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p style="color:#888;font-size:.9rem;margin:.25rem 0 .5rem;">Keine Notizen.</p>
+    {% endif %}
+    <form method="post" action="{% url 'note_add' %}">
+      {% csrf_token %}
+      <input type="hidden" name="source_group" value="mietverwaltung">
+      <input type="hidden" name="subject_type" value="tenant">
+      <input type="hidden" name="subject_id" value="{{ tenant.pk }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <textarea name="body" rows="2" style="width:100%;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
+      <button type="submit" class="ca-button" style="margin-top:.3rem;padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
+    </form>
+    {% endif %}
   </details>
   {% endfor %}
 
@@ -177,14 +208,35 @@
         </tbody>
       </table>
     </div>
+    {% if can_write_cluster %}
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    <p style="font-weight:500;margin:.25rem 0 .4rem;">Interne Notizen (Clustersprechende)</p>
     {% if cluster_notes %}
-    <hr class="ca-divider">
-    <p class="ca-label">Interne Notizen (Cluster)</p>
-    <ul style="font-size:.9rem;margin-top:.25rem;">
+    <ul style="font-size:.9rem;margin:.25rem 0 .75rem;">
       {% for n in cluster_notes %}
-      <li style="margin-bottom:.25rem;"><span style="color:#7a7a7a;">{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by }}:</span> {{ n.note }}</li>
+      <li style="margin-bottom:.25rem;display:flex;align-items:baseline;gap:.5rem;">
+        <span style="color:#7a7a7a;white-space:nowrap;">{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by.first_name }} {{ n.created_by.last_name }}:</span>
+        <span>{{ n.body }}</span>
+        <form method="post" action="{% url 'note_delete' n.pk %}" style="margin-left:auto;">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button type="submit" style="background:none;border:none;color:#b00;cursor:pointer;font-size:.8rem;padding:0;">✕</button>
+        </form>
+      </li>
       {% endfor %}
     </ul>
+    {% else %}
+    <p style="color:#888;font-size:.9rem;margin:.25rem 0 .5rem;">Keine Notizen.</p>
+    {% endif %}
+    <form method="post" action="{% url 'note_add' %}">
+      {% csrf_token %}
+      <input type="hidden" name="source_group" value="clustersprechende">
+      <input type="hidden" name="subject_type" value="tenant">
+      <input type="hidden" name="subject_id" value="{{ tenant.pk }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <textarea name="body" rows="2" style="width:100%;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
+      <button type="submit" class="ca-button" style="margin-top:.3rem;padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
+    </form>
     {% endif %}
   </details>
   {% endif %}

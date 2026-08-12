@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
-    AGAbfrageResult, EnrollmentProof, Tenant, TenantRoomAssignment,
+    AGAbfrageResult, EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
 )
 from app.tenant_access import SECTIONS, editable_fields, viewer_roles, visible_fields
 
@@ -136,6 +136,16 @@ def tenant_detail(request: HttpRequest, pk: int):
         )
     else:
         ctx["engagement"] = []
-    ctx["cluster_notes"] = []
+    can_write_mv = bool({"mietverwaltung", "admin"} & roles)
+    can_write_cluster = bool({"cluster", "admin"} & roles)
+    ctx["can_write_mv"] = can_write_mv
+    ctx["can_write_cluster"] = can_write_cluster
+
+    _note_qs = InternalNote.objects.filter(
+        subject_type="tenant", subject_id=tenant.pk, deleted_at__isnull=True
+    ).select_related("created_by").order_by("-created_at")
+
+    ctx["mv_notes"] = list(_note_qs.filter(source_group="mietverwaltung")) if can_write_mv else []
+    ctx["cluster_notes"] = list(_note_qs.filter(source_group="clustersprechende")) if can_write_cluster else []
 
     return render(request, "app/tenant_detail.html", ctx)
