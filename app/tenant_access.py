@@ -53,6 +53,17 @@ SECTIONS = [
     ]),
 ]
 
+_OWN_MV_ADMIN = frozenset({"owner", "mietverwaltung", "admin"})
+_MV_ADMIN = frozenset({"mietverwaltung", "admin"})
+
+# Non-field access rules shown in the permission matrix (not form fields).
+RESOURCE_SECTIONS = [
+    Section("rooms", "Zimmer & Mietverträge", [
+        _f("room_assignments_view", "Zimmer-Zuweisungen (aktuell + vergangen)", _OWN_MV_ADMIN, _MV_ADMIN),
+        _f("room_assignments_new", "Neues Zimmer zuweisen", frozenset(), _MV_ADMIN),
+    ]),
+]
+
 # All Tenant columns that any role may edit (admin override edits these too).
 EDITABLE_COLUMNS = sorted({
     f.name for s in SECTIONS for f in s.fields if f.editable_by

@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from app import ldap_utils
 from app.decorators import require_group
 from app.models import Tenant
-from app.tenant_access import SECTIONS
+from app.tenant_access import RESOURCE_SECTIONS, SECTIONS
 
 _ROLE_LABELS = {
     "public": "Öffentlich",
@@ -33,9 +33,10 @@ def admin_portal(request):
 
 @require_group("admins")
 def permission_matrix(request):
-    roles = sorted({r for s in SECTIONS for f in s.fields for r in f.visible_to | f.editable_by})
+    all_sections = list(SECTIONS) + list(RESOURCE_SECTIONS)
+    roles = sorted({r for s in all_sections for f in s.fields for r in f.visible_to | f.editable_by})
     sections_data = []
-    for section in SECTIONS:
+    for section in all_sections:
         rows = []
         for f in section.fields:
             cells = []
