@@ -144,18 +144,33 @@
   {% endif %}
 
   {% if engagement %}
-  <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="font-weight:600;cursor:pointer;">Engagement</summary>
-    <ul>
-      {% for r in engagement %}
-      <li>{{ r.abfrage }} · {{ r.ag_name }} · {{ r.status }}</li>
-      {% endfor %}
-    </ul>
+  <details style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;"><span>Engagement</span></summary>
+    <div style="overflow-x:auto;margin-top:.5rem;">
+      <table class="table is-fullwidth is-striped is-hoverable" style="font-size:.9rem;">
+        <thead>
+          <tr><th>Abfrage</th><th>AG</th><th>Status</th><th>Notiz</th></tr>
+        </thead>
+        <tbody>
+          {% for r in engagement %}
+          <tr>
+            <td><a href="{% url 'abfrage_detail' r.abfrage.pk %}" style="color:var(--ca-teal);">{{ r.abfrage }}</a></td>
+            <td>{{ r.ag_name }}</td>
+            <td><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
+            <td style="color:#7a7a7a;">{{ r.note|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="color:#7a7a7a;">Kein Engagement erfasst.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% if cluster_notes %}
-    <p style="font-weight:500;margin-top:.75rem;">Interne Notizen (Belegium)</p>
-    <ul>
+    <hr class="ca-divider">
+    <p class="ca-label">Interne Notizen (Belegium)</p>
+    <ul style="font-size:.9rem;margin-top:.25rem;">
       {% for n in cluster_notes %}
-      <li>{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by }}: {{ n.note }}</li>
+      <li style="margin-bottom:.25rem;"><span style="color:#7a7a7a;">{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by }}:</span> {{ n.note }}</li>
       {% endfor %}
     </ul>
     {% endif %}
