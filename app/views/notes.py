@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
-from app.models import InternalNote, Tenant
+from app.models import InternalNote, NoteSubjectType, Tenant
 
 # Maps viewer role name → NoteSourceGroup value. Extend here to add more groups.
 _ROLE_TO_SOURCE_GROUP = {
@@ -38,6 +38,9 @@ def add_note(request):
     subject_id = request.POST.get("subject_id", "")
     body = request.POST.get("body", "").strip()
     next_url = request.POST.get("next", "/")
+
+    if subject_type not in NoteSubjectType.values:
+        raise PermissionDenied
 
     allowed = _user_source_groups(request.user)
     if source_group not in allowed or not body or not subject_id:

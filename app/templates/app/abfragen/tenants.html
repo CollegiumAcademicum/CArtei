@@ -16,8 +16,6 @@
           <th>Username</th>
           <th>Ergebnis(se)</th>
           <th>Ausreichend?</th>
-          <th>Cluster-Notiz</th>
-          <th>Notiz bearbeiten</th>
         </tr>
       </thead>
       <tbody>
@@ -37,18 +35,9 @@
           <span style="color:#B61B29;font-weight:700;">✗ Nein</span>
           {% endif %}
         </td>
-        <td>{{ row.note.note|default:"—" }}</td>
-        <td>
-          <form method="post" style="display:flex;gap:0.4rem;align-items:center;">
-            {% csrf_token %}
-            <input type="hidden" name="note_tenant_id" value="{{ row.tenant.pk }}">
-            <input class="input is-small" type="text" name="note_text" value="{{ row.note.note|default:'' }}" placeholder="Interne Notiz" style="width:160px;">
-            <button type="submit" class="ca-button" style="padding:0.3rem 0.75rem;font-size:0.85rem;">OK</button>
-          </form>
-        </td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" style="color:#7a7a7a;">Keine aktiven Bewohner:innen.</td></tr>
+      <tr><td colspan="4" style="color:#7a7a7a;">Keine aktiven Bewohner:innen.</td></tr>
       {% endfor %}
       </tbody>
     </table>
