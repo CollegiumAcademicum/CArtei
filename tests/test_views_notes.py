@@ -31,6 +31,24 @@ def test_add_note_requires_login():
 
 
 @pytest.mark.django_db
+def test_cluster_user_can_add_note(settings):
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"]}
+    user = _make_user_in_group("cluster_user", "gr.cluster")
+    _make_tenant("cluster_user")
+    client = Client()
+    client.force_login(user)
+    resp = client.post("/notes/add/", {
+        "source_group": "clustersprechende",
+        "subject_type": "tenant",
+        "subject_id": "1",
+        "body": "Cluster note",
+        "next": "/dashboard/",
+    })
+    assert resp.status_code == 302
+    assert InternalNote.objects.filter(body="Cluster note", source_group="clustersprechende").exists()
+
+
+@pytest.mark.django_db
 def test_add_note_creates_note(settings):
     settings.TENANT_ROLE_GROUPS = {"mietverwaltung": ["ag.mietverwaltung"]}
     user = _make_user_in_group("mv_user", "ag.mietverwaltung")
@@ -46,7 +64,7 @@ def test_add_note_creates_note(settings):
     })
     assert resp.status_code == 302
     assert resp["Location"] == "/dashboard/"
-    note = InternalNote.objects.get()
+    note = InternalNote.objects.get(body="Test note")
     assert note.body == "Test note"
     assert note.source_group == "mietverwaltung"
     assert note.subject_id == 42
@@ -147,3 +165,26 @@ def test_delete_note_denied_wrong_group(settings):
     assert resp.status_code == 403
     note.refresh_from_db()
     assert note.deleted_at is None
+
+
+@pytest.mark.django_db
+def test_admin_can_delete_any_note(settings):
+    settings.TENANT_ROLE_GROUPS = {"mietverwaltung": ["ag.mietverwaltung"]}
+    author = _make_tenant("author_admin_delete")
+    admin_user = _make_user_in_group("admin_delete", "admins")
+    _make_tenant("admin_delete")
+    from django.utils.timezone import now
+    note = InternalNote.objects.create(
+        body="admin delete test",
+        source_group="mietverwaltung",
+        subject_type="tenant",
+        subject_id=1,
+        created_at=now(),
+        created_by=author,
+    )
+    client = Client()
+    client.force_login(admin_user)
+    resp = client.post(f"/notes/{note.pk}/delete/", {"next": "/"})
+    assert resp.status_code == 302
+    note.refresh_from_db()
+    assert note.deleted_at is not None
