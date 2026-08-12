@@ -55,12 +55,18 @@ SECTIONS = [
 
 _OWN_MV_ADMIN = frozenset({"owner", "mietverwaltung", "admin"})
 _MV_ADMIN = frozenset({"mietverwaltung", "admin"})
+_OWN_CLUSTER_ADMIN = frozenset({"owner", "cluster", "admin"})
+_CLUSTER_ADMIN = frozenset({"cluster", "admin"})
 
 # Non-field access rules shown in the permission matrix (not form fields).
 RESOURCE_SECTIONS = [
     Section("rooms", "Zimmer & Mietverträge", [
         _f("room_assignments_view", "Zimmer-Zuweisungen (aktuell + vergangen)", _OWN_MV_ADMIN, _MV_ADMIN),
         _f("room_assignments_new", "Neues Zimmer zuweisen", frozenset(), _MV_ADMIN),
+    ]),
+    Section("engagement", "AG-Engagement & Cluster-Notizen", [
+        _f("engagement_results", "AG-Abfrage-Ergebnisse", _OWN_CLUSTER_ADMIN, frozenset()),
+        _f("cluster_notes", "Cluster-Notizen", _CLUSTER_ADMIN, _CLUSTER_ADMIN),
     ]),
 ]
 
