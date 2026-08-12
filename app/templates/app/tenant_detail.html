@@ -144,25 +144,9 @@
 
     {% if section.key == "housing" and can_write_mv %}
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
-    <div style="display:flex;align-items:center;gap:.5rem;margin:.25rem 0 .4rem;">
-      <span style="font-weight:500;">Interne Notizen (Mietverwaltung)</span>
-      <details>
-        <summary style="list-style:none;display:inline-flex;align-items:center;justify-content:center;width:1.4rem;height:1.4rem;border:1px solid #bbb;border-radius:50%;cursor:pointer;color:#555;font-size:1.1rem;font-weight:bold;line-height:1;user-select:none;">+</summary>
-        <form method="post" action="{% url 'note_add' %}" style="margin-top:.4rem;">
-          {% csrf_token %}
-          <input type="hidden" name="source_group" value="mietverwaltung">
-          <input type="hidden" name="subject_type" value="tenant">
-          <input type="hidden" name="subject_id" value="{{ tenant.pk }}">
-          <input type="hidden" name="next" value="{{ request.path }}">
-          <div style="display:flex;align-items:flex-end;gap:.4rem;">
-            <textarea name="body" rows="2" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
-            <button type="submit" style="background:#27ae60;border:none;border-radius:4px;color:#fff;cursor:pointer;padding:.45rem .65rem;font-size:1.1rem;line-height:1;flex-shrink:0;">→</button>
-          </div>
-        </form>
-      </details>
-    </div>
+    <p style="font-weight:500;margin:.25rem 0 .4rem;">Interne Notizen (Mietverwaltung)</p>
     {% if mv_notes %}
-    <ul style="font-size:.9rem;margin:.25rem 0 .5rem;">
+    <ul style="font-size:.9rem;margin:.25rem 0 .75rem;">
       {% for n in mv_notes %}
       <li style="margin-bottom:.25rem;display:flex;align-items:baseline;gap:.5rem;">
         <span style="color:#7a7a7a;white-space:nowrap;">{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by.first_name }} {{ n.created_by.last_name }}:</span>
@@ -175,7 +159,20 @@
       </li>
       {% endfor %}
     </ul>
+    {% else %}
+    <p style="color:#888;font-size:.9rem;margin:.25rem 0 .5rem;">Keine Notizen.</p>
     {% endif %}
+    <form method="post" action="{% url 'note_add' %}">
+      {% csrf_token %}
+      <input type="hidden" name="source_group" value="mietverwaltung">
+      <input type="hidden" name="subject_type" value="tenant">
+      <input type="hidden" name="subject_id" value="{{ tenant.pk }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <div style="display:flex;align-items:flex-end;gap:.4rem;">
+        <textarea name="body" rows="2" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
+        <button type="submit" style="background:#27ae60;border:none;border-radius:4px;color:#fff;cursor:pointer;padding:.45rem .65rem;font-size:1.1rem;line-height:1;flex-shrink:0;">→</button>
+      </div>
+    </form>
     {% endif %}
   </details>
   {% endfor %}
@@ -215,25 +212,9 @@
     </div>
     {% if can_write_cluster %}
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
-    <div style="display:flex;align-items:center;gap:.5rem;margin:.25rem 0 .4rem;">
-      <span style="font-weight:500;">Interne Notizen (Clustersprechende)</span>
-      <details>
-        <summary style="list-style:none;display:inline-flex;align-items:center;justify-content:center;width:1.4rem;height:1.4rem;border:1px solid #bbb;border-radius:50%;cursor:pointer;color:#555;font-size:1.1rem;font-weight:bold;line-height:1;user-select:none;">+</summary>
-        <form method="post" action="{% url 'note_add' %}" style="margin-top:.4rem;">
-          {% csrf_token %}
-          <input type="hidden" name="source_group" value="clustersprechende">
-          <input type="hidden" name="subject_type" value="tenant">
-          <input type="hidden" name="subject_id" value="{{ tenant.pk }}">
-          <input type="hidden" name="next" value="{{ request.path }}">
-          <div style="display:flex;align-items:flex-end;gap:.4rem;">
-            <textarea name="body" rows="2" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
-            <button type="submit" style="background:#27ae60;border:none;border-radius:4px;color:#fff;cursor:pointer;padding:.45rem .65rem;font-size:1.1rem;line-height:1;flex-shrink:0;">→</button>
-          </div>
-        </form>
-      </details>
-    </div>
+    <p style="font-weight:500;margin:.25rem 0 .4rem;">Interne Notizen (Clustersprechende)</p>
     {% if cluster_notes %}
-    <ul style="font-size:.9rem;margin:.25rem 0 .5rem;">
+    <ul style="font-size:.9rem;margin:.25rem 0 .75rem;">
       {% for n in cluster_notes %}
       <li style="margin-bottom:.25rem;display:flex;align-items:baseline;gap:.5rem;">
         <span style="color:#7a7a7a;white-space:nowrap;">{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by.first_name }} {{ n.created_by.last_name }}:</span>
@@ -246,7 +227,20 @@
       </li>
       {% endfor %}
     </ul>
+    {% else %}
+    <p style="color:#888;font-size:.9rem;margin:.25rem 0 .5rem;">Keine Notizen.</p>
     {% endif %}
+    <form method="post" action="{% url 'note_add' %}">
+      {% csrf_token %}
+      <input type="hidden" name="source_group" value="clustersprechende">
+      <input type="hidden" name="subject_type" value="tenant">
+      <input type="hidden" name="subject_id" value="{{ tenant.pk }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <div style="display:flex;align-items:flex-end;gap:.4rem;">
+        <textarea name="body" rows="2" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
+        <button type="submit" style="background:#27ae60;border:none;border-radius:4px;color:#fff;cursor:pointer;padding:.45rem .65rem;font-size:1.1rem;line-height:1;flex-shrink:0;">→</button>
+      </div>
+    </form>
     {% endif %}
   </details>
   {% endif %}
