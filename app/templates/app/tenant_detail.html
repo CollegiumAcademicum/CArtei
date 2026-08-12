@@ -7,7 +7,7 @@
   </h1>
 
   {% for section in sections %}
-  <details {% if section.key == "personal" %}open {% endif %}class="ca-section" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+  <details id="section-{{ section.key }}" {% if section.key == "personal" %}open {% endif %}class="ca-section" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
       <span>{{ section.title }}</span>
       <span class="section-actions" style="display:none;margin-left:auto;gap:.4rem;align-items:center;">
@@ -164,6 +164,14 @@
 </div>
 
 <script>
+(function() {
+  var id = sessionStorage.getItem('restoreSection');
+  if (!id) return;
+  sessionStorage.removeItem('restoreSection');
+  var el = document.getElementById(id);
+  if (el) { el.open = true; el.scrollIntoView({behavior: 'instant', block: 'start'}); }
+})();
+
 document.querySelectorAll('details.ca-section').forEach(function(section) {
   var fields = section.querySelectorAll('input, select, textarea');
   var origValues = {};
@@ -207,6 +215,7 @@ document.querySelectorAll('details.ca-section').forEach(function(section) {
     btn.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
+      sessionStorage.setItem('restoreSection', section.id);
       var target = document.getElementById(btn.getAttribute('form'));
       if (target) target.requestSubmit(btn);
     });
