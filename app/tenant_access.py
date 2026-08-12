@@ -42,7 +42,7 @@ SECTIONS = [
         _f("sublet_from", "Untermiete von", _MV, _MV),
         _f("sublet_to", "Untermiete bis", _MV, _MV),
         _f("mailbox_key", "Briefkastenschlüssel", _MV, _MV),
-        _f("move_in", "Einzug", _OWN_MV, _MV),
+        _f("move_in", "Ersteinzug", _OWN_MV, _MV),
         _f("move_out", "Auszug", _OWN_MV, _MV),
         _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _ADMIN, _ADMIN),
     ]),
