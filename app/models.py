@@ -11,6 +11,17 @@ class AGStatus(models.TextChoices):
     INAKTIV = "INAKTIV", "inaktiv"
 
 
+class NoteSourceGroup(models.TextChoices):
+    MIETVERWALTUNG = "mietverwaltung", "Mietverwaltung"
+    CLUSTERSPRECHENDE = "clustersprechende", "Clustersprechende"
+
+
+class NoteSubjectType(models.TextChoices):
+    TENANT = "tenant", "Bewohner:in"
+    CLUSTER = "cluster", "Cluster"
+    WG = "wg", "WG"
+
+
 class Tenant(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
@@ -93,16 +104,24 @@ class AGAbfrageResult(models.Model):
         db_table = "ag_abfrage_result"
 
 
-class ClusterNote(models.Model):
-    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False)
-    abfrage = models.ForeignKey(AGAbfrage, on_delete=models.DO_NOTHING, db_constraint=False)
-    note = models.TextField()
+class InternalNote(models.Model):
+    body = models.TextField()
+    source_group = models.CharField(max_length=50, choices=NoteSourceGroup.choices)
+    subject_type = models.CharField(max_length=50, choices=NoteSubjectType.choices)
+    subject_id = models.IntegerField()
     created_at = models.DateTimeField()
-    created_by = models.CharField(max_length=255)
+    created_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="+"
+    )
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
+        null=True, blank=True, related_name="+"
+    )
 
     class Meta:
         managed = False
-        db_table = "cluster_note"
+        db_table = "internal_note"
 
 
 class Building(models.Model):
