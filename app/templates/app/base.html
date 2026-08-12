@@ -20,7 +20,7 @@
   <div class="ca-navbar-right">
     <a href="{% url 'dashboard' %}" class="ca-navbar-admin">Dashboard</a>
     <a href="{% url 'abfragen_list' %}" class="ca-navbar-admin">Abfragen</a>
-    {% if is_cluster_user %}<a href="{% url 'belegium' %}" class="ca-navbar-admin">Belegium</a>{% endif %}
+    {% if is_cluster_user %}<a href="{% url 'belegium' %}" class="ca-navbar-admin">Cluster</a>{% endif %}
     <a href="{% url 'admin_portal' %}" class="ca-navbar-admin">Admin</a>
     {% if current_tenant %}<a href="{% url 'tenant_detail' current_tenant.pk %}" class="ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</a>{% else %}<span class="ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</span>{% endif %}
     <form method="post" action="{% url 'logout' %}">
