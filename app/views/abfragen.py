@@ -171,7 +171,7 @@ def abfrage_tenants(request: HttpRequest, pk: int):
 
 
 @require_group("admins", "gr.cluster")
-def belegium(request: HttpRequest):
+def cluster(request: HttpRequest):
     abfragen = list(AGAbfrage.objects.all())
     selected_ids = {int(x) for x in request.GET.getlist("surveys") if x.isdigit()}
 
@@ -249,7 +249,7 @@ def belegium(request: HttpRequest):
     for row in rows:
         row["stats"] = cluster_stats[row["cluster_key"]]
 
-    return render(request, "app/abfragen/belegium.html", {
+    return render(request, "app/abfragen/cluster.html", {
         "abfragen": abfragen,
         "selected_ids": selected_ids,
         "selected_abfragen": selected_abfragen,

@@ -179,7 +179,7 @@
     </div>
     {% if cluster_notes %}
     <hr class="ca-divider">
-    <p class="ca-label">Interne Notizen (Belegium)</p>
+    <p class="ca-label">Interne Notizen (Cluster)</p>
     <ul style="font-size:.9rem;margin-top:.25rem;">
       {% for n in cluster_notes %}
       <li style="margin-bottom:.25rem;"><span style="color:#7a7a7a;">{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by }}:</span> {{ n.note }}</li>
