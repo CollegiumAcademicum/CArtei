@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 
 from app import ldap_utils
 from app.decorators import require_group
-from app.models import AGAbfrage, AGAbfrageResult, ClusterNote, Tenant
+from app.models import AGAbfrage, AGAbfrageResult, Tenant
 
 _STATUS_CHOICES = [
     ("ZU_AKTIV", "zu aktiv"),
@@ -138,29 +138,11 @@ def abfrage_tenants(request: HttpRequest, pk: int):
     for r in AGAbfrageResult.objects.filter(abfrage=abfrage):
         results_by_tenant.setdefault(r.tenant_id, []).append(r)
 
-    notes = {n.tenant_id: n for n in ClusterNote.objects.filter(abfrage=abfrage)}
-
-    if request.method == "POST":
-        tenant_id = request.POST.get("note_tenant_id")
-        note_text = request.POST.get("note_text", "").strip()
-        if tenant_id and note_text:
-            ClusterNote.objects.update_or_create(
-                tenant_id=tenant_id,
-                abfrage=abfrage,
-                defaults={
-                    "note": note_text,
-                    "created_at": datetime.now(tz=timezone.utc),
-                    "created_by": request.user.username,
-                },
-            )
-        return redirect("abfrage_tenants", pk=pk)
-
     rows = [
         {
             "tenant": t,
             "results": results_by_tenant.get(t.pk, []),
             "sufficient": any(r.status in ("AKTIV", "ZU_AKTIV") for r in results_by_tenant.get(t.pk, [])),
-            "note": notes.get(t.pk),
         }
         for t in tenants
     ]
@@ -269,7 +251,6 @@ def cluster(request: HttpRequest):
 def abfrage_delete(request: HttpRequest, pk: int):
     abfrage = get_object_or_404(AGAbfrage, pk=pk)
     label = str(abfrage)
-    ClusterNote.objects.filter(abfrage=abfrage).delete()
     AGAbfrageResult.objects.filter(abfrage=abfrage).delete()
     abfrage.delete()
     messages.success(request, f'Abfrage "{label}" wurde gelöscht.')

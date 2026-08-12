@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
-    AGAbfrageResult, ClusterNote, EnrollmentProof, Tenant, TenantRoomAssignment,
+    AGAbfrageResult, EnrollmentProof, Tenant, TenantRoomAssignment,
 )
 from app.tenant_access import SECTIONS, editable_fields, viewer_roles, visible_fields
 
@@ -136,9 +136,6 @@ def tenant_detail(request: HttpRequest, pk: int):
         )
     else:
         ctx["engagement"] = []
-    if {"cluster", "admin"} & roles:
-        ctx["cluster_notes"] = list(ClusterNote.objects.filter(tenant=tenant).order_by("-created_at"))
-    else:
-        ctx["cluster_notes"] = []
+    ctx["cluster_notes"] = []
 
     return render(request, "app/tenant_detail.html", ctx)
