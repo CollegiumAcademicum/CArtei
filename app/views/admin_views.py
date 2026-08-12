@@ -7,6 +7,16 @@ from django.views.decorators.http import require_POST
 from app import ldap_utils
 from app.decorators import require_group
 from app.models import Tenant
+from app.tenant_access import SECTIONS
+
+_ROLE_LABELS = {
+    "public": "Öffentlich",
+    "owner": "Bewohner*in selbst",
+    "mietverwaltung": "Mietverwaltung",
+    "cluster": "Cluster",
+    "finanzierung": "Finanzierung",
+    "admin": "Admin",
+}
 
 
 @require_group("admins")
@@ -18,6 +28,31 @@ def admin_portal(request):
         "total": total,
         "flinta_quote": round(flinta / total * 100, 1) if total else 0,
         "azubi_quote": round(azubi / total * 100, 1) if total else 0,
+    })
+
+
+@require_group("admins")
+def permission_matrix(request):
+    roles = sorted({r for s in SECTIONS for f in s.fields for r in f.visible_to | f.editable_by})
+    sections_data = []
+    for section in SECTIONS:
+        rows = []
+        for f in section.fields:
+            cells = []
+            for role in roles:
+                can_see = role in f.visible_to
+                can_edit = role in f.editable_by
+                cells.append(
+                    "both" if (can_see and can_edit) else
+                    "view" if can_see else
+                    "edit" if can_edit else
+                    "none"
+                )
+            rows.append({"label": f.label, "name": f.name, "cells": cells})
+        sections_data.append({"title": section.title, "rows": rows})
+    return render(request, "app/admin/permission_matrix.html", {
+        "sections": sections_data,
+        "roles": [{"key": r, "label": _ROLE_LABELS.get(r, r)} for r in roles],
     })
 
 

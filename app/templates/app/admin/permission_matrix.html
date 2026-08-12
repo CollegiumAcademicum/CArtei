@@ -1,0 +1,63 @@
+{% extends "app/base.html" %}
+{% block title %}Berechtigungsmatrix — CArtei{% endblock %}
+{% block content %}
+<div class="ca-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <h1 style="font-size:1.4rem;font-weight:700;margin:0;">Berechtigungsmatrix</h1>
+    <a href="{% url 'admin_portal' %}" class="ca-button-outline" style="font-size:0.9rem;padding:0.4rem 1rem;">← Admin-Portal</a>
+  </div>
+  <p style="color:#555;margin-bottom:1.5rem;font-size:0.9rem;">
+    Zeigt, welche Rollen welche Felder sehen bzw. bearbeiten dürfen. Konfiguration in <code>app/tenant_access.py</code>.
+  </p>
+
+  <div style="overflow-x:auto;">
+    <table class="table is-bordered is-narrow" style="min-width:600px;width:100%;">
+      <thead>
+        <tr>
+          <th style="min-width:160px;">Feld</th>
+          {% for role in roles %}
+          <th style="text-align:center;white-space:nowrap;">{{ role.label }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for section in sections %}
+        <tr>
+          <td colspan="{{ roles|length|add:1 }}" style="background:#f5fffe;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;color:#2f9991;padding:0.4rem 0.75rem;">
+            {{ section.title }}
+          </td>
+        </tr>
+        {% for row in section.rows %}
+        <tr>
+          <td style="font-size:0.9rem;">
+            {{ row.label }}
+            <span style="display:block;font-size:0.75rem;color:#aaa;">{{ row.name }}</span>
+          </td>
+          {% for cell in row.cells %}
+          <td style="text-align:center;vertical-align:middle;">
+            {% if cell == "both" %}
+              <span style="display:inline-block;background:#d4edda;color:#155724;border-radius:3px;padding:2px 7px;font-size:0.78rem;font-weight:700;white-space:nowrap;">sehen + bearb.</span>
+            {% elif cell == "view" %}
+              <span style="display:inline-block;background:#e3f2fd;color:#0d47a1;border-radius:3px;padding:2px 7px;font-size:0.78rem;font-weight:700;">sehen</span>
+            {% elif cell == "edit" %}
+              <span style="display:inline-block;background:#fff3cd;color:#856404;border-radius:3px;padding:2px 7px;font-size:0.78rem;font-weight:700;">bearb.</span>
+            {% else %}
+              <span style="color:#ccc;">—</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1rem;font-size:0.8rem;color:#aaa;">
+    <strong style="color:#155724;">sehen + bearb.</strong> = sichtbar &amp; editierbar &nbsp;·&nbsp;
+    <strong style="color:#0d47a1;">sehen</strong> = nur sichtbar &nbsp;·&nbsp;
+    <strong style="color:#856404;">bearb.</strong> = nur editierbar &nbsp;·&nbsp;
+    <span style="color:#ccc;">—</span> = kein Zugriff
+  </p>
+</div>
+{% endblock %}

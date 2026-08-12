@@ -14,4 +14,5 @@ urlpatterns = [
     path("tenants/<int:pk>/", tenant.tenant_detail, name="tenant_detail"),
     path("admin/", admin_views.admin_portal, name="admin_portal"),
     path("admin/sync-from-ldap/", admin_views.sync_from_ldap, name="sync_from_ldap"),
+    path("admin/permissions/", admin_views.permission_matrix, name="permission_matrix"),
 ]
