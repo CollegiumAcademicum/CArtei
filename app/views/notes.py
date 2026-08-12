@@ -69,5 +69,7 @@ def delete_note(request, pk):
         raise PermissionDenied
 
     author = _author(request.user)
+    if author is None:
+        raise PermissionDenied
     InternalNote.objects.filter(pk=note.pk).update(deleted_at=now(), deleted_by=author)
     return redirect(next_url)
