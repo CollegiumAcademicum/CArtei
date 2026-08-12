@@ -118,6 +118,18 @@
     </form>
     {% endif %}
 
+    {% if section.key == "housing" and active_assignments and not can_manage_room %}
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    <p style="font-weight:500;margin:.25rem 0 .25rem;">Aktuelle Zimmer</p>
+    <ul>
+      {% for a in active_assignments %}
+      <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
+          — eingezogen {{ a.moved_in }}
+          {% if a.key_handed_over %}· Schlüssel übergeben{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
     {% if section.key == "housing" and past_assignments %}
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
     <p style="font-weight:500;margin:.25rem 0 .25rem;">Frühere Zimmer</p>

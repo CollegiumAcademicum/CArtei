@@ -124,6 +124,7 @@ def tenant_detail(request: HttpRequest, pk: int):
             ctx["new_room_form"] = TenantRoomAssignmentForm(prefix="new_room")
     else:
         ctx["active_assignment_forms"] = []
+    ctx["active_assignments"] = active_assignments
 
     if {"owner", "mietverwaltung", "admin"} & roles:
         ctx["enrollment_proofs"] = list(EnrollmentProof.objects.filter(tenant=tenant))
