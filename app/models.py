@@ -33,9 +33,6 @@ class Tenant(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
     is_flinta = models.BooleanField(default=False)
-    study_subject = models.CharField(max_length=255, null=True, blank=True)
-    apprenticeship_field = models.CharField(max_length=255, null=True, blank=True)
-    educational_institution = models.CharField(max_length=255, null=True, blank=True)
     barrier_free_needed = models.BooleanField(default=False)
     mailbox_key = models.BooleanField(default=False)
     mailbox_list_opt_in = models.BooleanField(default=False)
@@ -179,13 +176,28 @@ class TenantRoomAssignment(models.Model):
         db_table = "tenant_room_assignment"
 
 
+class EnrollmentType(models.TextChoices):
+    STUDY = "STUDY", "Studium"
+    APPRENTICESHIP = "APPRENTICESHIP", "Ausbildung"
+    SCHUELER = "SCHUELER", "Schüler*in"
+    FSJ = "FSJ", "Freiwilliges Soziales Jahr"
+
+
 class EnrollmentProof(models.Model):
-    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False)
-    enrollment_type = models.CharField(max_length=50)
-    enrollment_name = models.CharField(max_length=255)
+    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="enrollment_proofs")
+    enrollment_type = models.CharField(max_length=50, choices=EnrollmentType.choices)
+    field_of_study = models.CharField(max_length=255, null=True, blank=True)
+    educational_institution = models.CharField(max_length=255, null=True, blank=True)
     file_name = models.CharField(max_length=255)
-    submitted_at = models.DateTimeField()
+    file_data = models.BinaryField()
+    uploaded_at = models.DateTimeField()
+    uploaded_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True, related_name="uploaded_proofs", db_column="uploaded_by_id")
+    last_edited_at = models.DateTimeField(null=True, blank=True)
+    last_edited_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True, related_name="edited_proofs", db_column="last_edited_by_id")
     valid_until = models.DateField()
+    verified_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True, related_name="verified_proofs", db_column="verified_by_id")
+    verified_at = models.DateTimeField(null=True, blank=True)
+    needs_human_review = models.BooleanField(default=False)
 
     class Meta:
         managed = False

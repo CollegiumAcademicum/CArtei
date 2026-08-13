@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 
 from app import ldap_utils
 from app.decorators import require_group
-from app.models import Tenant
+from app.models import EnrollmentProof, EnrollmentType, Tenant
 from app.tenant_access import RESOURCE_SECTIONS, SECTIONS
 
 _ROLE_LABELS = {
@@ -23,7 +23,7 @@ _ROLE_LABELS = {
 def admin_portal(request):
     total = Tenant.objects.count()
     flinta = Tenant.objects.filter(is_flinta=True).count()
-    azubi = Tenant.objects.filter(apprenticeship_field__isnull=False).exclude(apprenticeship_field="").count()
+    azubi = Tenant.objects.filter(enrollment_proofs__enrollment_type=EnrollmentType.APPRENTICESHIP).distinct().count()
     return render(request, "app/admin/portal.html", {
         "total": total,
         "flinta_quote": round(flinta / total * 100, 1) if total else 0,

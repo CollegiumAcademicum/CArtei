@@ -27,14 +27,9 @@ SECTIONS = [
         _f("email", "E-Mail", _OWN_MV, _OWN_MV),
         _f("phone", "Telefon", _OWN_MV, _OWN_MV),
         _f("is_flinta", "FLINTA", _OWN_MV, _OWN_MV),
-        _f("mailbox_list_opt_in", "Briefkastenabfrage", _OWN_MV, _OWN_MV),
+        _f("mailbox_list_opt_in", "Ich möchte, dass mein Name bei den Briefkästen steht", _OWN_MV, _OWN_MV),
         _f("date_of_birth", "Geburtsdatum", _OWN_MV, _MV),
         _f("barrier_free_needed", "Barrierefreiheit benötigt", _OWN_MV, _MV),
-    ]),
-    Section("education", "Ausbildung & Studium", [
-        _f("study_subject", "Studienfach", _OWN_MV, _MV),
-        _f("apprenticeship_field", "Ausbildungsbereich", _OWN_MV, _MV),
-        _f("educational_institution", "Bildungseinrichtung", _OWN_MV, _MV),
     ]),
     Section("housing", "Wohnen", [
         _f("is_sublet", "Untermiete", _OWN_MV, _MV),
