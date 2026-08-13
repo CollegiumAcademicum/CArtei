@@ -140,6 +140,7 @@ def tenant_detail(request: HttpRequest, pk: int):
     can_write_cluster = bool({"cluster", "admin"} & roles)
     ctx["can_write_mv"] = can_write_mv
     ctx["can_write_cluster"] = can_write_cluster
+    ctx["can_upload"] = bool({"owner", "mietverwaltung", "admin"} & roles)
 
     _note_qs = InternalNote.objects.filter(
         subject_type="tenant", subject_id=tenant.pk, deleted_at__isnull=True

@@ -1,3 +1,5 @@
+import datetime
+
 from django.conf import settings as django_settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -20,6 +22,8 @@ def upload_proof(request, pk):
     caller = _caller(request.user)
     if caller is None:
         raise PermissionDenied
+    if caller.pk != pk and not _is_mv(request.user):
+        raise PermissionDenied
 
     f = request.FILES.get("proof_file")
     if not f:
@@ -27,6 +31,11 @@ def upload_proof(request, pk):
 
     enrollment_type = request.POST.get("enrollment_type", "")
     if enrollment_type not in EnrollmentType.values:
+        return HttpResponseBadRequest()
+
+    try:
+        datetime.date.fromisoformat(request.POST.get("valid_until", ""))
+    except ValueError:
         return HttpResponseBadRequest()
 
     EnrollmentProof.objects.create(
@@ -58,12 +67,11 @@ def verify_proof(request, pk, proof_pk):
     if not _is_mv(request.user):
         raise PermissionDenied
     caller = _caller(request.user)
-    if caller is None:
-        raise PermissionDenied
+    # caller may be None (MV staff without Tenant row); verified_by_id will be NULL
     proof = get_object_or_404(EnrollmentProof, pk=proof_pk, tenant_id=pk)
     EnrollmentProof.objects.filter(pk=proof.pk).update(
         verified_at=now(),
-        verified_by_id=caller.pk,
+        verified_by_id=caller.pk if caller else None,
         needs_human_review=False,
     )
     return redirect("tenant_detail", pk=pk)
@@ -80,10 +88,17 @@ def edit_proof(request, pk, proof_pk):
     if caller.pk != pk and not _is_mv(request.user):
         raise PermissionDenied
     proof = get_object_or_404(EnrollmentProof, pk=proof_pk, tenant_id=pk)
+    enrollment_type = request.POST.get("enrollment_type", proof.enrollment_type)
+    if enrollment_type not in EnrollmentType.values:
+        return HttpResponseBadRequest()
+    try:
+        datetime.date.fromisoformat(request.POST.get("valid_until", str(proof.valid_until)))
+    except ValueError:
+        return HttpResponseBadRequest()
     EnrollmentProof.objects.filter(pk=proof.pk).update(
-        enrollment_type=request.POST.get("enrollment_type", proof.enrollment_type),
-        field_of_study=request.POST.get("field_of_study", "") or None,
-        educational_institution=request.POST.get("educational_institution", "") or None,
+        enrollment_type=enrollment_type,
+        field_of_study=request.POST.get("field_of_study", proof.field_of_study) or None,
+        educational_institution=request.POST.get("educational_institution", proof.educational_institution) or None,
         valid_until=request.POST.get("valid_until", str(proof.valid_until)),
         last_edited_at=now(),
         last_edited_by_id=caller.pk,

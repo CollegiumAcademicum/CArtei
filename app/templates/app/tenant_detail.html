@@ -228,6 +228,7 @@
     <p style="color:#888;font-size:.9rem;">Kein Nachweis hochgeladen.</p>
     {% endif %}
 
+    {% if can_upload %}
     <form method="post" action="{% url 'enrollment_proof_upload' pk=tenant.pk %}" enctype="multipart/form-data" style="margin-top:1rem;display:grid;gap:.5rem;max-width:480px;">
       {% csrf_token %}
       <label style="font-size:.9rem;font-weight:600;">Nachweis hochladen</label>
@@ -244,6 +245,7 @@
       <input name="proof_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
       <button type="submit" style="padding:.3rem .8rem;align-self:start;">Hochladen</button>
     </form>
+    {% endif %}
   </details>
 
   {% if engagement %}
