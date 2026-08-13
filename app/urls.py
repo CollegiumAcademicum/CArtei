@@ -1,6 +1,6 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, dashboard, notes, tenant
+from app.views import abfragen, admin_views, dashboard, enrollment_proof, notes, tenant
 
 urlpatterns = [
     path("dashboard/", dashboard.dashboard, name="dashboard"),
@@ -12,6 +12,7 @@ urlpatterns = [
     path("abfragen/<int:pk>/delete/", abfragen.abfrage_delete, name="abfrage_delete"),
     path("cluster/", abfragen.cluster, name="cluster"),
     path("tenants/<int:pk>/", tenant.tenant_detail, name="tenant_detail"),
+    path("tenants/<int:pk>/enrollment-proof/upload/", enrollment_proof.upload_proof, name="enrollment_proof_upload"),
     path("notes/add/", notes.add_note, name="note_add"),
     path("notes/<int:pk>/delete/", notes.delete_note, name="note_delete"),
     path("admin/", admin_views.admin_portal, name="admin_portal"),
