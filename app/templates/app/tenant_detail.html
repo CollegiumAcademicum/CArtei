@@ -177,16 +177,74 @@
   </details>
   {% endfor %}
 
-  {% if enrollment_proofs %}
   <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;">Immatrikulationsnachweise</summary>
-    <ul>
-      {% for p in enrollment_proofs %}
-      <li>{{ p.enrollment_name }} ({{ p.enrollment_type }}) — gültig bis {{ p.valid_until }}</li>
-      {% endfor %}
-    </ul>
+
+    {% if enrollment_proofs %}
+    <table style="width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.9rem;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:.25rem .5rem;">Datei</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Typ</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Fach / Bereich</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Einrichtung</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Gültig bis</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Status</th>
+          {% if can_write_mv %}<th></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in enrollment_proofs %}
+        <tr style="{% if p.needs_human_review %}background:#fff8e1;{% endif %}">
+          <td style="padding:.25rem .5rem;">{{ p.file_name }}</td>
+          <td style="padding:.25rem .5rem;">{{ p.get_enrollment_type_display }}</td>
+          <td style="padding:.25rem .5rem;">{{ p.field_of_study|default:"—" }}</td>
+          <td style="padding:.25rem .5rem;">{{ p.educational_institution|default:"—" }}</td>
+          <td style="padding:.25rem .5rem;">{{ p.valid_until }}</td>
+          <td style="padding:.25rem .5rem;">
+            {% if p.needs_human_review %}
+              ⚠ Prüfung erforderlich
+            {% elif p.verified_at %}
+              ✓ Verifiziert ({{ p.verified_at|date:"d.m.Y" }})
+            {% else %}
+              Ausstehend
+            {% endif %}
+          </td>
+          {% if can_write_mv %}
+          <td style="padding:.25rem .5rem;">
+            {% if not p.verified_at or p.needs_human_review %}
+            <form method="post" action="{% url 'enrollment_proof_verify' pk=tenant.pk proof_pk=p.pk %}">
+              {% csrf_token %}
+              <button type="submit" style="font-size:.8rem;padding:.1rem .4rem;">Verifizieren</button>
+            </form>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:#888;font-size:.9rem;">Kein Nachweis hochgeladen.</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'enrollment_proof_upload' pk=tenant.pk %}" enctype="multipart/form-data" style="margin-top:1rem;display:grid;gap:.5rem;max-width:480px;">
+      {% csrf_token %}
+      <label style="font-size:.9rem;font-weight:600;">Nachweis hochladen</label>
+      <select name="enrollment_type" required style="padding:.3rem;">
+        <option value="">— Typ wählen —</option>
+        <option value="STUDY">Studium</option>
+        <option value="APPRENTICESHIP">Ausbildung</option>
+        <option value="SCHUELER">Schüler*in</option>
+        <option value="FSJ">Freiwilliges Soziales Jahr</option>
+      </select>
+      <input name="field_of_study" type="text" placeholder="Fach / Bereich (optional)" style="padding:.3rem;">
+      <input name="educational_institution" type="text" placeholder="Bildungseinrichtung (optional)" style="padding:.3rem;">
+      <input name="valid_until" type="date" required style="padding:.3rem;">
+      <input name="proof_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+      <button type="submit" style="padding:.3rem .8rem;align-self:start;">Hochladen</button>
+    </form>
   </details>
-  {% endif %}
 
   {% if engagement %}
   <details style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
