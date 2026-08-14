@@ -1,8 +1,9 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, dashboard, enrollment_proof, notes, tenant
+from app.views import abfragen, admin_views, dashboard, enrollment_proof, landing, notes, tenant
 
 urlpatterns = [
+    path("info/", landing.landing, name="landing"),
     path("dashboard/", dashboard.dashboard, name="dashboard"),
     path("abfragen/", abfragen.abfragen_list, name="abfragen_list"),
     path("abfragen/new/", abfragen.abfrage_new, name="abfrage_new"),

@@ -4,7 +4,9 @@ from django.urls import include, path
 
 
 def _root(request):
-    return redirect("dashboard")
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+    return redirect("landing")
 
 
 urlpatterns = [

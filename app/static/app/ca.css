@@ -202,6 +202,135 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 }
 .sort-btn:hover { color: var(--ca-teal); }
 
+/* ── Landing / info page ── */
+.lp { max-width: 1000px; margin: 0 auto; }
+.lp-section { margin: 3.5rem auto 0; }
+.lp-section:first-child { margin-top: 2rem; }
+
+/* Hero */
+.lp-hero {
+  text-align: center;
+  padding: 3.5rem 1.5rem 3rem;
+  background:
+    radial-gradient(60% 120% at 50% 0%, rgba(53,173,164,0.12), rgba(53,173,164,0) 70%),
+    linear-gradient(180deg, #f5fffe 0%, #fcfcfc 100%);
+  border-radius: 14px;
+  border: 1px solid #e3f3f1;
+}
+.lp-hero-logo img { height: 64px; margin-bottom: 1.25rem; }
+.lp-hero h1 {
+  font-size: 3rem; font-weight: 700; color: var(--ca-teal);
+  letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 0.5rem;
+}
+.lp-hero .lp-tagline { font-size: 1.25rem; color: #4a4a4a; font-weight: 600; margin-bottom: 1.25rem; }
+.lp-hero p { max-width: 620px; margin: 0 auto 1.75rem; font-size: 1.05rem; line-height: 1.6; color: #555; }
+.lp-cta { display: inline-flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+.lp-cta .ca-button, .lp-cta .ca-button-outline { text-decoration: none; display: inline-block; }
+
+/* Section headings */
+.lp-h2 {
+  font-size: 1.6rem; font-weight: 700; color: var(--ca-text);
+  text-align: center; margin-bottom: 0.4rem;
+}
+.lp-h2::after {
+  content: ""; display: block; width: 48px; height: 3px;
+  background: var(--ca-teal); border-radius: 2px; margin: 0.6rem auto 0;
+}
+.lp-sub { text-align: center; color: #7a7a7a; margin-bottom: 2rem; }
+
+/* Feature cards */
+.lp-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem; }
+.lp-feature {
+  background: white; border: 1px solid #eee; border-radius: 10px;
+  padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.lp-feature:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(53,173,164,0.15); }
+.lp-feature-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: #eafaf8; color: var(--ca-teal);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 0.9rem;
+}
+.lp-feature-icon svg { width: 24px; height: 24px; }
+.lp-feature h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.4rem; }
+.lp-feature p { font-size: 0.92rem; color: #666; line-height: 1.5; }
+
+/* Tech toggles (native <details>) */
+.lp-toggle {
+  background: white; border: 1px solid #eee; border-radius: 10px;
+  margin-bottom: 0.85rem; overflow: hidden;
+}
+.lp-toggle[open] { border-color: var(--ca-teal); box-shadow: 0 2px 10px rgba(53,173,164,0.1); }
+.lp-toggle > summary {
+  list-style: none; cursor: pointer; padding: 1.1rem 1.35rem;
+  font-weight: 700; font-size: 1.02rem; color: var(--ca-text);
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.lp-toggle > summary::-webkit-details-marker { display: none; }
+.lp-toggle > summary::after {
+  content: "＋"; margin-left: auto; color: var(--ca-teal);
+  font-weight: 700; font-size: 1.2rem; transition: transform 0.2s ease;
+}
+.lp-toggle[open] > summary::after { content: "－"; }
+.lp-toggle > summary .lp-chip { margin-left: 0; }
+.lp-toggle-body { padding: 0 1.35rem 1.35rem; color: #555; line-height: 1.6; font-size: 0.95rem; }
+.lp-toggle-body p { margin-bottom: 0.75rem; }
+.lp-toggle-body ul { margin: 0.5rem 0 0.75rem 1.1rem; list-style: disc; }
+.lp-toggle-body li { margin-bottom: 0.35rem; }
+.lp-toggle-body code {
+  background: #f2f4f4; border-radius: 3px; padding: 0.1em 0.4em;
+  font-size: 0.88em; color: #2f5f5b;
+}
+.lp-toggle-body table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; }
+.lp-toggle-body th, .lp-toggle-body td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+.lp-toggle-body th { color: #7a7a7a; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.05em; }
+
+.lp-chip {
+  display: inline-block; font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 2px 8px; border-radius: 20px; background: #eafaf8; color: var(--ca-teal);
+}
+
+/* Roadmap timeline */
+.lp-timeline { position: relative; margin: 0 auto; padding-left: 2rem; }
+.lp-timeline::before {
+  content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px;
+  width: 2px; background: linear-gradient(180deg, var(--ca-teal), #cfeeeb);
+}
+.lp-phase { position: relative; margin-bottom: 1.5rem; }
+.lp-phase::before {
+  content: "✓"; position: absolute; left: -2rem; top: 0;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--ca-teal); color: white; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 3px #eafaf8;
+}
+.lp-phase h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.15rem; }
+.lp-phase h3 .lp-phase-tag { font-size: 0.72rem; color: #7a7a7a; font-weight: 600; }
+.lp-phase p { font-size: 0.92rem; color: #666; line-height: 1.5; }
+
+/* Backlog */
+.lp-tier { margin-bottom: 1.75rem; }
+.lp-tier-head { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7a7a; margin-bottom: 0.75rem; }
+.lp-backlog-item {
+  background: white; border: 1px solid #eee; border-left: 3px solid var(--ca-teal);
+  border-radius: 8px; padding: 0.9rem 1.1rem; margin-bottom: 0.6rem;
+}
+.lp-backlog-item.is-blocked { border-left-color: #d8b23a; }
+.lp-backlog-item h4 { font-size: 0.98rem; font-weight: 700; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.lp-backlog-item p { font-size: 0.88rem; color: #666; line-height: 1.45; }
+.lp-tag { display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; }
+.lp-tag-nc { background: #e3f2fd; color: #0d47a1; }
+.lp-tag-spec { background: #f3e5f5; color: #6a1b9a; }
+.lp-pts { display: inline-block; margin-left: auto; font-size: 0.72rem; font-weight: 700; color: var(--ca-teal); background: #eafaf8; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+
+.lp-note { text-align: center; color: #9a9a9a; font-size: 0.82rem; margin-top: 2rem; }
+
+@media (max-width: 600px) {
+  .lp-hero h1 { font-size: 2.2rem; }
+}
+
 /* ── Mobile ── */
 @media (max-width: 600px) {
   .ca-navbar { height: auto; flex-wrap: wrap; padding: 0.5rem 1rem; gap: 0.5rem; }
