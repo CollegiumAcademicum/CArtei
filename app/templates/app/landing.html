@@ -1,0 +1,285 @@
+{% extends "app/base.html" %}
+{% load static %}
+{% block title %}Willkommen{% endblock %}
+
+{% block content %}
+<div class="lp">
+
+  {# ── Hero ── #}
+  <section class="lp-section lp-hero">
+    <div class="lp-hero-logo">
+      <img src="https://collegiumacademicum.de/img/logo.png" alt="Collegium Academicum">
+    </div>
+    <h1>CArtei</h1>
+    <p class="lp-tagline">Die Mieter:innenverwaltung des Collegium Academicum</p>
+    <p>
+      CArtei bündelt an einem Ort, wer bei uns wohnt, wer sich wo engagiert und
+      welche Nachweise vorliegen. Alles rollenbasiert und datenschutzfreundlich:
+      Jede:r sieht genau das, was die eigene Aufgabe erfordert – nicht mehr.
+    </p>
+    <div class="lp-cta">
+      <a class="ca-button" href="{% url 'login' %}">Anmelden</a>
+      <a class="ca-button-outline" href="#roadmap">Zur Roadmap</a>
+    </div>
+  </section>
+
+  {# ── Features ── #}
+  <section class="lp-section">
+    <h2 class="lp-h2">Was CArtei kann</h2>
+    <p class="lp-sub">Die wichtigsten Bausteine – in Alltagssprache.</p>
+    <div class="lp-features">
+
+      <div class="lp-feature">
+        <div class="lp-feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+        </div>
+        <h3>Wohnen &amp; Zimmer</h3>
+        <p>Wer wohnt in welcher WG, welchem Zimmer und welchem Cluster – inklusive
+           Ein- und Auszügen sowie Untermiete.</p>
+      </div>
+
+      <div class="lp-feature">
+        <div class="lp-feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h3>Profile mit Datenschutz</h3>
+        <p>Jedes Mieter:innen-Profil zeigt Felder je nach Rolle – vom eigenen
+           Profil bis zur Miet- und Finanzverwaltung.</p>
+      </div>
+
+      <div class="lp-feature">
+        <div class="lp-feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <h3>Engagement-Abfragen</h3>
+        <p>AG- und Initiativen-Engagement erfassen, Fristen im Blick behalten und
+           pro Cluster auswerten.</p>
+      </div>
+
+      <div class="lp-feature">
+        <div class="lp-feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
+        </div>
+        <h3>Ausbildungsnachweise</h3>
+        <p>Immatrikulationsbescheinigungen selbst hochladen; die Verwaltung prüft,
+           bearbeitet und bestätigt sie.</p>
+      </div>
+
+      <div class="lp-feature">
+        <div class="lp-feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>Interne Notizen</h3>
+        <p>Admin-Kommentare zu Mieter:innen, Clustern und WGs – zugriffsgeschützt
+           und nachvollziehbar (append-only).</p>
+      </div>
+
+      <div class="lp-feature">
+        <div class="lp-feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Lückenlos protokolliert</h3>
+        <p>Jede Änderung wird auf Datenbankebene automatisch mit Zeitpunkt und
+           Urheber:in im Audit-Trail festgehalten.</p>
+      </div>
+
+    </div>
+  </section>
+
+  {# ── Under the hood (tech toggles) ── #}
+  <section class="lp-section">
+    <h2 class="lp-h2">Unter der Haube</h2>
+    <p class="lp-sub">Für die Technikbegeisterten: aufklappen und mitlesen.</p>
+
+    <details class="lp-toggle">
+      <summary>Architektur: drei Repositories <span class="lp-chip">Aufbau</span></summary>
+      <div class="lp-toggle-body">
+        <p>CArtei ist bewusst in drei eigenständige Repositories geteilt, die
+           nebeneinander entwickelt werden – klare Zuständigkeiten, sauber trennbar.</p>
+        <table>
+          <thead><tr><th>Repo</th><th>Rolle</th></tr></thead>
+          <tbody>
+            <tr><td><code>cartei_db</code></td><td>Schema – die <em>Single Source of Truth</em>. SQLAlchemy-2.0-Modelle + Alembic-Migrationen, als Paket veröffentlicht.</td></tr>
+            <tr><td><code>CArtei</code></td><td>Django-5-Webanwendung mit LDAP-Login. Liest und schreibt die Datenbank über <code>managed=False</code>-Spiegelmodelle.</td></tr>
+            <tr><td><code>cartei_deployment</code></td><td>Podman Compose + systemd auf zwei VMs (DB + App), Backups und Bootstrap-Skripte.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details class="lp-toggle">
+      <summary>Technologie-Stack <span class="lp-chip">Stack</span></summary>
+      <div class="lp-toggle-body">
+        <ul>
+          <li><strong>Sprache &amp; Tooling:</strong> Python 3.14, Paket- und Task-Runner <code>uv</code> (kein bare <code>pip</code>).</li>
+          <li><strong>Datenbank:</strong> PostgreSQL mit SQLAlchemy 2.0 (declarative, <code>Mapped[...]</code>) und Alembic-Migrationen.</li>
+          <li><strong>Web:</strong> Django 5, Server-side-Templates, Bulma + hauseigenes CA-Design.</li>
+          <li><strong>Auth:</strong> LDAP gegen FreeIPA, TLS-verifiziert über den mitgelieferten CA-Cert.</li>
+          <li><strong>Betrieb:</strong> Podman-Container, systemd, verschlüsselte Offsite-Backups.</li>
+          <li><strong>Qualität:</strong> pytest in jedem Repo, CI baut und pusht die Container-Images.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="lp-toggle">
+      <summary>Ein Schema, überall gespiegelt <span class="lp-chip">Datenmodell</span></summary>
+      <div class="lp-toggle-body">
+        <p>Das Datenmodell existiert nur an <em>einer</em> Stelle: in <code>cartei_db</code>.
+           Eine Schema-Änderung ist immer ein zweistufiger Schritt – Modell + Alembic-Migration
+           in <code>cartei_db</code>, danach das gespiegelte <code>managed=False</code>-Modell in Django.</p>
+        <p>Django besitzt hier keine Domänen-Tabellen: <code>manage.py migrate</code> verwaltet
+           ausschließlich Auth, Sessions und ContentTypes. Fremdschlüssel-Constraints gehören der
+           Datenbank, nicht dem Framework.</p>
+      </div>
+    </details>
+
+    <details class="lp-toggle">
+      <summary>Rollenbasierter Zugriff bis auf Feldebene <span class="lp-chip">Zugriff</span></summary>
+      <div class="lp-toggle-body">
+        <p>Sichtbarkeit und Editierbarkeit werden pro Feld aufgelöst (~19 Felder) – anhand der
+           LDAP-Gruppen der angemeldeten Person. Kollidieren mehrere Rollen, greift eine klare
+           Vorrang-Regel.</p>
+        <p>Views sind mit <code>@login_required</code> und einem <code>@require_group(...)</code>-Decorator
+           abgesichert; das Profilformular zeigt exakt die Felder, die man bearbeiten darf. Eine
+           schreibgeschützte Berechtigungsmatrix macht sichtbar, wer was sehen kann.</p>
+      </div>
+    </details>
+
+    <details class="lp-toggle">
+      <summary>Audit-Trail auf Datenbankebene <span class="lp-chip">Audit</span></summary>
+      <div class="lp-toggle-body">
+        <p>Jede Änderung wird per PostgreSQL-Trigger nach <code>audit_history</code> geschrieben –
+           unabhängig davon, <em>wie</em> die Zeile geändert wurde (Django-ORM, rohes SQL,
+           Migration). Die Datenbank selbst hält es fest.</p>
+        <p>Die handelnde Person wird pro Request über eine Middleware / Contextvar gesetzt, sodass
+           jeder Eintrag der angemeldeten Nutzer:in zugeordnet ist. Datumsangaben laufen durchgängig
+           im ISO-Format (YMD).</p>
+      </div>
+    </details>
+
+    <details class="lp-toggle">
+      <summary>Betrieb &amp; Deployment <span class="lp-chip">Ops</span></summary>
+      <div class="lp-toggle-body">
+        <p>Zwei getrennte VMs (Datenbank + App), betrieben mit Podman Compose. systemd-Oneshot-Services
+           wrappen <code>podman compose up/down</code>; <code>.timer</code>-Units treiben nächtliches
+           Image-Update und Backup.</p>
+        <p>Verschlüsselte Offsite-Backups landen bucket-scoped bei Cloudflare R2 (per rclone). Der
+           Deploy läuft über <code>curl | bash</code>-Bootstrap-Skripte; ein <code>operations.md</code>-Runbook
+           dokumentiert den Betrieb.</p>
+      </div>
+    </details>
+  </section>
+
+  {# ── Roadmap ── #}
+  <section class="lp-section" id="roadmap">
+    <h2 class="lp-h2">Roadmap &amp; Status</h2>
+    <p class="lp-sub">Wo wir stehen – und was als Nächstes kommt.</p>
+
+    <h3 class="lp-tier-head" style="text-align:center;margin-bottom:1.75rem;">✅ Bereits gebaut &amp; im Einsatz</h3>
+    <div class="lp-timeline">
+      <div class="lp-phase">
+        <h3>Datenbank-Fundament <span class="lp-phase-tag">cartei_db</span></h3>
+        <p>Ein zentrales Schema (Building, WG, Room, Tenant, AGAbfrage, EnrollmentProof, InternalNote …),
+           SQLAlchemy 2.0 + Alembic, plus vollständiges Auditing über Postgres-Trigger.</p>
+      </div>
+      <div class="lp-phase">
+        <h3>Web-App-Kern <span class="lp-phase-tag">CArtei</span></h3>
+        <p>Django 5 mit LDAP-Login, <code>managed=False</code>-Spiegelmodellen, CA-Design und CI.
+           Inklusive Dashboard, Engagement-Abfragen und Cluster-Auswertung.</p>
+      </div>
+      <div class="lp-phase">
+        <h3>Profile &amp; rollenbasierter Zugriff</h3>
+        <p>Feld-Zugriffsmatrix (~19 Felder), rollen-getrimmtes Profilformular, editierbare
+           Zimmerzuordnung, Untermiete und eine Berechtigungsmatrix für Admins.</p>
+      </div>
+      <div class="lp-phase">
+        <h3>Interne Notizen</h3>
+        <p>Polymorphe <code>internal_note</code>-Tabelle mit LDAP-geschütztem Zugriff, append-only
+           und Soft-Delete – angezeigt auf der Profilseite.</p>
+      </div>
+      <div class="lp-phase">
+        <h3>Ausbildungsnachweise</h3>
+        <p>Self-Service-Upload durch Mieter:innen, Prüfung und Bearbeitung durch die Verwaltung,
+           automatische Berechnung des Gültigkeitsendes (31.3. / 30.9.).</p>
+      </div>
+      <div class="lp-phase">
+        <h3>Deployment &amp; Betrieb <span class="lp-phase-tag">live in Produktion</span></h3>
+        <p>Zwei-VM-Setup mit Podman &amp; systemd, verschlüsselte Offsite-Backups und ein
+           dokumentiertes Runbook. Die aktuellen Builds laufen produktiv.</p>
+      </div>
+    </div>
+
+    <h3 class="lp-tier-head" style="text-align:center;margin:2.5rem 0 1.5rem;">⬜ Backlog – geplant</h3>
+
+    <div class="lp-tier">
+      <div class="lp-tier-head">P1 · Produkt-Wunsch, teils gebaut</div>
+      <div class="lp-backlog-item">
+        <h4>Nachweis-Automatisierung &amp; MV-Tooling <span class="lp-tag lp-tag-nc">NC</span> <span class="lp-pts">21 · XXL</span></h4>
+        <p>Nächtliche Auto-Prüfung von Nachweisen (PDF-Text bzw. Vision-Modell), Alarm bei nicht
+           lesbaren Dokumenten und ein eigenes Nachweise-Dashboard.</p>
+      </div>
+      <div class="lp-backlog-item">
+        <h4>Briefkastenabfrage → CArtei <span class="lp-tag lp-tag-nc">NC</span> <span class="lp-pts">8 · L</span></h4>
+        <p>Die Briefkasten-Umfrage als Abfrage-Workflow abbilden; die Felder auf <code>Tenant</code>
+           existieren bereits.</p>
+      </div>
+      <div class="lp-backlog-item">
+        <h4>Soli-Miete: Verwaltung + Min/Max <span class="lp-tag lp-tag-nc">NC</span> <span class="lp-tag lp-tag-spec">spec</span> <span class="lp-pts">5 · M</span></h4>
+        <p>Management-Oberfläche und eine <code>CHECK</code>-Grenze, sobald die Limits feststehen.</p>
+      </div>
+      <div class="lp-backlog-item">
+        <h4>Reporting &amp; Statistiken <span class="lp-tag lp-tag-nc">NC</span> <span class="lp-tag lp-tag-spec">spec</span> <span class="lp-pts">13 · XL</span></h4>
+        <p>Ein Reports-Bereich für Nachweise, Engagement-Statistiken und Point-in-Time-History
+           (die Audit-Daten liegen bereits vor, es fehlt der Viewer).</p>
+      </div>
+    </div>
+
+    <div class="lp-tier">
+      <div class="lp-tier-head">P2 · Erweiterungen, klein oder schema-ready</div>
+      <div class="lp-backlog-item">
+        <h4>Benachrichtigungen <span class="lp-tag lp-tag-spec">spec</span> <span class="lp-pts">8 · L</span></h4>
+        <p>E-Mail-Erinnerungen für Engagement-Fristen und ablaufende Nachweise.</p>
+      </div>
+      <div class="lp-backlog-item">
+        <h4>Notizen an Clustern &amp; WGs <span class="lp-tag lp-tag-spec">spec</span> <span class="lp-pts">5 · M</span></h4>
+        <p>Das <code>internal_note</code>-Schema unterstützt diese Subjekte bereits – es fehlt nur die UI.</p>
+      </div>
+      <div class="lp-backlog-item">
+        <h4>Dashboard-Extras <span class="lp-tag lp-tag-spec">spec</span> <span class="lp-pts">5 · M</span></h4>
+        <p>Mehrere gleichzeitig offene Abfragen und ein modulares Widget-Grid.</p>
+      </div>
+    </div>
+
+    <div class="lp-tier">
+      <div class="lp-tier-head">P3 · Größer / grundlegend</div>
+      <div class="lp-backlog-item">
+        <h4>Miet-/Nebenkostenabrechnung <span class="lp-tag lp-tag-spec">spec</span> <span class="lp-pts">21 · XXL</span></h4>
+        <p><code>RoomRent</code> (temporal) + <code>Nebenkostenabrechnung</code> in <code>cartei_db</code>;
+           schaltet die Finanzierung-Rolle und den Zahlungsbereich frei.</p>
+      </div>
+      <div class="lp-backlog-item">
+        <h4>Einzugs-/Auszugs-Workflow <span class="lp-tag lp-tag-spec">spec</span> <span class="lp-pts">13 · XL</span></h4>
+        <p>Onboarding und Offboarding von Mieter:innen als geführter Ablauf.</p>
+      </div>
+      <div class="lp-backlog-item">
+        <h4>Raum-Management-UI <span class="lp-tag lp-tag-spec">spec</span> <span class="lp-pts">8 · L</span></h4>
+        <p>Gebäude, WGs und Zimmer selbst verwalten – nicht nur deren Zuordnung.</p>
+      </div>
+    </div>
+
+    <div class="lp-tier">
+      <div class="lp-tier-head">Blockiert · Design-Entscheidung nötig</div>
+      <div class="lp-backlog-item is-blocked">
+        <h4>Bewerberportal <span class="lp-tag lp-tag-nc">NC</span> <span class="lp-pts">TBD · ≥13</span></h4>
+        <p>Bewerber:innen haben die Verschwiegenheitserklärung noch nicht unterschrieben – die
+           Voraussetzung, um aus LDAP nach CArtei geladen zu werden. Braucht einen eigenen
+           Datensatz-Typ, der nicht an LDAP gekoppelt ist.</p>
+      </div>
+    </div>
+
+    <p class="lp-note">Priorisierung ist ein Vorschlag – umsortierbar, wie das Team es sieht.
+       Schätzungen sind grobe Story Points (Fibonacci), Stand 14.08.2026.</p>
+  </section>
+
+</div>
+{% endblock %}
