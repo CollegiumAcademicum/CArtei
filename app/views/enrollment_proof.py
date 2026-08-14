@@ -1,14 +1,18 @@
 import datetime
+import mimetypes
 
 from django.conf import settings as django_settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
 from app.models import EnrollmentProof, EnrollmentType, Tenant
+
+MAX_PROOF_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 def _caller(user):
@@ -28,6 +32,9 @@ def upload_proof(request, pk):
     f = request.FILES.get("proof_file")
     if not f:
         return HttpResponseBadRequest()
+    if f.size > MAX_PROOF_SIZE:
+        messages.error(request, "Die Datei ist zu groß (max. 10 MB).")
+        return redirect("tenant_detail", pk=pk)
 
     enrollment_type = request.POST.get("enrollment_type", "")
     if enrollment_type not in EnrollmentType.values:
@@ -104,3 +111,17 @@ def edit_proof(request, pk, proof_pk):
         last_edited_by_id=caller.pk,
     )
     return redirect("tenant_detail", pk=pk)
+
+
+@login_required
+def download_proof(request, pk, proof_pk):
+    caller = _caller(request.user)
+    if caller is None:
+        raise PermissionDenied
+    if caller.pk != pk and not _is_mv(request.user):
+        raise PermissionDenied
+    proof = get_object_or_404(EnrollmentProof, pk=proof_pk, tenant_id=pk)
+    content_type, _ = mimetypes.guess_type(proof.file_name)
+    response = HttpResponse(bytes(proof.file_data), content_type=content_type or "application/octet-stream")
+    response["Content-Disposition"] = f'inline; filename="{proof.file_name}"'
+    return response

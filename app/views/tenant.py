@@ -127,9 +127,12 @@ def tenant_detail(request: HttpRequest, pk: int):
     ctx["active_assignments"] = active_assignments
 
     if {"owner", "mietverwaltung", "admin"} & roles:
-        ctx["enrollment_proofs"] = list(EnrollmentProof.objects.filter(tenant=tenant))
+        proofs = list(EnrollmentProof.objects.filter(tenant=tenant).order_by("-uploaded_at"))
+        ctx["pending_proofs"] = [p for p in proofs if not p.verified_at or p.needs_human_review]
+        ctx["verified_proofs"] = [p for p in proofs if p.verified_at and not p.needs_human_review]
     else:
-        ctx["enrollment_proofs"] = []
+        ctx["pending_proofs"] = []
+        ctx["verified_proofs"] = []
     if {"owner", "cluster", "admin"} & roles:
         ctx["engagement"] = list(
             AGAbfrageResult.objects.filter(tenant=tenant).select_related("abfrage")

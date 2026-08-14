@@ -178,10 +178,11 @@
   {% endfor %}
 
   <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="font-weight:600;cursor:pointer;">Immatrikulationsnachweise</summary>
+    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;"><span>Ausbildungsnachweis</span></summary>
 
-    {% if enrollment_proofs %}
-    <table style="width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.9rem;">
+    <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Ausstehend</p>
+    {% if pending_proofs %}
+    <table style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
       <thead>
         <tr>
           <th style="text-align:left;padding:.25rem .5rem;">Datei</th>
@@ -189,35 +190,27 @@
           <th style="text-align:left;padding:.25rem .5rem;">Fach / Bereich</th>
           <th style="text-align:left;padding:.25rem .5rem;">Einrichtung</th>
           <th style="text-align:left;padding:.25rem .5rem;">Gültig bis</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Hochgeladen</th>
           <th style="text-align:left;padding:.25rem .5rem;">Status</th>
           {% if can_write_mv %}<th></th>{% endif %}
         </tr>
       </thead>
       <tbody>
-        {% for p in enrollment_proofs %}
+        {% for p in pending_proofs %}
         <tr style="{% if p.needs_human_review %}background:#fff8e1;{% endif %}">
-          <td style="padding:.25rem .5rem;">{{ p.file_name }}</td>
+          <td style="padding:.25rem .5rem;"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);">{{ p.file_name }}</a></td>
           <td style="padding:.25rem .5rem;">{{ p.get_enrollment_type_display }}</td>
           <td style="padding:.25rem .5rem;">{{ p.field_of_study|default:"—" }}</td>
           <td style="padding:.25rem .5rem;">{{ p.educational_institution|default:"—" }}</td>
           <td style="padding:.25rem .5rem;">{{ p.valid_until }}</td>
-          <td style="padding:.25rem .5rem;">
-            {% if p.needs_human_review %}
-              ⚠ Prüfung erforderlich
-            {% elif p.verified_at %}
-              ✓ Verifiziert ({{ p.verified_at|date:"d.m.Y" }})
-            {% else %}
-              Ausstehend
-            {% endif %}
-          </td>
+          <td style="padding:.25rem .5rem;">{{ p.uploaded_at|date:"d.m.Y" }}</td>
+          <td style="padding:.25rem .5rem;">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% else %}Ausstehend{% endif %}</td>
           {% if can_write_mv %}
           <td style="padding:.25rem .5rem;">
-            {% if not p.verified_at or p.needs_human_review %}
             <form method="post" action="{% url 'enrollment_proof_verify' pk=tenant.pk proof_pk=p.pk %}">
               {% csrf_token %}
               <button type="submit" style="font-size:.8rem;padding:.1rem .4rem;">Verifizieren</button>
             </form>
-            {% endif %}
           </td>
           {% endif %}
         </tr>
@@ -225,7 +218,39 @@
       </tbody>
     </table>
     {% else %}
-    <p style="color:#888;font-size:.9rem;">Kein Nachweis hochgeladen.</p>
+    <p style="color:#888;font-size:.9rem;">Keine ausstehenden Nachweise.</p>
+    {% endif %}
+
+    <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Verifiziert</p>
+    {% if verified_proofs %}
+    <table style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:.25rem .5rem;">Datei</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Typ</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Fach / Bereich</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Einrichtung</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Gültig bis</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Hochgeladen</th>
+          <th style="text-align:left;padding:.25rem .5rem;">Verifiziert am</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in verified_proofs %}
+        <tr>
+          <td style="padding:.25rem .5rem;"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);">{{ p.file_name }}</a></td>
+          <td style="padding:.25rem .5rem;">{{ p.get_enrollment_type_display }}</td>
+          <td style="padding:.25rem .5rem;">{{ p.field_of_study|default:"—" }}</td>
+          <td style="padding:.25rem .5rem;">{{ p.educational_institution|default:"—" }}</td>
+          <td style="padding:.25rem .5rem;">{{ p.valid_until }}</td>
+          <td style="padding:.25rem .5rem;">{{ p.uploaded_at|date:"d.m.Y" }}</td>
+          <td style="padding:.25rem .5rem;">{{ p.verified_at|date:"d.m.Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:#888;font-size:.9rem;">Noch keine verifizierten Nachweise.</p>
     {% endif %}
 
     {% if can_upload %}
@@ -243,6 +268,7 @@
       <input name="educational_institution" type="text" placeholder="Bildungseinrichtung (optional)" style="padding:.3rem;">
       <input name="valid_until" type="date" required style="padding:.3rem;">
       <input name="proof_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+      <small style="color:#888;">PDF, JPG oder PNG, max. 10 MB</small>
       <button type="submit" style="padding:.3rem .8rem;align-self:start;">Hochladen</button>
     </form>
     {% endif %}

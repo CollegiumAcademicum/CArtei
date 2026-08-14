@@ -15,6 +15,7 @@ urlpatterns = [
     path("tenants/<int:pk>/enrollment-proof/upload/", enrollment_proof.upload_proof, name="enrollment_proof_upload"),
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/verify/", enrollment_proof.verify_proof, name="enrollment_proof_verify"),
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/edit/", enrollment_proof.edit_proof, name="enrollment_proof_edit"),
+    path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/download/", enrollment_proof.download_proof, name="enrollment_proof_download"),
     path("notes/add/", notes.add_note, name="note_add"),
     path("notes/<int:pk>/delete/", notes.delete_note, name="note_delete"),
     path("admin/", admin_views.admin_portal, name="admin_portal"),
