@@ -254,21 +254,23 @@
     {% endif %}
 
     {% if can_upload %}
-    <form method="post" action="{% url 'enrollment_proof_upload' pk=tenant.pk %}" enctype="multipart/form-data" style="margin-top:1rem;display:grid;gap:.5rem;max-width:480px;">
+    <form method="post" action="{% url 'enrollment_proof_upload' pk=tenant.pk %}" enctype="multipart/form-data" style="margin-top:1rem;">
       {% csrf_token %}
-      <label style="font-size:.9rem;font-weight:600;">Nachweis hochladen</label>
-      <select name="enrollment_type" required style="padding:.3rem;">
-        <option value="">— Typ wählen —</option>
-        <option value="STUDY">Studium</option>
-        <option value="APPRENTICESHIP">Ausbildung</option>
-        <option value="SCHUELER">Schüler*in</option>
-        <option value="FSJ">Freiwilliges Soziales Jahr</option>
-      </select>
-      <input name="field_of_study" type="text" placeholder="Fach / Bereich (optional)" style="padding:.3rem;">
-      <input name="educational_institution" type="text" placeholder="Bildungseinrichtung (optional)" style="padding:.3rem;">
-      <input name="proof_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
-      <small style="color:#888;">PDF, JPG oder PNG, max. 10 MB</small>
-      <button type="submit" class="ca-button" style="align-self:start;">Hochladen</button>
+      <label style="font-size:.9rem;font-weight:600;display:block;margin-bottom:.4rem;">Nachweis hochladen</label>
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
+        <select name="enrollment_type" required style="padding:.3rem;">
+          <option value="">— Typ wählen —</option>
+          <option value="STUDY">Studium</option>
+          <option value="APPRENTICESHIP">Ausbildung</option>
+          <option value="SCHUELER">Schüler*in</option>
+          <option value="FSJ">Freiwilliges Soziales Jahr</option>
+        </select>
+        <input name="field_of_study" type="text" placeholder="Fach / Bereich (optional)" style="padding:.3rem;flex:1;min-width:140px;">
+        <input name="educational_institution" type="text" placeholder="Bildungseinrichtung (optional)" style="padding:.3rem;flex:1;min-width:160px;">
+        <input name="proof_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:160px;">
+        <button type="submit" class="ca-button">Hochladen</button>
+      </div>
+      <small style="color:#888;display:block;margin-top:.25rem;">PDF, JPG oder PNG, max. 10 MB</small>
     </form>
     {% endif %}
   </details>
