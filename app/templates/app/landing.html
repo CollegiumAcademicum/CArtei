@@ -26,7 +26,6 @@
   {# ── Features ── #}
   <section class="lp-section">
     <h2 class="lp-h2">Was CArtei kann</h2>
-    <p class="lp-sub">Die wichtigsten Bausteine – in Alltagssprache.</p>
     <div class="lp-features">
 
       <div class="lp-feature">
@@ -43,8 +42,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
         <h3>Profile mit Datenschutz</h3>
-        <p>Jedes Mieter:innen-Profil zeigt Felder je nach Rolle – vom eigenen
-           Profil bis zur Miet- und Finanzverwaltung.</p>
+        <p>Jedes Mieter:innen-Profil zeigt Anderen nur das, was sie wissen müssen. Der Personenkreis, der sensible Daten einsehen kann wird möglichst klein gehalten</p>
       </div>
 
       <div class="lp-feature">
@@ -70,31 +68,30 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </div>
         <h3>Interne Notizen</h3>
-        <p>Admin-Kommentare zu Mieter:innen, Clustern und WGs – zugriffsgeschützt
-           und nachvollziehbar (append-only).</p>
+        <p>AGs und Gremien können sich interne Notizen über Mietende, WGs, Cluster, Gebäude, Abfragen, etc... anlegen – zugriffsgeschützt
+           und nachvollziehbar.</p>
       </div>
 
       <div class="lp-feature">
         <div class="lp-feature-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
-        <h3>Lückenlos protokolliert</h3>
-        <p>Jede Änderung wird auf Datenbankebene automatisch mit Zeitpunkt und
-           Urheber:in im Audit-Trail festgehalten.</p>
+        <h3>Automatisch protokolliert</h3>
+        <p>Änderungen werden auf Datenbankebene automatisch mit Zeitpunkt und
+           Urheber:in im Audit-Trail festgehalten, sodass änderungen nachvollziehbar sind. (extrem personenbezogene Daten wie z.B. das Geschlecht/FLINTA* Status wird davon ausgenommen)</p>
       </div>
 
     </div>
   </section>
 
-  {# ── Under the hood (tech toggles) ── #}
+  {# ── Under the hood ── #}
   <section class="lp-section">
     <h2 class="lp-h2">Unter der Haube</h2>
-    <p class="lp-sub">Für die Technikbegeisterten: aufklappen und mitlesen.</p>
 
     <details class="lp-toggle">
-      <summary>Architektur: drei Repositories <span class="lp-chip">Aufbau</span></summary>
+      <summary>Architektur: vier Repositories <span class="lp-chip">Aufbau</span></summary>
       <div class="lp-toggle-body">
-        <p>CArtei ist bewusst in drei eigenständige Repositories geteilt, die
+        <p>CArtei ist bewusst in vier eigenständige Repositories geteilt, die
            nebeneinander entwickelt werden – klare Zuständigkeiten, sauber trennbar.</p>
         <table>
           <thead><tr><th>Repo</th><th>Rolle</th></tr></thead>
@@ -102,6 +99,7 @@
             <tr><td><code>cartei_db</code></td><td>Schema – die <em>Single Source of Truth</em>. SQLAlchemy-2.0-Modelle + Alembic-Migrationen, als Paket veröffentlicht.</td></tr>
             <tr><td><code>CArtei</code></td><td>Django-5-Webanwendung mit LDAP-Login. Liest und schreibt die Datenbank über <code>managed=False</code>-Spiegelmodelle.</td></tr>
             <tr><td><code>cartei_deployment</code></td><td>Podman Compose + systemd auf zwei VMs (DB + App), Backups und Bootstrap-Skripte.</td></tr>
+            <tr><td><code>cartei_vision</code></td><td>Automatische Prüfung von Immatrikulationsbescheinigungen der Uni Heidelberg über deren digitale Signatur. <em>Neu – noch im Aufbau.</em></td></tr>
           </tbody>
         </table>
       </div>
@@ -214,9 +212,12 @@
     <div class="lp-tier">
       <div class="lp-tier-head">P1 · Produkt-Wunsch, teils gebaut</div>
       <div class="lp-backlog-item">
-        <h4>Nachweis-Automatisierung &amp; MV-Tooling <span class="lp-tag lp-tag-nc">NC</span> <span class="lp-pts">21 · XXL</span></h4>
-        <p>Nächtliche Auto-Prüfung von Nachweisen (PDF-Text bzw. Vision-Modell), Alarm bei nicht
-           lesbaren Dokumenten und ein eigenes Nachweise-Dashboard.</p>
+        <h4>Nachweis-Automatisierung &amp; MV-Tooling <span class="lp-phase-tag">cartei_vision</span> <span class="lp-tag lp-tag-nc">NC</span> <span class="lp-pts">21 · XXL</span></h4>
+        <p>Nächtliche Auto-Prüfung von Nachweisen. Zuerst die Immatrikulationsbescheinigungen der
+           Uni Heidelberg (~75 % aller Nachweise), die von der Uni <strong>digital signiert</strong>
+           sind – die Signatur wird geprüft und der Nachweis automatisch bestätigt; die übrigen
+           Institute prüft die Mietverwaltung weiterhin von Hand. Dazu Alarm bei nicht prüfbaren
+           Dokumenten und ein eigenes Nachweise-Dashboard.</p>
       </div>
       <div class="lp-backlog-item">
         <h4>Briefkastenabfrage → CArtei <span class="lp-tag lp-tag-nc">NC</span> <span class="lp-pts">8 · L</span></h4>
