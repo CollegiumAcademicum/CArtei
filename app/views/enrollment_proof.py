@@ -15,6 +15,16 @@ from app.models import EnrollmentProof, EnrollmentType, Tenant
 MAX_PROOF_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
+def _next_semester_end(today=None):
+    today = today or datetime.date.today()
+    y = today.year
+    if today <= datetime.date(y, 3, 31):
+        return datetime.date(y, 3, 31)
+    if today <= datetime.date(y, 9, 30):
+        return datetime.date(y, 9, 30)
+    return datetime.date(y + 1, 3, 31)
+
+
 def _caller(user):
     return Tenant.objects.filter(intranet_username=user.username).first()
 
@@ -40,11 +50,6 @@ def upload_proof(request, pk):
     if enrollment_type not in EnrollmentType.values:
         return HttpResponseBadRequest()
 
-    try:
-        datetime.date.fromisoformat(request.POST.get("valid_until", ""))
-    except ValueError:
-        return HttpResponseBadRequest()
-
     EnrollmentProof.objects.create(
         tenant=tenant,
         enrollment_type=enrollment_type,
@@ -54,7 +59,7 @@ def upload_proof(request, pk):
         file_data=f.read(),
         uploaded_at=now(),
         uploaded_by=caller,
-        valid_until=request.POST.get("valid_until"),
+        valid_until=_next_semester_end(),
     )
     return redirect("tenant_detail", pk=pk)
 
@@ -98,15 +103,10 @@ def edit_proof(request, pk, proof_pk):
     enrollment_type = request.POST.get("enrollment_type", proof.enrollment_type)
     if enrollment_type not in EnrollmentType.values:
         return HttpResponseBadRequest()
-    try:
-        datetime.date.fromisoformat(request.POST.get("valid_until", str(proof.valid_until)))
-    except ValueError:
-        return HttpResponseBadRequest()
     EnrollmentProof.objects.filter(pk=proof.pk).update(
         enrollment_type=enrollment_type,
         field_of_study=request.POST.get("field_of_study", proof.field_of_study) or None,
         educational_institution=request.POST.get("educational_institution", proof.educational_institution) or None,
-        valid_until=request.POST.get("valid_until", str(proof.valid_until)),
         last_edited_at=now(),
         last_edited_by_id=caller.pk,
     )
