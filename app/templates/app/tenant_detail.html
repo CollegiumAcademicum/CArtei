@@ -204,7 +204,7 @@
           <td style="padding:.25rem .5rem;">{{ p.educational_institution|default:"—" }}</td>
           <td style="padding:.25rem .5rem;">{{ p.valid_until }}</td>
           <td style="padding:.25rem .5rem;">{{ p.uploaded_at|date:"d.m.Y" }}</td>
-          <td style="padding:.25rem .5rem;">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% else %}Ausstehend{% endif %}</td>
+          <td style="padding:.25rem .5rem;">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% if p.review_reason %}<br><small style="color:#a15c00;">{{ p.review_reason }}</small>{% endif %}{% else %}Ausstehend{% endif %}</td>
           {% if can_write_mv %}
           <td style="padding:.25rem .5rem;">
             <button type="button" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;" onclick="document.getElementById('verify-form-{{ p.pk }}').hidden=!document.getElementById('verify-form-{{ p.pk }}').hidden">Verifizieren</button>
