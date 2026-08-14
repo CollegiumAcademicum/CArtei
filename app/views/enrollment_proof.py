@@ -81,7 +81,18 @@ def verify_proof(request, pk, proof_pk):
     caller = _caller(request.user)
     # caller may be None (MV staff without Tenant row); verified_by_id will be NULL
     proof = get_object_or_404(EnrollmentProof, pk=proof_pk, tenant_id=pk)
+    enrollment_type = request.POST.get("enrollment_type", proof.enrollment_type)
+    if enrollment_type not in EnrollmentType.values:
+        enrollment_type = proof.enrollment_type
+    try:
+        valid_until = datetime.date.fromisoformat(request.POST.get("valid_until", ""))
+    except ValueError:
+        valid_until = proof.valid_until
     EnrollmentProof.objects.filter(pk=proof.pk).update(
+        enrollment_type=enrollment_type,
+        field_of_study=request.POST.get("field_of_study", proof.field_of_study) or None,
+        educational_institution=request.POST.get("educational_institution", proof.educational_institution) or None,
+        valid_until=valid_until,
         verified_at=now(),
         verified_by_id=caller.pk if caller else None,
         needs_human_review=False,

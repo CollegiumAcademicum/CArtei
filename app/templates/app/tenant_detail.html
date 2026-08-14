@@ -207,13 +207,30 @@
           <td style="padding:.25rem .5rem;">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% else %}Ausstehend{% endif %}</td>
           {% if can_write_mv %}
           <td style="padding:.25rem .5rem;">
-            <form method="post" action="{% url 'enrollment_proof_verify' pk=tenant.pk proof_pk=p.pk %}">
-              {% csrf_token %}
-              <button type="submit" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;">Verifizieren</button>
-            </form>
+            <button type="button" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;" onclick="document.getElementById('verify-form-{{ p.pk }}').hidden=!document.getElementById('verify-form-{{ p.pk }}').hidden">Verifizieren</button>
           </td>
           {% endif %}
         </tr>
+        {% if can_write_mv %}
+        <tr id="verify-form-{{ p.pk }}" hidden>
+          <td colspan="8" style="padding:.5rem;background:#f7f7f7;border-top:1px solid #eee;">
+            <form method="post" action="{% url 'enrollment_proof_verify' pk=tenant.pk proof_pk=p.pk %}" style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
+              {% csrf_token %}
+              <select name="enrollment_type" style="padding:.25rem;">
+                <option value="STUDY" {% if p.enrollment_type == "STUDY" %}selected{% endif %}>Studium</option>
+                <option value="APPRENTICESHIP" {% if p.enrollment_type == "APPRENTICESHIP" %}selected{% endif %}>Ausbildung</option>
+                <option value="SCHUELER" {% if p.enrollment_type == "SCHUELER" %}selected{% endif %}>Schüler*in</option>
+                <option value="FSJ" {% if p.enrollment_type == "FSJ" %}selected{% endif %}>FSJ</option>
+              </select>
+              <input name="field_of_study" type="text" value="{{ p.field_of_study|default:'' }}" placeholder="Fach / Bereich" style="padding:.25rem;flex:1;min-width:120px;">
+              <input name="educational_institution" type="text" value="{{ p.educational_institution|default:'' }}" placeholder="Bildungseinrichtung" style="padding:.25rem;flex:1;min-width:150px;">
+              <input name="valid_until" type="date" value="{{ p.valid_until|date:'Y-m-d' }}" required style="padding:.25rem;">
+              <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Bestätigen</button>
+              <button type="button" class="ca-button-outline" style="font-size:.8rem;padding:.2rem .6rem;" onclick="this.closest('tr').hidden=true">Abbrechen</button>
+            </form>
+          </td>
+        </tr>
+        {% endif %}
         {% endfor %}
       </tbody>
     </table>
