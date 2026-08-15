@@ -271,7 +271,7 @@
           <td style="padding:.25rem .5rem;">
             <form method="post" action="{% url 'enrollment_proof_revert' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" onsubmit="return confirm('Verifizierung aufheben? Der Nachweis wird erneut automatisch geprüft.');">
               {% csrf_token %}
-              <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;">Verifizierung aufheben</button>
+              <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;" title="Verifizierung aufheben – erneut automatisch prüfen">Aufheben</button>
             </form>
           </td>
           {% endif %}
