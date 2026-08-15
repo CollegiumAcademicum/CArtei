@@ -393,16 +393,27 @@
 (function() {
   var id = sessionStorage.getItem('restoreSection');
   if (!id) return;
+  var y = sessionStorage.getItem('restoreScroll');
   sessionStorage.removeItem('restoreSection');
+  sessionStorage.removeItem('restoreScroll');
   var el = document.getElementById(id);
-  if (el) { el.open = true; el.scrollIntoView({behavior: 'instant', block: 'start'}); }
+  if (el) el.open = true;
+  if (y !== null) {
+    y = parseInt(y, 10);
+    window.scrollTo(0, y);
+    // Re-apply after the section's expand animation grows the document.
+    setTimeout(function() { window.scrollTo(0, y); }, 300);
+  }
 })();
 
-// Any form submit: remember the enclosing section so the post-redirect reload
-// reopens it and scrolls back instead of jumping to the top.
+// Any form submit: remember the enclosing section and exact scroll offset so the
+// post-redirect reload restores the position instead of jumping to the top.
 document.addEventListener('submit', function(e) {
   var section = e.target.closest('details[id]');
-  if (section) sessionStorage.setItem('restoreSection', section.id);
+  if (section) {
+    sessionStorage.setItem('restoreSection', section.id);
+    sessionStorage.setItem('restoreScroll', window.scrollY);
+  }
 }, true);
 
 document.querySelectorAll('details.ca-section').forEach(function(section) {
