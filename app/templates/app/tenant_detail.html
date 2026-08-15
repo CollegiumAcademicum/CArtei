@@ -206,8 +206,12 @@
           <td style="padding:.25rem .5rem;">{{ p.uploaded_at|date:"d.m.Y" }}</td>
           <td style="padding:.25rem .5rem;">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% if p.review_reason %}<br><small style="color:#a15c00;">{{ p.review_reason }}</small>{% endif %}{% else %}Ausstehend{% endif %}</td>
           {% if can_write_mv %}
-          <td style="padding:.25rem .5rem;">
+          <td style="padding:.25rem .5rem;white-space:nowrap;">
             <button type="button" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;" onclick="document.getElementById('verify-form-{{ p.pk }}').hidden=!document.getElementById('verify-form-{{ p.pk }}').hidden">Verifizieren</button>
+            <form method="post" action="{% url 'enrollment_proof_reject' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" onsubmit="return confirm('Diesen Nachweis ablehnen und löschen?');">
+              {% csrf_token %}
+              <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;">Ablehnen</button>
+            </form>
           </td>
           {% endif %}
         </tr>
@@ -250,6 +254,7 @@
           <th style="text-align:left;padding:.25rem .5rem;">Gültig bis</th>
           <th style="text-align:left;padding:.25rem .5rem;">Hochgeladen</th>
           <th style="text-align:left;padding:.25rem .5rem;">Verifiziert am</th>
+          {% if can_write_mv %}<th></th>{% endif %}
         </tr>
       </thead>
       <tbody>
@@ -262,6 +267,14 @@
           <td style="padding:.25rem .5rem;">{{ p.valid_until }}</td>
           <td style="padding:.25rem .5rem;">{{ p.uploaded_at|date:"d.m.Y" }}</td>
           <td style="padding:.25rem .5rem;">{{ p.verified_at|date:"d.m.Y" }}</td>
+          {% if can_write_mv %}
+          <td style="padding:.25rem .5rem;">
+            <form method="post" action="{% url 'enrollment_proof_revert' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" onsubmit="return confirm('Verifizierung aufheben? Der Nachweis wird erneut automatisch geprüft.');">
+              {% csrf_token %}
+              <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;">Verifizierung aufheben</button>
+            </form>
+          </td>
+          {% endif %}
         </tr>
         {% endfor %}
       </tbody>
