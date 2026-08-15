@@ -148,7 +148,7 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   background: #faf6ec; border: 1px solid #ece3cf; border-radius: 6px;
   padding: 0.25rem 0.75rem 0.6rem; margin-bottom: 0.25rem;
 }
-.ca-notes-panel:not(.open) .ca-notes-inner { margin-bottom: 0; }
+.ca-notes-panel:not(.open) .ca-notes-inner { margin-bottom: 0; background: none; border-color: transparent; }
 
 /* Animate native <details> expansion. Progressive enhancement: browsers
    without ::details-content / interpolate-size just toggle instantly.
