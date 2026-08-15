@@ -143,7 +143,12 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   transition: grid-template-rows 0.25s ease;
 }
 .ca-notes-panel.open { grid-template-rows: 1fr; }
-.ca-notes-inner { overflow: hidden; min-height: 0; }
+.ca-notes-inner {
+  overflow: hidden; min-height: 0;
+  background: #faf6ec; border: 1px solid #ece3cf; border-radius: 6px;
+  padding: 0.25rem 0.75rem 0.6rem; margin-bottom: 0.25rem;
+}
+.ca-notes-panel:not(.open) .ca-notes-inner { margin-bottom: 0; }
 
 /* Animate native <details> expansion. Progressive enhancement: browsers
    without ::details-content / interpolate-size just toggle instantly.
