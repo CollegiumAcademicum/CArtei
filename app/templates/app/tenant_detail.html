@@ -182,6 +182,7 @@
 
     <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Ausstehend</p>
     {% if pending_proofs %}
+    <div style="overflow-x:auto;">
     <table style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
       <thead>
         <tr>
@@ -238,12 +239,14 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
     {% else %}
     <p style="color:#888;font-size:.9rem;">Keine ausstehenden Nachweise.</p>
     {% endif %}
 
     <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Verifiziert</p>
     {% if verified_proofs %}
+    <div style="overflow-x:auto;">
     <table style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
       <thead>
         <tr>
@@ -279,6 +282,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
     {% else %}
     <p style="color:#888;font-size:.9rem;">Noch keine verifizierten Nachweise.</p>
     {% endif %}
