@@ -186,7 +186,7 @@
   </details>
   {% endfor %}
 
-  <details open class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+  <details open id="section-proofs" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
       <span>Ausbildungsnachweis</span>
       {% if can_write_cluster %}
@@ -359,7 +359,7 @@
   </details>
 
   {% if engagement %}
-  <details class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+  <details id="section-engagement" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;"><span>Engagement</span></summary>
     <div style="overflow-x:auto;margin-top:.5rem;">
       <table class="table is-fullwidth is-striped is-hoverable" style="font-size:.9rem;">
@@ -397,6 +397,13 @@
   var el = document.getElementById(id);
   if (el) { el.open = true; el.scrollIntoView({behavior: 'instant', block: 'start'}); }
 })();
+
+// Any form submit: remember the enclosing section so the post-redirect reload
+// reopens it and scrolls back instead of jumping to the top.
+document.addEventListener('submit', function(e) {
+  var section = e.target.closest('details[id]');
+  if (section) sessionStorage.setItem('restoreSection', section.id);
+}, true);
 
 document.querySelectorAll('details.ca-section').forEach(function(section) {
   var fields = Array.from(section.querySelectorAll('input, select, textarea')).filter(function(f) { return !f.closest('.ca-note-form'); });
