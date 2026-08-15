@@ -457,6 +457,10 @@ document.querySelectorAll('.ca-notes-toggle').forEach(function(btn) {
     if (!panel) return;
     var open = panel.classList.toggle('open');
     btn.classList.toggle('open', open);
+    if (open) {
+      var section = panel.closest('details');
+      if (section) section.open = true;
+    }
   });
 });
 
