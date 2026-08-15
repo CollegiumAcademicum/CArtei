@@ -124,6 +124,15 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ca-notes-panel.open { grid-template-rows: 1fr; }
 .ca-notes-inner { overflow: hidden; min-height: 0; }
 
+/* Animate native <details> expansion. Progressive enhancement: browsers
+   without ::details-content just toggle instantly.
+   ponytail: needs Chrome 131+/modern Firefox; older browsers fall back to no animation. */
+.ca-collapse::details-content {
+  display: grid; grid-template-rows: 0fr; overflow: hidden;
+  transition: grid-template-rows 0.25s ease, content-visibility 0.25s allow-discrete;
+}
+.ca-collapse[open]::details-content { grid-template-rows: 1fr; }
+
 /* ── Messages (Django flash messages) ── */
 .ca-messages { margin: 1rem auto 0; }
 .ca-message {

@@ -8,7 +8,7 @@
   </h1>
 
   {% for section in sections %}
-  <details id="section-{{ section.key }}" {% if section.key == "personal" %}open {% endif %}class="ca-section" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+  <details id="section-{{ section.key }}" {% if section.key == "personal" %}open {% endif %}class="ca-section ca-collapse" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
       <span>{{ section.title }}</span>
       <span style="margin-left:auto;display:flex;gap:.4rem;align-items:center;">
@@ -186,7 +186,7 @@
   </details>
   {% endfor %}
 
-  <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+  <details open class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
       <span>Ausbildungsnachweis</span>
       {% if can_write_cluster %}
@@ -359,7 +359,7 @@
   </details>
 
   {% if engagement %}
-  <details style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+  <details class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;"><span>Engagement</span></summary>
     <div style="overflow-x:auto;margin-top:.5rem;">
       <table class="table is-fullwidth is-striped is-hoverable" style="font-size:.9rem;">
