@@ -11,9 +11,14 @@
   <details id="section-{{ section.key }}" {% if section.key == "personal" %}open {% endif %}class="ca-section" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
       <span>{{ section.title }}</span>
-      <span class="section-actions" style="display:none;margin-left:auto;gap:.4rem;align-items:center;">
-        <button type="submit" form="form-{{ section.key }}" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
-        <button type="button" class="revert-btn ca-button-outline" style="padding:.2rem .75rem;font-size:.82rem;">Zurücksetzen</button>
+      <span style="margin-left:auto;display:flex;gap:.4rem;align-items:center;">
+        {% if section.key == "housing" and can_write_mv %}
+        <button type="button" class="ca-notes-toggle" data-notes="mv-notes">🗒 Notizen {{ mv_notes|length }}</button>
+        {% endif %}
+        <span class="section-actions" style="display:none;gap:.4rem;align-items:center;">
+          <button type="submit" form="form-{{ section.key }}" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
+          <button type="button" class="revert-btn ca-button-outline" style="padding:.2rem .75rem;font-size:.82rem;">Zurücksetzen</button>
+        </span>
       </span>
     </summary>
 
@@ -144,6 +149,7 @@
     {% endif %}
 
     {% if section.key == "housing" and can_write_mv %}
+    <div class="ca-notes-panel" id="mv-notes" hidden>
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
     <p style="font-weight:500;margin:.25rem 0 .4rem;">Interne Notizen (Mietverwaltung)</p>
     {% if mv_notes %}
@@ -174,12 +180,18 @@
         <button type="submit" class="ca-button" style="padding:.45rem .65rem;font-size:1.1rem;line-height:1;flex-shrink:0;">→</button>
       </div>
     </form>
+    </div>
     {% endif %}
   </details>
   {% endfor %}
 
   <details open style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;"><span>Ausbildungsnachweis</span></summary>
+    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
+      <span>Ausbildungsnachweis</span>
+      {% if can_write_cluster %}
+      <button type="button" class="ca-notes-toggle" data-notes="cluster-notes" style="margin-left:auto;">🗒 Notizen {{ cluster_notes|length }}</button>
+      {% endif %}
+    </summary>
 
     <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Ausstehend</p>
     {% if pending_proofs %}
@@ -338,6 +350,7 @@
       </table>
     </div>
     {% if can_write_cluster %}
+    <div class="ca-notes-panel" id="cluster-notes" hidden>
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
     <p style="font-weight:500;margin:.25rem 0 .4rem;">Interne Notizen (Clustersprechende)</p>
     {% if cluster_notes %}
@@ -368,6 +381,7 @@
         <button type="submit" class="ca-button" style="padding:.45rem .65rem;font-size:1.1rem;line-height:1;flex-shrink:0;">→</button>
       </div>
     </form>
+    </div>
     {% endif %}
   </details>
   {% endif %}
@@ -429,6 +443,18 @@ document.querySelectorAll('details.ca-section').forEach(function(section) {
       var target = document.getElementById(btn.getAttribute('form'));
       if (target) target.requestSubmit(btn);
     });
+  });
+});
+
+// Internal-notes toggle in section headers: stopPropagation so it doesn't toggle the parent <details>.
+document.querySelectorAll('.ca-notes-toggle').forEach(function(btn) {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var panel = document.getElementById(btn.dataset.notes);
+    if (!panel) return;
+    panel.hidden = !panel.hidden;
+    btn.classList.toggle('open', !panel.hidden);
   });
 });
 
