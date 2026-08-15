@@ -102,6 +102,37 @@ def verify_proof(request, pk, proof_pk):
 
 @login_required
 @require_POST
+def revert_proof(request, pk, proof_pk):
+    """Clear verification so the vision worker re-analyzes the proof (worker
+    picks up rows where verified_at IS NULL AND needs_human_review IS False)."""
+    get_object_or_404(Tenant, pk=pk)
+    if not _is_mv(request.user):
+        raise PermissionDenied
+    proof = get_object_or_404(EnrollmentProof, pk=proof_pk, tenant_id=pk)
+    EnrollmentProof.objects.filter(pk=proof.pk).update(
+        verified_at=None,
+        verified_by_id=None,
+        needs_human_review=False,
+        review_reason=None,
+    )
+    return redirect("tenant_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def reject_proof(request, pk, proof_pk):
+    """Reject an unverified proof by deleting it (DB-audited via entity_history
+    triggers). No 'rejected' status column exists — the tenant re-uploads."""
+    get_object_or_404(Tenant, pk=pk)
+    if not _is_mv(request.user):
+        raise PermissionDenied
+    proof = get_object_or_404(EnrollmentProof, pk=proof_pk, tenant_id=pk)
+    proof.delete()
+    return redirect("tenant_detail", pk=pk)
+
+
+@login_required
+@require_POST
 def edit_proof(request, pk, proof_pk):
     get_object_or_404(Tenant, pk=pk)
     caller = _caller(request.user)
