@@ -198,6 +198,7 @@ class EnrollmentProof(models.Model):
     verified_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True, related_name="verified_proofs", db_column="verified_by_id")
     verified_at = models.DateTimeField(null=True, blank=True)
     needs_human_review = models.BooleanField(default=False)
+    review_reason = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         managed = False
