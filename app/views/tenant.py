@@ -135,7 +135,9 @@ def tenant_detail(request: HttpRequest, pk: int):
         ctx["verified_proofs"] = []
     if {"owner", "cluster", "admin"} & roles:
         ctx["engagement"] = list(
-            AGAbfrageResult.objects.filter(tenant=tenant).select_related("abfrage")
+            AGAbfrageResult.objects.filter(tenant=tenant)
+            .select_related("abfrage")
+            .order_by("-abfrage__ends_at", "abfrage_id")
         )
     else:
         ctx["engagement"] = []
