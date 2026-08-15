@@ -82,7 +82,28 @@ body {
   padding: 0.5rem 0.6rem; font-family: inherit; font-size: 0.95rem;
   color: var(--ca-text); background: #fcfcfc;
 }
-.ca-field input[type="checkbox"] { width: auto; align-self: start; }
+/* Boolean fields as an animated toggle slider (✕ = false, ✓ = true). */
+.ca-field input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  position: relative; flex: none; align-self: start;
+  width: 44px; height: 24px; padding: 0; border: none;
+  background: #d0524f; border-radius: 999px; cursor: pointer;
+  transition: background 0.25s ease;
+}
+.ca-field input[type="checkbox"]::before {
+  content: "✕";
+  position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; color: #d0524f; font-size: 12px; line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: left 0.25s ease, color 0.25s ease;
+}
+.ca-field input[type="checkbox"]:checked { background: var(--ca-teal); }
+.ca-field input[type="checkbox"]:checked::before {
+  content: "✓"; left: 22px; color: var(--ca-teal);
+}
+.ca-field input[type="checkbox"]:focus-visible { outline: 2px solid var(--ca-teal); outline-offset: 2px; }
 .ca-field textarea { resize: vertical; min-height: 90px; }
 .ca-field:has(textarea) { grid-column: 1 / -1; }  /* long text spans the full row */
 .ca-input:focus, .ca-textarea:focus {
