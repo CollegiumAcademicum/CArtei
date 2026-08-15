@@ -117,6 +117,12 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 }
 .ca-notes-toggle:hover { background: #f5f5f5; }
 .ca-notes-toggle.open { background: var(--ca-teal); color: white; border-color: var(--ca-teal); }
+.ca-notes-panel {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+.ca-notes-panel.open { grid-template-rows: 1fr; }
+.ca-notes-inner { overflow: hidden; min-height: 0; }
 
 /* ── Messages (Django flash messages) ── */
 .ca-messages { margin: 1rem auto 0; }
