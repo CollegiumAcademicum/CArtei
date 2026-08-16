@@ -82,10 +82,16 @@
       <p style="color:#888;font-size:.9rem;margin:.25rem 0;">Kein Zimmer zugeordnet.</p>
       {% endfor %}
       {% if past_assignment_forms %}
-      <p style="font-weight:500;margin:.75rem 0 .4rem;">Frühere Zimmer</p>
-      {% for assignment, aform in past_assignment_forms %}
-      {% include "app/_room_assignment_edit.html" %}
-      {% endfor %}
+      <details style="margin-top:.75rem;">
+        <summary style="cursor:pointer;list-style:none;font-weight:500;">
+          Frühere Zimmer ({{ past_assignment_forms|length }}) ▾
+        </summary>
+        <div style="margin-top:.4rem;">
+        {% for assignment, aform in past_assignment_forms %}
+        {% include "app/_room_assignment_edit.html" %}
+        {% endfor %}
+        </div>
+      </details>
       {% endif %}
       <details style="margin-top:.75rem;">
         <summary style="cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:.5rem;">

@@ -40,9 +40,10 @@ def test_admin_sees_and_edits_all_but_system_ids():
     assert SYSTEM_ID_FIELDS.isdisjoint(edt)
 
 
-def test_owner_edits_exactly_six():
+def test_owner_edits_exactly_seven():
     edt = editable_fields({"public", "owner"})
-    assert edt == {"email", "phone", "is_flinta", "mailbox_list_opt_in", "preferred_name", "pronouns"}
+    assert edt == {"email", "phone", "is_flinta", "mailbox_list_opt_in",
+                   "preferred_name", "pronouns", "soli_miete_wunsch"}
 
 
 def test_stranger_sees_only_public_card():
@@ -52,7 +53,7 @@ def test_stranger_sees_only_public_card():
 def test_mietverwaltung_can_edit_dob_and_contact():
     edt = editable_fields({"public", "mietverwaltung"})
     assert {"date_of_birth", "email", "move_in", "mailbox_key"} <= edt
-    assert "soli_miete_wunsch" not in edt  # admin-only
+    assert "soli_miete_wunsch" not in edt  # owner-only (admin override aside)
 
 
 def test_editable_columns_are_real_tenant_fields():

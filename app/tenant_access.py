@@ -30,6 +30,7 @@ SECTIONS = [
         _f("mailbox_list_opt_in", "Ich möchte, dass mein Name bei den Briefkästen steht", _OWN_MV, _OWN_MV),
         _f("date_of_birth", "Geburtsdatum", _OWN_MV, _MV),
         _f("barrier_free_needed", "Barrierefreiheit benötigt", _OWN_MV, _MV),
+        _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _OWNER, _OWNER),
     ]),
     Section("housing", "Wohnen", [
         _f("is_sublet", "Untermiete", _OWN_MV, _MV),
@@ -39,7 +40,6 @@ SECTIONS = [
         _f("mailbox_key", "Briefkastenschlüssel", _OWN_MV, _MV),
         _f("move_in", "Ersteinzug", _OWN_MV, _MV),
         _f("move_out", "Auszug", _OWN_MV, _MV),
-        _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _ADMIN, _ADMIN),
     ]),
     Section("legal", "Rechtliches", [
         _f("data_priv_signed_at", "Datenschutz unterschrieben", _OWN_MV, _MV),

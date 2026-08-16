@@ -66,12 +66,14 @@ def test_owner_post_updates_only_allowed_field():
     resp = c.post(f"/tenants/{t.pk}/", {
         "email": "changed@ca.de", "phone": "123", "preferred_name": "Owzy",
         "pronouns": "sie/ihr", "is_flinta": "on", "mailbox_list_opt_in": "",
-        "soli_miete_wunsch": "999",  # not editable by owner — must be ignored
+        "soli_miete_wunsch": "150",     # owner-editable — must apply
+        "date_of_birth": "1990-05-01",  # MV-only — must be ignored
     })
     assert resp.status_code in (200, 302)
     t.refresh_from_db()
     assert t.email == "changed@ca.de"
-    assert str(t.soli_miete_wunsch) == "0.00"  # unchanged
+    assert str(t.soli_miete_wunsch) == "150.00"  # owner may set it
+    assert t.date_of_birth is None  # unchanged (owner cannot edit)
 
 
 @pytest.mark.django_db
