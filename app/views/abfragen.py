@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from app import ldap_utils
+from app.auth import ag_group_names
 from app.decorators import require_group
 from app.models import AGAbfrage, AGAbfrageResult, Tenant
 
@@ -21,17 +22,11 @@ _STATUS_CHOICES = [
 ]
 
 
-_SYSTEM_GROUPS = {"admins", "gr.cluster"}
-
-
 @login_required
 def abfragen_list(request: HttpRequest):
     abfragen = AGAbfrage.objects.all()
     is_privileged = request.user.groups.filter(name__in=["admins", "gr.cluster"]).exists()
-    user_groups = sorted(
-        g for g in request.user.groups.values_list("name", flat=True)
-        if g not in _SYSTEM_GROUPS
-    )
+    user_groups = ag_group_names(request.user)
     return render(request, "app/abfragen/list.html", {
         "abfragen": abfragen,
         "is_privileged": is_privileged,

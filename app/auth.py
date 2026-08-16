@@ -7,12 +7,28 @@ from django_auth_ldap.backend import LDAPBackend
 
 logger = logging.getLogger(__name__)
 
+# Prefixes of the org working groups (AGs, Gremien, Institute) that a user can
+# belong to. Rights-granting groups ("admins" and — as a dev placeholder — the
+# groups mapped via CARTEI_ADMIN_GROUP/CARTEI_CLUSTER_GROUP) are tracked
+# separately as markers; in the final deployment those live outside these
+# prefixes, so filtering on them keeps rights groups out of the AG display.
+GROUP_PREFIXES = ("ag.", "gr.", "in.")
+
 
 def _dn_to_cn(dn: str) -> str:
     for part in dn.split(","):
         if part.lower().startswith("cn="):
             return part[3:]
     return dn
+
+
+def ag_group_names(user) -> list[str]:
+    """The user's org working groups (ag./gr./in.), sorted, for dashboard
+    display. Non-prefixed rights markers like 'admins' are excluded."""
+    return sorted(
+        g for g in user.groups.values_list("name", flat=True)
+        if g.startswith(GROUP_PREFIXES)
+    )
 
 
 class CustomLDAPBackend(LDAPBackend):
@@ -31,14 +47,17 @@ class CustomLDAPBackend(LDAPBackend):
             desired: set[str] = set()
             for dn in member_of:
                 dn_l = dn.lower()
+                # A DN can grant admin/cluster AND be a normal AG at the same
+                # time: the IT AG (ag.it) doubles as the admin group, so its
+                # members must stay in "ag.it" to appear in the dashboard and
+                # submit engagement reports. Checks are independent, not elif.
                 if dn_l == admin_dn:
                     desired.add("admins")
-                elif dn_l == cluster_dn:
+                if dn_l == cluster_dn:
                     desired.add("gr.cluster")
-                else:
-                    cn = _dn_to_cn(dn)
-                    if cn.startswith("ag.") or cn.startswith("in."):
-                        desired.add(cn)
+                cn = _dn_to_cn(dn)
+                if cn.startswith(GROUP_PREFIXES):
+                    desired.add(cn)
             current = set(user.groups.values_list("name", flat=True))
             for name in desired - current:
                 group, _ = Group.objects.get_or_create(name=name)
