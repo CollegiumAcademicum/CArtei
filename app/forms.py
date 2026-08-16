@@ -32,8 +32,9 @@ class TenantRoomAssignmentForm(forms.ModelForm):
     class Meta:
         model = TenantRoomAssignment
         fields = [
-            "room", "moved_in", "moved_out", "mailbox_key", "is_sublet",
-            "sublet_of_tenant", "key_received", "key_returned", "deposit_iban",
+            "room", "moved_in", "moved_out", "mailbox_key_received",
+            "mailbox_key_returned", "is_sublet", "sublet_of_tenant",
+            "key_received", "key_returned", "deposit_iban",
         ]
 
     def __init__(self, *args, **kwargs):

@@ -161,7 +161,8 @@ class TenantRoomAssignment(models.Model):
     room = models.ForeignKey(Room, on_delete=models.DO_NOTHING, db_constraint=False)
     moved_in = models.DateField()
     moved_out = models.DateField(null=True, blank=True)
-    mailbox_key = models.BooleanField(default=False)
+    mailbox_key_received = models.DateField(null=True, blank=True)
+    mailbox_key_returned = models.DateField(null=True, blank=True)
     is_sublet = models.BooleanField(default=False)
     sublet_of_tenant = models.ForeignKey(
         Tenant, null=True, blank=True, on_delete=models.DO_NOTHING,

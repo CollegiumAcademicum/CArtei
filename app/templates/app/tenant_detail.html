@@ -112,8 +112,12 @@
             {{ new_room_form.moved_out }}
           </div>
           <div class="ca-field">
-            <span class="ca-field-label">Briefkastenschlüssel</span>
-            {{ new_room_form.mailbox_key }}
+            <span class="ca-field-label">Briefkastenschlüssel erhalten</span>
+            {{ new_room_form.mailbox_key_received }}
+          </div>
+          <div class="ca-field">
+            <span class="ca-field-label">Briefkastenschlüssel abgegeben</span>
+            {{ new_room_form.mailbox_key_returned }}
           </div>
           <div class="ca-field">
             <span class="ca-field-label">Schlüssel erhalten</span>
@@ -167,7 +171,8 @@
       <li{% if a.is_sublet %} class="ca-sublet-line"{% endif %}>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
           — eingezogen {{ a.moved_in }}
           {% if a.is_sublet %}· <span class="ca-room-badge ca-room-badge--sublet">Untermiete</span>{% endif %}
-          {% if a.mailbox_key %}· Briefkastenschlüssel{% endif %}
+          {% if a.mailbox_key_received %}· Briefkastenschlüssel erhalten {{ a.mailbox_key_received }}{% endif %}
+          {% if a.mailbox_key_returned %}· Briefkastenschlüssel abgegeben {{ a.mailbox_key_returned }}{% endif %}
           {% if a.key_received %}· Schlüssel erhalten {{ a.key_received }}{% endif %}
           {% if a.key_returned %}· abgegeben {{ a.key_returned }}{% endif %}</li>
       {% endfor %}
@@ -182,6 +187,8 @@
       <li{% if a.is_sublet %} class="ca-sublet-line"{% endif %}>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
           — {{ a.moved_in }} bis {{ a.moved_out }}
           {% if a.is_sublet %}· <span class="ca-room-badge ca-room-badge--sublet">Untermiete</span>{% endif %}
+          {% if a.mailbox_key_received %}· Briefkastenschlüssel erhalten {{ a.mailbox_key_received }}{% endif %}
+          {% if a.mailbox_key_returned %}· Briefkastenschlüssel abgegeben {{ a.mailbox_key_returned }}{% endif %}
           {% if a.key_received %}· Schlüssel erhalten {{ a.key_received }}{% endif %}
           {% if a.key_returned %}· abgegeben {{ a.key_returned }}{% endif %}</li>
       {% endfor %}

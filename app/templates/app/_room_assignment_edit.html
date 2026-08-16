@@ -8,7 +8,8 @@
         <span>Eingezogen {{ assignment.moved_in }}</span>
         <span>{% if assignment.moved_out %}Ausgezogen {{ assignment.moved_out }}{% else %}aktuell{% endif %}</span>
         {% if assignment.is_sublet %}<span class="ca-room-badge ca-room-badge--sublet">Untermiete{% if assignment.sublet_of_tenant %} von {{ assignment.sublet_of_tenant.first_name }} {{ assignment.sublet_of_tenant.last_name }}{% endif %}</span>{% endif %}
-        {% if assignment.mailbox_key %}<span class="ca-room-badge">Briefkastenschlüssel</span>{% endif %}
+        {% if assignment.mailbox_key_received %}<span class="ca-room-badge">Briefkastenschlüssel erhalten {{ assignment.mailbox_key_received }}</span>{% endif %}
+        {% if assignment.mailbox_key_returned %}<span class="ca-room-badge">Briefkastenschlüssel abgegeben {{ assignment.mailbox_key_returned }}</span>{% endif %}
         {% if assignment.key_received %}<span class="ca-room-badge">Schlüssel erhalten {{ assignment.key_received }}</span>{% endif %}
         {% if assignment.key_returned %}<span class="ca-room-badge">Schlüssel abgegeben {{ assignment.key_returned }}</span>{% endif %}
       </span>
@@ -33,8 +34,14 @@
         {% if aform.moved_out.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.moved_out.errors }}</div>{% endif %}
       </div>
       <div class="ca-field">
-        <span class="ca-field-label">Briefkastenschlüssel</span>
-        {{ aform.mailbox_key }}
+        <span class="ca-field-label">Briefkastenschlüssel erhalten</span>
+        {{ aform.mailbox_key_received }}
+        {% if aform.mailbox_key_received.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.mailbox_key_received.errors }}</div>{% endif %}
+      </div>
+      <div class="ca-field">
+        <span class="ca-field-label">Briefkastenschlüssel abgegeben</span>
+        {{ aform.mailbox_key_returned }}
+        {% if aform.mailbox_key_returned.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.mailbox_key_returned.errors }}</div>{% endif %}
       </div>
       <div class="ca-field">
         <span class="ca-field-label">Schlüssel erhalten</span>
