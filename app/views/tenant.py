@@ -9,7 +9,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
-    AGAbfrageResult, EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
+    AGAbfrage, AGAbfrageResult, AGStatus, EnrollmentProof, InternalNote,
+    Tenant, TenantRoomAssignment,
 )
 from app.tenant_access import (
     SECTIONS, editable_fields, global_roles, viewer_roles, visible_fields,
@@ -25,6 +26,7 @@ def tenant_list(request: HttpRequest):
     show_realname = "first_name" in visible      # real name + email + move dates
     show_room = bool({"mietverwaltung", "admin"} & roles)
     show_cluster = bool({"mietverwaltung", "admin", "cluster"} & roles)
+    show_surveys = bool({"cluster", "admin"} & roles)  # AG-engagement columns
     today = date.today()
 
     qs = Tenant.objects.all()
@@ -57,6 +59,16 @@ def tenant_list(request: HttpRequest):
     selected_clusters = set(request.GET.getlist("cluster"))
     sublet = request.GET.get("sublet", "all")
 
+    # AG-engagement (formerly the standalone cluster page): survey picker + result
+    # columns, cluster/admin only.
+    abfragen = list(AGAbfrage.objects.all()) if show_surveys else []
+    selected_ids = {int(x) for x in request.GET.getlist("surveys") if x.isdigit()} if show_surveys else set()
+    selected_abfragen = [a for a in abfragen if a.pk in selected_ids]
+    results_by_tenant: dict[int, dict[int, list]] = {}
+    if selected_ids:
+        for r in AGAbfrageResult.objects.filter(abfrage_id__in=selected_ids):
+            results_by_tenant.setdefault(r.tenant_id, {}).setdefault(r.abfrage_id, []).append(r)
+
     rows = []
     for t in tenants:
         a = assign_by_tenant.get(t.pk)
@@ -68,7 +80,12 @@ def tenant_list(request: HttpRequest):
             continue
         if show_room and sublet == "none" and is_sublet:
             continue
-        rows.append({"tenant": t, "assignment": a, "cluster": cluster, "is_sublet": is_sublet})
+        row = {"tenant": t, "assignment": a, "cluster": cluster,
+               "cluster_key": cluster or "", "is_sublet": is_sublet}
+        if show_surveys:
+            tr = results_by_tenant.get(t.pk, {})
+            row["survey_results"] = [(ab, tr.get(ab.pk, [])) for ab in selected_abfragen]
+        rows.append(row)
 
     def _room_key(r):
         a = r["assignment"]
@@ -98,6 +115,31 @@ def tenant_list(request: HttpRequest):
     reverse = request.GET.get("dir", "asc") == "desc"
     rows.sort(key=sort_keys[sort], reverse=reverse)
 
+    # Grouped per-cluster engagement summary (over the full filtered set, before
+    # pagination) — rendered as a header row when sorting by cluster.
+    group_by_cluster = show_surveys and sort == "cluster"
+    if group_by_cluster:
+        status_label = dict(AGStatus.choices)
+        stats: dict[str, dict] = {}
+        for row in rows:
+            st = stats.setdefault(row["cluster_key"],
+                                  {"count": 0, "counts": {a.pk: {} for a in selected_abfragen}})
+            st["count"] += 1
+            for a, results in row["survey_results"]:
+                counts = st["counts"][a.pk]
+                for r in results:
+                    counts[r.status] = counts.get(r.status, 0) + 1
+        for st in stats.values():
+            st["surveys"] = [
+                {"abfrage": a, "badges": [
+                    {"status": s, "label": status_label.get(s, s), "count": st["counts"][a.pk][s]}
+                    for s, _l in AGStatus.choices if s in st["counts"][a.pk]
+                ]}
+                for a in selected_abfragen
+            ]
+        for row in rows:
+            row["stats"] = stats[row["cluster_key"]]
+
     try:
         per_page = int(request.GET.get("per_page", 25))
     except ValueError:
@@ -112,8 +154,16 @@ def tenant_list(request: HttpRequest):
         "show_realname": show_realname,
         "show_room": show_room,
         "show_cluster": show_cluster,
+        "show_surveys": show_surveys,
+        "abfragen": abfragen,
+        "selected_ids": selected_ids,
+        "selected_abfragen": selected_abfragen,
+        "group_by_cluster": group_by_cluster,
+        "col_count": (1 + (2 if show_room else 0) + (1 if show_cluster else 0)
+                      + (2 if show_realname else 0) + len(selected_abfragen)),
         "all_clusters": all_clusters,
         "selected_clusters": selected_clusters,
+        "no_cluster_selected": "" in selected_clusters,
         "per_page": per_page,
         "per_page_choices": _PER_PAGE_CHOICES,
         "q": q,

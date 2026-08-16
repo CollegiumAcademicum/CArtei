@@ -11,7 +11,6 @@ urlpatterns = [
     path("abfragen/<int:pk>/ag/<str:ag_name>/", abfragen.ag_edit, name="ag_edit"),
     path("abfragen/<int:pk>/tenants/", abfragen.abfrage_tenants, name="abfrage_tenants"),
     path("abfragen/<int:pk>/delete/", abfragen.abfrage_delete, name="abfrage_delete"),
-    path("cluster/", abfragen.cluster, name="cluster"),
     path("tenants/", tenant.tenant_list, name="tenant_list"),
     path("tenants/<int:pk>/", tenant.tenant_detail, name="tenant_detail"),
     path("tenants/<int:pk>/enrollment-proof/upload/", enrollment_proof.upload_proof, name="enrollment_proof_upload"),

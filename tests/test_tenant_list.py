@@ -42,6 +42,22 @@ def _assign(tenant, cluster=None, is_sublet=False):
     )
 
 
+def _abfrage(label="Q3-Umfrage"):
+    from app.models import AGAbfrage
+    today = date.today()
+    return AGAbfrage.objects.create(
+        date=today, label=label,
+        ends_at=today + timedelta(days=7), grace_ends_at=today + timedelta(days=14),
+    )
+
+
+def _result(abfrage, tenant, ag_name="ag.kueche", status="AKTIV"):
+    from app.models import AGAbfrageResult
+    return AGAbfrageResult.objects.create(
+        abfrage=abfrage, tenant=tenant, ag_name=ag_name, status=status
+    )
+
+
 @pytest.mark.django_db
 def test_list_requires_login():
     resp = Client().get("/tenants/")
@@ -137,6 +153,67 @@ def test_hidden_column_sort_falls_back_and_does_not_crash(settings):
     resp = c.get("/tenants/?sort=email")
     assert resp.status_code == 200
     assert "Xavier" in resp.content.decode()
+
+
+@pytest.mark.django_db
+def test_cluster_user_sees_survey_selector(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    _abfrage(label="Q3-Umfrage")
+    c = Client()
+    _login(c, "cl", groups=["gr.cluster"])
+    body = c.get("/tenants/").content.decode()
+    assert 'name="surveys"' in body
+    assert "Q3-Umfrage" in body
+
+
+@pytest.mark.django_db
+def test_mietverwaltung_has_no_survey_selector(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    _abfrage(label="Q3-Umfrage")
+    c = Client()
+    _login(c, "mv", groups=["ag.mietverwaltung"])
+    body = c.get("/tenants/").content.decode()
+    assert 'name="surveys"' not in body
+
+
+@pytest.mark.django_db
+def test_survey_results_render_for_selected_survey(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _tenant("ada", preferred_name="Ada")
+    a = _abfrage(label="Q3")
+    _result(a, t, ag_name="ag.kueche", status="AKTIV")
+    c = Client()
+    _login(c, "cl", groups=["gr.cluster"])
+    body = c.get(f"/tenants/?surveys={a.pk}").content.decode()
+    assert "ag.kueche" in body
+    assert "aktiv" in body
+
+
+@pytest.mark.django_db
+def test_cluster_summary_rows_only_when_sorted_by_cluster(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _tenant("ada", preferred_name="Ada")
+    _assign(t, cluster="A")
+    a = _abfrage(label="Q3")
+    _result(a, t, status="AKTIV")
+    c = Client()
+    _login(c, "cl", groups=["gr.cluster"])
+    grouped = c.get(f"/tenants/?surveys={a.pk}&sort=cluster").content.decode()
+    assert "cluster-summary" in grouped
+    ungrouped = c.get(f"/tenants/?surveys={a.pk}&sort=name").content.decode()
+    assert "cluster-summary" not in ungrouped
+
+
+@pytest.mark.django_db
+def test_kein_cluster_filter_shows_only_clusterless(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    clustered = _tenant("c", preferred_name="Clustered")
+    _assign(clustered, cluster="A")
+    _tenant("l", preferred_name="Lonely")  # no assignment → no cluster
+    c = Client()
+    _login(c, "cl", groups=["gr.cluster"])
+    body = c.get("/tenants/?cluster=").content.decode()
+    assert "Lonely" in body and "Clustered" not in body
 
 
 @pytest.mark.django_db
