@@ -1,5 +1,0 @@
-{% if sort == col and dir == "asc" %}
-<a href="{% querystring sort=col dir='desc' page=None %}" style="color:inherit;">{{ label }} ▲</a>
-{% else %}
-<a href="{% querystring sort=col dir='asc' page=None %}" style="color:inherit;">{{ label }}{% if sort == col %} ▼{% endif %}</a>
-{% endif %}

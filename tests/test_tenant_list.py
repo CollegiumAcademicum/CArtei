@@ -96,19 +96,8 @@ def test_mietverwaltung_sees_email_and_realname(settings):
 
 
 @pytest.mark.django_db
-def test_search_filters_by_name(settings):
-    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    _tenant("ada", first_name="Ada", last_name="Lovelace", preferred_name="")
-    _tenant("grace", first_name="Grace", last_name="Hopper", preferred_name="")
-    c = Client()
-    _login(c, "mv", groups=["ag.mietverwaltung"])
-    body = c.get("/tenants/?q=Hopper").content.decode()
-    assert "Hopper" in body
-    assert "Lovelace" not in body
-
-
-@pytest.mark.django_db
 def test_active_default_excludes_former(settings):
+    # residents scope stays server-side (decides which records are loaded).
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
     _tenant("current", preferred_name="Current")
     _tenant("gone", preferred_name="Gone", move_out=date.today() - timedelta(days=5))
@@ -121,38 +110,70 @@ def test_active_default_excludes_former(settings):
 
 
 @pytest.mark.django_db
-def test_sublet_filter(settings):
+def test_all_rows_rendered_no_pagination(settings):
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    sub = _tenant("sub", preferred_name="Subby")
-    reg = _tenant("reg", preferred_name="Reggy")
-    _assign(sub, is_sublet=True)
-    _assign(reg, is_sublet=False)
+    for i in range(30):
+        _tenant(f"t{i}", preferred_name=f"Person{i:02d}", last_name=f"N{i:02d}")
     c = Client()
     _login(c, "mv", groups=["ag.mietverwaltung"])
-    body = c.get("/tenants/?sublet=only").content.decode()
-    assert "Subby" in body and "Reggy" not in body
+    body = c.get("/tenants/").content.decode()
+    assert "Person00" in body and "Person29" in body
 
 
 @pytest.mark.django_db
-def test_sort_by_email(settings):
+def test_move_in_column_has_date_filter(settings):
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    _tenant("b", preferred_name="Bea", email="b@ca.de")
-    _tenant("a", preferred_name="Ann", email="a@ca.de")
+    _tenant("ada", preferred_name="Ada")
     c = Client()
     _login(c, "mv", groups=["ag.mietverwaltung"])
-    body = c.get("/tenants/?sort=email&dir=asc").content.decode()
-    assert body.index("a@ca.de") < body.index("b@ca.de")
+    body = c.get("/tenants/").content.decode()
+    assert 'data-col="move_in"' in body
+    assert 'type="date"' in body
 
 
 @pytest.mark.django_db
-def test_hidden_column_sort_falls_back_and_does_not_crash(settings):
+def test_rows_carry_sort_and_value_data_attributes(settings):
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    _tenant("x", preferred_name="Xavier")
+    _tenant("ada", first_name="Ada", last_name="Lovelace", move_in=date(2024, 3, 15))
     c = Client()
-    _login(c, "plain")  # no groups → can't see email/room columns
-    resp = c.get("/tenants/?sort=email")
-    assert resp.status_code == 200
-    assert "Xavier" in resp.content.decode()
+    _login(c, "mv", groups=["ag.mietverwaltung"])
+    body = c.get("/tenants/").content.decode()
+    assert 'data-sort="lovelace ada"' in body           # name sorts by last, first
+    assert 'data-value="2024-03-15"' in body            # move_in machine value for date filter/sort
+
+
+@pytest.mark.django_db
+def test_sublet_column_has_select_filter_only_for_room_users(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    _tenant("ada", preferred_name="Ada")
+    c = Client()
+    _login(c, "mv", groups=["ag.mietverwaltung"])
+    body = c.get("/tenants/").content.decode()
+    assert 'data-col="sublet"' in body
+    c2 = Client()
+    _login(c2, "plain")
+    assert 'data-col="sublet"' not in c2.get("/tenants/").content.decode()
+
+
+@pytest.mark.django_db
+def test_column_chooser_lists_only_allowed_columns(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    _tenant("ada", preferred_name="Ada")
+    plain = Client()
+    _login(plain, "plain")
+    pbody = plain.get("/tenants/").content.decode()
+    assert 'data-col-toggle="email"' not in pbody
+    assert 'data-col-toggle="room"' not in pbody
+
+    mv = Client()
+    _login(mv, "mv", groups=["ag.mietverwaltung"])
+    mbody = mv.get("/tenants/").content.decode()
+    assert 'data-col-toggle="email"' in mbody
+    assert 'data-col-toggle="room"' in mbody
+
+    cl = Client()
+    _login(cl, "cl", groups=["gr.cluster"])
+    assert 'data-col-toggle="cluster"' in cl.get("/tenants/").content.decode()
 
 
 @pytest.mark.django_db
@@ -190,7 +211,7 @@ def test_survey_results_render_for_selected_survey(settings):
 
 
 @pytest.mark.django_db
-def test_cluster_summary_rows_only_when_sorted_by_cluster(settings):
+def test_engagement_summary_panel_when_surveys_selected(settings):
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
     t = _tenant("ada", preferred_name="Ada")
     _assign(t, cluster="A")
@@ -198,32 +219,7 @@ def test_cluster_summary_rows_only_when_sorted_by_cluster(settings):
     _result(a, t, status="AKTIV")
     c = Client()
     _login(c, "cl", groups=["gr.cluster"])
-    grouped = c.get(f"/tenants/?surveys={a.pk}&sort=cluster").content.decode()
-    assert "cluster-summary" in grouped
-    ungrouped = c.get(f"/tenants/?surveys={a.pk}&sort=name").content.decode()
-    assert "cluster-summary" not in ungrouped
-
-
-@pytest.mark.django_db
-def test_kein_cluster_filter_shows_only_clusterless(settings):
-    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    clustered = _tenant("c", preferred_name="Clustered")
-    _assign(clustered, cluster="A")
-    _tenant("l", preferred_name="Lonely")  # no assignment → no cluster
-    c = Client()
-    _login(c, "cl", groups=["gr.cluster"])
-    body = c.get("/tenants/?cluster=").content.decode()
-    assert "Lonely" in body and "Clustered" not in body
-
-
-@pytest.mark.django_db
-def test_pagination(settings):
-    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    for i in range(30):
-        _tenant(f"t{i}", preferred_name=f"Person{i:02d}", last_name=f"N{i:02d}")
-    c = Client()
-    _login(c, "mv", groups=["ag.mietverwaltung"])
-    p1 = c.get("/tenants/?per_page=25&sort=name&dir=asc").content.decode()
-    assert "Person00" in p1 and "Person29" not in p1
-    p2 = c.get("/tenants/?per_page=25&sort=name&dir=asc&page=2").content.decode()
-    assert "Person29" in p2 and "Person00" not in p2
+    with_surveys = c.get(f"/tenants/?surveys={a.pk}").content.decode()
+    assert "engagement-summary" in with_surveys
+    without = c.get("/tenants/").content.decode()
+    assert "engagement-summary" not in without

@@ -2,7 +2,6 @@ from datetime import date
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
@@ -16,7 +15,37 @@ from app.tenant_access import (
     SECTIONS, editable_fields, global_roles, viewer_roles, visible_fields,
 )
 
-_PER_PAGE_CHOICES = [25, 50, 100]
+
+def _engagement_summary(rows, selected_abfragen):
+    """Per-cluster tallies over the current scope (server-side, not affected by
+    the live per-column row filters). Powers the summary panel above the table."""
+    status_label = dict(AGStatus.choices)
+    stats: dict[str, dict] = {}
+    for row in rows:
+        st = stats.setdefault(row["cluster_key"], {
+            "cluster": row["cluster"], "count": 0,
+            "counts": {a.pk: {} for a in selected_abfragen},
+        })
+        st["count"] += 1
+        for a, results in row["survey_results"]:
+            counts = st["counts"][a.pk]
+            for r in results:
+                counts[r.status] = counts.get(r.status, 0) + 1
+    out = []
+    for key in sorted(stats):
+        st = stats[key]
+        out.append({
+            "cluster": st["cluster"],
+            "count": st["count"],
+            "surveys": [
+                {"abfrage": a, "badges": [
+                    {"status": s, "label": status_label.get(s, s), "count": st["counts"][a.pk][s]}
+                    for s, _l in AGStatus.choices if s in st["counts"][a.pk]
+                ]}
+                for a in selected_abfragen
+            ],
+        })
+    return out
 
 
 @login_required
@@ -29,18 +58,14 @@ def tenant_list(request: HttpRequest):
     show_surveys = bool({"cluster", "admin"} & roles)  # AG-engagement columns
     today = date.today()
 
+    # Server-side *scope* only (which records to load). Column filtering, sorting
+    # and visibility are all client-side (see tenant_list.html).
     qs = Tenant.objects.all()
     residents = request.GET.get("residents", "active")
     if residents == "active":
         qs = qs.filter(Q(move_out__isnull=True) | Q(move_out__gt=today))
     elif residents == "former":
         qs = qs.filter(move_out__isnull=False, move_out__lte=today)
-
-    q = request.GET.get("q", "").strip()
-    if q:
-        qs = qs.filter(
-            Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(preferred_name__icontains=q)
-        )
     tenants = list(qs)
 
     # One active assignment per tenant (room/wg/cluster/sublet), keyed by tenant_id.
@@ -53,14 +78,7 @@ def tenant_list(request: HttpRequest):
         ):
             assign_by_tenant.setdefault(a.tenant_id, a)
 
-    all_clusters = sorted(
-        {a.room.wg.cluster for a in assign_by_tenant.values() if a.room.wg.cluster}
-    ) if show_cluster else []
-    selected_clusters = set(request.GET.getlist("cluster"))
-    sublet = request.GET.get("sublet", "all")
-
-    # AG-engagement (formerly the standalone cluster page): survey picker + result
-    # columns, cluster/admin only.
+    # AG-engagement scope (cluster/admin): which surveys' results to load.
     abfragen = list(AGAbfrage.objects.all()) if show_surveys else []
     selected_ids = {int(x) for x in request.GET.getlist("surveys") if x.isdigit()} if show_surveys else set()
     selected_abfragen = [a for a in abfragen if a.pk in selected_ids]
@@ -73,83 +91,18 @@ def tenant_list(request: HttpRequest):
     for t in tenants:
         a = assign_by_tenant.get(t.pk)
         cluster = a.room.wg.cluster if a else None
-        is_sublet = bool(a and a.is_sublet)
-        if show_cluster and selected_clusters and (cluster or "") not in selected_clusters:
-            continue
-        if show_room and sublet == "only" and not is_sublet:
-            continue
-        if show_room and sublet == "none" and is_sublet:
-            continue
         row = {"tenant": t, "assignment": a, "cluster": cluster,
-               "cluster_key": cluster or "", "is_sublet": is_sublet}
+               "cluster_key": cluster or "", "is_sublet": bool(a and a.is_sublet)}
         if show_surveys:
             tr = results_by_tenant.get(t.pk, {})
             row["survey_results"] = [(ab, tr.get(ab.pk, [])) for ab in selected_abfragen]
         rows.append(row)
 
-    def _room_key(r):
-        a = r["assignment"]
-        return (a.room.wg.name.lower(), a.room.name.lower()) if a else ("", "")
-
-    _name_key = lambda r: (r["tenant"].last_name.lower(), r["tenant"].first_name.lower())
-    sort_keys = {
-        "name": _name_key,
-        "move_in": lambda r: (r["tenant"].move_in or date.min, _name_key(r)),
-        "email": lambda r: (r["tenant"].email.lower(), _name_key(r)),
-        "room": lambda r: (_room_key(r), _name_key(r)),
-        "sublet": lambda r: (r["is_sublet"], _name_key(r)),
-        "cluster": lambda r: (r["cluster"] or "", _name_key(r)),
-    }
-    # Columns hidden from this viewer must not be sortable — fall back to name.
-    allowed_sorts = {"name"}
-    if show_realname:
-        allowed_sorts |= {"move_in", "email"}
-    if show_room:
-        allowed_sorts |= {"room", "sublet"}
-    if show_cluster:
-        allowed_sorts.add("cluster")
-
-    sort = request.GET.get("sort", "name")
-    if sort not in allowed_sorts:
-        sort = "name"
-    reverse = request.GET.get("dir", "asc") == "desc"
-    rows.sort(key=sort_keys[sort], reverse=reverse)
-
-    # Grouped per-cluster engagement summary (over the full filtered set, before
-    # pagination) — rendered as a header row when sorting by cluster.
-    group_by_cluster = show_surveys and sort == "cluster"
-    if group_by_cluster:
-        status_label = dict(AGStatus.choices)
-        stats: dict[str, dict] = {}
-        for row in rows:
-            st = stats.setdefault(row["cluster_key"],
-                                  {"count": 0, "counts": {a.pk: {} for a in selected_abfragen}})
-            st["count"] += 1
-            for a, results in row["survey_results"]:
-                counts = st["counts"][a.pk]
-                for r in results:
-                    counts[r.status] = counts.get(r.status, 0) + 1
-        for st in stats.values():
-            st["surveys"] = [
-                {"abfrage": a, "badges": [
-                    {"status": s, "label": status_label.get(s, s), "count": st["counts"][a.pk][s]}
-                    for s, _l in AGStatus.choices if s in st["counts"][a.pk]
-                ]}
-                for a in selected_abfragen
-            ]
-        for row in rows:
-            row["stats"] = stats[row["cluster_key"]]
-
-    try:
-        per_page = int(request.GET.get("per_page", 25))
-    except ValueError:
-        per_page = 25
-    if per_page not in _PER_PAGE_CHOICES:
-        per_page = 25
-    page = Paginator(rows, per_page).get_page(request.GET.get("page"))
+    # Default order by name; client-side sorting takes over on header click.
+    rows.sort(key=lambda r: (r["tenant"].last_name.lower(), r["tenant"].first_name.lower()))
 
     return render(request, "app/tenant_list.html", {
-        "page": page,
+        "rows": rows,
         "total": len(rows),
         "show_realname": show_realname,
         "show_room": show_room,
@@ -158,19 +111,8 @@ def tenant_list(request: HttpRequest):
         "abfragen": abfragen,
         "selected_ids": selected_ids,
         "selected_abfragen": selected_abfragen,
-        "group_by_cluster": group_by_cluster,
-        "col_count": (1 + (2 if show_room else 0) + (1 if show_cluster else 0)
-                      + (2 if show_realname else 0) + len(selected_abfragen)),
-        "all_clusters": all_clusters,
-        "selected_clusters": selected_clusters,
-        "no_cluster_selected": "" in selected_clusters,
-        "per_page": per_page,
-        "per_page_choices": _PER_PAGE_CHOICES,
-        "q": q,
+        "summary": _engagement_summary(rows, selected_abfragen) if selected_abfragen else None,
         "residents": residents,
-        "sublet": sublet,
-        "sort": sort,
-        "dir": "desc" if reverse else "asc",
     })
 
 
