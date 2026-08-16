@@ -167,44 +167,7 @@
   <details open id="section-proofs" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
       <span>Ausbildungsnachweis</span>
-      {% if can_write_cluster %}
-      <button type="button" class="ca-notes-toggle" data-notes="cluster-notes" style="margin-left:auto;">🗒 Notizen {{ cluster_notes|length }}</button>
-      {% endif %}
     </summary>
-
-    {% if can_write_cluster %}
-    <div class="ca-notes-panel" id="cluster-notes"><div class="ca-notes-inner">
-    <p style="font-weight:500;margin:.5rem 0 .4rem;">Interne Notizen (Clustersprechende)</p>
-    {% if cluster_notes %}
-    <ul style="font-size:.9rem;margin:.25rem 0 .75rem;">
-      {% for n in cluster_notes %}
-      <li style="margin-bottom:.25rem;display:flex;align-items:baseline;gap:.5rem;">
-        <span style="color:#7a7a7a;white-space:nowrap;">{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by.first_name }} {{ n.created_by.last_name }}:</span>
-        <span>{{ n.body }}</span>
-        <form method="post" action="{% url 'note_delete' n.pk %}" style="margin-left:auto;">
-          {% csrf_token %}
-          <input type="hidden" name="next" value="{{ request.path }}">
-          <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.05rem .35rem;color:#b00;border-color:#b00;">✕</button>
-        </form>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p style="color:#888;font-size:.9rem;margin:.25rem 0 .5rem;">Keine Notizen.</p>
-    {% endif %}
-    <form class="ca-note-form" method="post" action="{% url 'note_add' %}">
-      {% csrf_token %}
-      <input type="hidden" name="source_group" value="clustersprechende">
-      <input type="hidden" name="subject_type" value="tenant">
-      <input type="hidden" name="subject_id" value="{{ tenant.pk }}">
-      <input type="hidden" name="next" value="{{ request.path }}">
-      <div style="display:flex;align-items:center;gap:.4rem;">
-        <textarea name="body" rows="2" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
-        <button type="submit" class="ca-button" style="padding:.45rem .65rem;font-size:1.1rem;line-height:1;flex-shrink:0;">→</button>
-      </div>
-    </form>
-    </div></div>
-    {% endif %}
 
     <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Ausstehend</p>
     {% if pending_proofs %}
@@ -335,9 +298,50 @@
     {% endif %}
   </details>
 
-  {% if engagement %}
+  {% if engagement or can_write_cluster %}
   <details id="section-engagement" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;"><span>Engagement</span></summary>
+    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
+      <span>Engagement</span>
+      {% if can_write_cluster %}
+      <button type="button" class="ca-notes-toggle" data-notes="cluster-notes" style="margin-left:auto;">🗒 Notizen {{ cluster_notes|length }}</button>
+      {% endif %}
+    </summary>
+
+    {% if can_write_cluster %}
+    <div class="ca-notes-panel" id="cluster-notes"><div class="ca-notes-inner">
+    <p style="font-weight:500;margin:.5rem 0 .4rem;">Interne Notizen (Clustersprechende)</p>
+    {% if cluster_notes %}
+    <ul style="font-size:.9rem;margin:.25rem 0 .75rem;">
+      {% for n in cluster_notes %}
+      <li style="margin-bottom:.25rem;display:flex;align-items:baseline;gap:.5rem;">
+        <span style="color:#7a7a7a;white-space:nowrap;">{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by.first_name }} {{ n.created_by.last_name }}:</span>
+        <span>{{ n.body }}</span>
+        <form method="post" action="{% url 'note_delete' n.pk %}" style="margin-left:auto;">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.05rem .35rem;color:#b00;border-color:#b00;">✕</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p style="color:#888;font-size:.9rem;margin:.25rem 0 .5rem;">Keine Notizen.</p>
+    {% endif %}
+    <form class="ca-note-form" method="post" action="{% url 'note_add' %}">
+      {% csrf_token %}
+      <input type="hidden" name="source_group" value="clustersprechende">
+      <input type="hidden" name="subject_type" value="tenant">
+      <input type="hidden" name="subject_id" value="{{ tenant.pk }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <div style="display:flex;align-items:center;gap:.4rem;">
+        <textarea name="body" rows="2" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
+        <button type="submit" class="ca-button" style="padding:.45rem .65rem;font-size:1.1rem;line-height:1;flex-shrink:0;">→</button>
+      </div>
+    </form>
+    </div></div>
+    {% endif %}
+
+    {% if engagement %}
     <div style="overflow-x:auto;margin-top:.5rem;">
       <table class="table is-fullwidth is-striped is-hoverable" style="font-size:.9rem;">
         <thead>
@@ -362,6 +366,9 @@
         </tbody>
       </table>
     </div>
+    {% else %}
+    <p style="color:#888;font-size:.9rem;margin-top:.5rem;">Kein Engagement erfasst.</p>
+    {% endif %}
   </details>
   {% endif %}
 </div>
