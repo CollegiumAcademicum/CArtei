@@ -47,12 +47,25 @@
     <input type="hidden" name="sort" value="{{ sort }}">
     <input type="hidden" name="dir" value="{{ dir }}">
     <button type="submit" class="ca-button">Filtern</button>
-    {% if all_clusters %}
+    {% if all_clusters or show_cluster %}
     <div style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
       <span style="font-size:0.8rem;color:#7a7a7a;">Cluster:</span>
       {% for cl in all_clusters %}
       <label style="font-size:0.85rem;"><input type="checkbox" name="cluster" value="{{ cl }}"
         {% if cl in selected_clusters %}checked{% endif %}> {{ cl }}</label>
+      {% endfor %}
+      <label style="font-size:0.85rem;color:#7a7a7a;"><input type="checkbox" name="cluster" value=""
+        {% if no_cluster_selected %}checked{% endif %}> kein Cluster</label>
+    </div>
+    {% endif %}
+    {% if show_surveys %}
+    <div style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:0.4rem 1rem;align-items:center;">
+      <span style="font-size:0.8rem;color:#7a7a7a;">Abfragen:</span>
+      {% for a in abfragen %}
+      <label style="font-size:0.85rem;"><input type="checkbox" name="surveys" value="{{ a.pk }}"
+        {% if a.pk in selected_ids %}checked{% endif %}> {{ a }}</label>
+      {% empty %}
+      <span style="font-size:0.85rem;color:#7a7a7a;">Keine Abfragen vorhanden.</span>
       {% endfor %}
     </div>
     {% endif %}
@@ -68,11 +81,26 @@
           {% if show_room %}<th>{% include "app/_sort_th.html" with col="sublet" label="Untermiete" %}</th>{% endif %}
           {% if show_realname %}<th>{% include "app/_sort_th.html" with col="email" label="E-Mail" %}</th>{% endif %}
           {% if show_realname %}<th>{% include "app/_sort_th.html" with col="move_in" label="Einzug" %}</th>{% endif %}
+          {% for a in selected_abfragen %}<th>{{ a }}</th>{% endfor %}
         </tr>
       </thead>
       <tbody>
       {% for row in page %}
         {% with t=row.tenant %}
+        {% if group_by_cluster %}{% ifchanged row.cluster_key %}
+        <tr class="cluster-summary">
+          <td colspan="{{ col_count }}" style="font-weight:700;background:#f4f1ea;">
+            {% if row.cluster %}Cluster {{ row.cluster }}{% else %}kein Cluster{% endif %}
+            <span style="color:#7a7a7a;font-weight:400;">— {{ row.stats.count }} Bewohner*in{{ row.stats.count|pluralize:"nen" }}</span>
+            {% for s in row.stats.surveys %}
+            <div style="font-weight:400;margin-top:0.2rem;font-size:0.85rem;">
+              <span style="color:#7a7a7a;">{{ s.abfrage }}:</span>
+              {% for b in s.badges %}<span class="badge badge-{{ b.status }}" style="margin-left:0.2rem;">{{ b.label }}: {{ b.count }}</span>{% empty %}<span style="color:#7a7a7a;">—</span>{% endfor %}
+            </div>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endifchanged %}{% endif %}
         <tr>
           <td>
             <a href="{% url 'tenant_detail' t.pk %}" style="color:var(--ca-teal);font-weight:600;">
@@ -87,10 +115,13 @@
           {% if show_room %}<td>{% if row.is_sublet %}Ja{% else %}—{% endif %}</td>{% endif %}
           {% if show_realname %}<td>{{ t.email|default:"—" }}</td>{% endif %}
           {% if show_realname %}<td>{{ t.move_in|default:"—" }}</td>{% endif %}
+          {% for a, results in row.survey_results %}
+          <td>{% for r in results %}<span class="badge badge-{{ r.status }}" style="display:inline-block;margin:1px;">{{ r.ag_name }}: {{ r.get_status_display }}</span>{% empty %}—{% endfor %}</td>
+          {% endfor %}
         </tr>
         {% endwith %}
       {% empty %}
-        <tr><td colspan="6" style="color:#7a7a7a;">Keine Bewohner*innen gefunden.</td></tr>
+        <tr><td colspan="{{ col_count }}" style="color:#7a7a7a;">Keine Bewohner*innen gefunden.</td></tr>
       {% endfor %}
       </tbody>
     </table>
