@@ -2,6 +2,8 @@ from datetime import date
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -9,7 +11,98 @@ from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
     AGAbfrageResult, EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
 )
-from app.tenant_access import SECTIONS, editable_fields, viewer_roles, visible_fields
+from app.tenant_access import (
+    SECTIONS, editable_fields, global_roles, viewer_roles, visible_fields,
+)
+
+_PER_PAGE_CHOICES = [25, 50, 100]
+
+
+@login_required
+def tenant_list(request: HttpRequest):
+    roles = global_roles(request.user)
+    visible = visible_fields(roles)
+    show_realname = "first_name" in visible      # real name + email + move dates
+    show_room = bool({"mietverwaltung", "admin"} & roles)
+    show_cluster = bool({"mietverwaltung", "admin", "cluster"} & roles)
+    today = date.today()
+
+    qs = Tenant.objects.all()
+    residents = request.GET.get("residents", "active")
+    if residents == "active":
+        qs = qs.filter(Q(move_out__isnull=True) | Q(move_out__gt=today))
+    elif residents == "former":
+        qs = qs.filter(move_out__isnull=False, move_out__lte=today)
+
+    q = request.GET.get("q", "").strip()
+    if q:
+        qs = qs.filter(
+            Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(preferred_name__icontains=q)
+        )
+    tenants = list(qs)
+
+    # One active assignment per tenant (room/wg/cluster/sublet), keyed by tenant_id.
+    assign_by_tenant = {}
+    if show_room or show_cluster:
+        for a in (
+            TenantRoomAssignment.objects
+            .filter(Q(moved_out__isnull=True) | Q(moved_out__gt=today))
+            .select_related("room__wg")
+        ):
+            assign_by_tenant.setdefault(a.tenant_id, a)
+
+    all_clusters = sorted(
+        {a.room.wg.cluster for a in assign_by_tenant.values() if a.room.wg.cluster}
+    ) if show_cluster else []
+    selected_clusters = set(request.GET.getlist("cluster"))
+    sublet = request.GET.get("sublet", "all")
+
+    rows = []
+    for t in tenants:
+        a = assign_by_tenant.get(t.pk)
+        cluster = a.room.wg.cluster if a else None
+        is_sublet = bool(a and a.is_sublet)
+        if show_cluster and selected_clusters and (cluster or "") not in selected_clusters:
+            continue
+        if show_room and sublet == "only" and not is_sublet:
+            continue
+        if show_room and sublet == "none" and is_sublet:
+            continue
+        rows.append({"tenant": t, "assignment": a, "cluster": cluster, "is_sublet": is_sublet})
+
+    sort = request.GET.get("sort", "name")
+    reverse = request.GET.get("dir", "asc") == "desc"
+    if sort == "move_in":
+        rows.sort(key=lambda r: (r["tenant"].move_in or date.min, r["tenant"].last_name.lower()), reverse=reverse)
+    elif sort == "cluster" and show_cluster:
+        rows.sort(key=lambda r: (r["cluster"] or "", r["tenant"].last_name.lower()), reverse=reverse)
+    else:
+        rows.sort(key=lambda r: (r["tenant"].last_name.lower(), r["tenant"].first_name.lower()), reverse=reverse)
+
+    try:
+        per_page = int(request.GET.get("per_page", 25))
+    except ValueError:
+        per_page = 25
+    if per_page not in _PER_PAGE_CHOICES:
+        per_page = 25
+    page = Paginator(rows, per_page).get_page(request.GET.get("page"))
+
+    return render(request, "app/tenant_list.html", {
+        "page": page,
+        "total": len(rows),
+        "show_realname": show_realname,
+        "show_room": show_room,
+        "show_cluster": show_cluster,
+        "all_clusters": all_clusters,
+        "selected_clusters": selected_clusters,
+        "per_page": per_page,
+        "per_page_choices": _PER_PAGE_CHOICES,
+        "q": q,
+        "residents": residents,
+        "sublet": sublet,
+        "sort": sort,
+        "dir": "desc" if reverse else "asc",
+    })
 
 
 def _current_tenant(request):
