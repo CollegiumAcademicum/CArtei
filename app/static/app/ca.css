@@ -111,6 +111,32 @@ body {
   box-shadow: 0 0 0 2px rgba(53,173,164,0.15);
 }
 
+/* ── Room assignment rows (read-only until "Bearbeiten") ── */
+.ca-room-assignment {
+  border: 1px solid #ececec; border-radius: 6px;
+  padding: 0.5rem 0.7rem; margin: 0.4rem 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ca-room-assignment:hover { background: #faf8f3; border-color: #dcdcdc; }
+.ca-room-display { display: flex; align-items: center; gap: 0.75rem; }
+.ca-room-main { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.ca-room-name { font-weight: 600; }
+.ca-room-meta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.75rem;
+  font-size: 0.85rem; color: #6a6a6a;
+}
+.ca-room-badge {
+  font-size: 0.75rem; font-weight: 600; color: var(--ca-teal-dark);
+  background: rgba(53,173,164,0.12); border-radius: 999px; padding: 0.05rem 0.5rem;
+}
+.ca-room-edit-btn {
+  flex-shrink: 0; padding: 0.15rem 0.6rem; font-size: 0.8rem;
+  opacity: 0; transition: opacity 0.15s ease;
+}
+.ca-room-assignment:hover .ca-room-edit-btn,
+.ca-room-assignment:focus-within .ca-room-edit-btn { opacity: 1; }
+@media (hover: none) { .ca-room-edit-btn { opacity: 1; } }  /* touch: no hover to reveal */
+
 /* ── Dirty-section highlight ── */
 details.is-dirty {
   border: 2px solid #f5c518 !important;

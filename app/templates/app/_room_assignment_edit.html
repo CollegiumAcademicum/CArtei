@@ -1,14 +1,18 @@
-{# One editable room assignment. Read-only by default; "Bearbeiten" reveals the fields.
-   Requires context vars: assignment, aform. #}
-<div class="ca-room-assignment" style="margin:.4rem 0;">
+{# One editable room assignment. Read-only until "Bearbeiten"; needs: assignment, aform. #}
+<div class="ca-room-assignment">
   <input type="hidden" name="assignment_ids" value="{{ assignment.pk }}">
-  <div class="ca-room-display" style="display:{% if aform.errors %}none{% else %}flex{% endif %};align-items:baseline;gap:.5rem;">
-    <span style="flex:1;">{{ assignment.room.wg.building.name }} · {{ assignment.room.wg.name }} · {{ assignment.room.name }}
-      — {{ assignment.moved_in }}{% if assignment.moved_out %} bis {{ assignment.moved_out }}{% else %} (aktuell){% endif %}
-      {% if assignment.key_handed_over %}· Schlüssel übergeben{% endif %}</span>
-    <button type="button" class="ca-room-edit-btn ca-button-outline" style="padding:.15rem .6rem;font-size:.8rem;flex-shrink:0;">Bearbeiten</button>
+  <div class="ca-room-display"{% if aform.errors %} style="display:none;"{% endif %}>
+    <div class="ca-room-main">
+      <span class="ca-room-name">{{ assignment.room.wg.building.name }} · {{ assignment.room.wg.name }} · {{ assignment.room.name }}</span>
+      <span class="ca-room-meta">
+        <span>Eingezogen {{ assignment.moved_in }}</span>
+        <span>{% if assignment.moved_out %}Ausgezogen {{ assignment.moved_out }}{% else %}aktuell{% endif %}</span>
+        {% if assignment.key_handed_over %}<span class="ca-room-badge">Schlüssel übergeben</span>{% endif %}
+      </span>
+    </div>
+    <button type="button" class="ca-room-edit-btn ca-button-outline">Bearbeiten</button>
   </div>
-  <div class="ca-room-fields" style="display:{% if aform.errors %}block{% else %}none{% endif %};">
+  <div class="ca-room-fields"{% if not aform.errors %} style="display:none;"{% endif %}>
     <div class="ca-field-grid">
       <div class="ca-field">
         <span class="ca-field-label">Zimmer</span>
