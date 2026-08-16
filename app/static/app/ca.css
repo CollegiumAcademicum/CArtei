@@ -130,9 +130,11 @@ body {
   background: rgba(53,173,164,0.12); border-radius: 999px; padding: 0.05rem 0.5rem;
 }
 .ca-room-edit-btn {
-  flex-shrink: 0; padding: 0.15rem 0.6rem; font-size: 0.8rem;
-  opacity: 0; transition: opacity 0.15s ease;
+  flex-shrink: 0; padding: 0.05rem 0.3rem; font-size: 0.72rem;
+  border: none; background: none; color: #9a9a9a; cursor: pointer;
+  opacity: 0; transition: opacity 0.15s ease, color 0.15s ease;
 }
+.ca-room-edit-btn:hover { color: var(--ca-teal); text-decoration: underline; }
 .ca-room-assignment:hover .ca-room-edit-btn,
 .ca-room-assignment:focus-within .ca-room-edit-btn { opacity: 1; }
 @media (hover: none) { .ca-room-edit-btn { opacity: 1; } }  /* touch: no hover to reveal */
