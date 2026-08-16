@@ -19,6 +19,7 @@
   {% if request.user.is_authenticated %}
   <div class="ca-navbar-right">
     <a href="{% url 'dashboard' %}" class="ca-navbar-admin">Dashboard</a>
+    <a href="{% url 'tenant_list' %}" class="ca-navbar-admin">Bewohner*innen</a>
     <a href="{% url 'abfragen_list' %}" class="ca-navbar-admin">Abfragen</a>
     {% if is_cluster_user %}<a href="{% url 'cluster' %}" class="ca-navbar-admin">Cluster</a>{% endif %}
     <a href="{% url 'admin_portal' %}" class="ca-navbar-admin">Admin</a>

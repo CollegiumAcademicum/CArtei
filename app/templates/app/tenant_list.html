@@ -1,0 +1,111 @@
+{% extends "app/base.html" %}
+{% block title %}Bewohner*innen — CArtei{% endblock %}
+{% block content %}
+<div class="ca-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <h1 style="font-size:1.4rem;font-weight:700;">Bewohner*innen</h1>
+    <span style="color:#7a7a7a;font-size:0.9rem;">{{ total }} Person{{ total|pluralize:"en" }}</span>
+  </div>
+
+  <form method="get" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;margin-bottom:1.25rem;">
+    <div>
+      <label class="label" style="font-size:0.8rem;">Suche</label>
+      <input type="text" name="q" value="{{ q }}" class="input" placeholder="Name…" style="min-width:14rem;">
+    </div>
+    <div>
+      <label class="label" style="font-size:0.8rem;">Bewohner*innen</label>
+      <div class="select">
+        <select name="residents">
+          <option value="active" {% if residents == "active" %}selected{% endif %}>Aktuelle</option>
+          <option value="former" {% if residents == "former" %}selected{% endif %}>Ehemalige</option>
+          <option value="all" {% if residents == "all" %}selected{% endif %}>Alle</option>
+        </select>
+      </div>
+    </div>
+    {% if show_room %}
+    <div>
+      <label class="label" style="font-size:0.8rem;">Untermiete</label>
+      <div class="select">
+        <select name="sublet">
+          <option value="all" {% if sublet == "all" %}selected{% endif %}>Alle</option>
+          <option value="only" {% if sublet == "only" %}selected{% endif %}>Nur Untermiete</option>
+          <option value="none" {% if sublet == "none" %}selected{% endif %}>Keine Untermiete</option>
+        </select>
+      </div>
+    </div>
+    {% endif %}
+    <div>
+      <label class="label" style="font-size:0.8rem;">Pro Seite</label>
+      <div class="select">
+        <select name="per_page">
+          {% for n in per_page_choices %}
+          <option value="{{ n }}" {% if n == per_page %}selected{% endif %}>{{ n }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <input type="hidden" name="sort" value="{{ sort }}">
+    <input type="hidden" name="dir" value="{{ dir }}">
+    <button type="submit" class="ca-button">Filtern</button>
+    {% if all_clusters %}
+    <div style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
+      <span style="font-size:0.8rem;color:#7a7a7a;">Cluster:</span>
+      {% for cl in all_clusters %}
+      <label style="font-size:0.85rem;"><input type="checkbox" name="cluster" value="{{ cl }}"
+        {% if cl in selected_clusters %}checked{% endif %}> {{ cl }}</label>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </form>
+
+  <div style="overflow-x:auto;">
+    <table class="table is-fullwidth is-striped is-hoverable" style="font-size:0.9rem;">
+      <thead>
+        <tr>
+          <th>{% include "app/_sort_th.html" with col="name" label="Name" %}</th>
+          {% if show_room %}<th>Zimmer / WG</th>{% endif %}
+          {% if show_cluster %}<th>{% include "app/_sort_th.html" with col="cluster" label="Cluster" %}</th>{% endif %}
+          {% if show_room %}<th>Untermiete</th>{% endif %}
+          {% if show_realname %}<th>E-Mail</th>{% endif %}
+          {% if show_realname %}<th>{% include "app/_sort_th.html" with col="move_in" label="Einzug" %}</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in page %}
+        {% with t=row.tenant %}
+        <tr>
+          <td>
+            <a href="{% url 'tenant_detail' t.pk %}" style="color:var(--ca-teal);font-weight:600;">
+              {% if t.preferred_name %}{{ t.preferred_name }}{% else %}{{ t.first_name }} {{ t.last_name }}{% endif %}
+            </a>
+            {% if show_realname and t.preferred_name %}<span style="color:#7a7a7a;"> ({{ t.first_name }} {{ t.last_name }})</span>{% endif %}
+          </td>
+          {% if show_room %}
+          <td>{% if row.assignment %}{{ row.assignment.room.name }} · {{ row.assignment.room.wg.name }}{% else %}—{% endif %}</td>
+          {% endif %}
+          {% if show_cluster %}<td>{{ row.cluster|default:"—" }}</td>{% endif %}
+          {% if show_room %}<td>{% if row.is_sublet %}Ja{% else %}—{% endif %}</td>{% endif %}
+          {% if show_realname %}<td>{{ t.email|default:"—" }}</td>{% endif %}
+          {% if show_realname %}<td>{{ t.move_in|default:"—" }}</td>{% endif %}
+        </tr>
+        {% endwith %}
+      {% empty %}
+        <tr><td colspan="6" style="color:#7a7a7a;">Keine Bewohner*innen gefunden.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page.paginator.num_pages > 1 %}
+  <nav class="pagination is-small" role="navigation" style="margin-top:1rem;">
+    {% if page.has_previous %}
+    <a class="pagination-previous" href="{% querystring page=page.previous_page_number %}">Zurück</a>
+    {% endif %}
+    {% if page.has_next %}
+    <a class="pagination-next" href="{% querystring page=page.next_page_number %}">Weiter</a>
+    {% endif %}
+    <span class="pagination-list" style="color:#7a7a7a;">Seite {{ page.number }} / {{ page.paginator.num_pages }}</span>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}
