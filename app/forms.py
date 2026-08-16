@@ -31,7 +31,10 @@ class TenantForm(forms.ModelForm):
 class TenantRoomAssignmentForm(forms.ModelForm):
     class Meta:
         model = TenantRoomAssignment
-        fields = ["room", "moved_in", "moved_out", "key_handed_over", "deposit_iban"]
+        fields = [
+            "room", "moved_in", "moved_out", "mailbox_key", "is_sublet",
+            "sublet_of_tenant", "key_received", "key_returned", "deposit_iban",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -39,6 +42,8 @@ class TenantRoomAssignmentForm(forms.ModelForm):
             "wg__building__name", "wg__name", "name"
         )
         self.fields["room"].label_from_instance = lambda r: f"{r.wg.building.name} · {r.wg.name} · {r.name}"
+        self.fields["sublet_of_tenant"].queryset = Tenant.objects.order_by("last_name", "first_name")
+        self.fields["sublet_of_tenant"].required = False
         for field in self.fields.values():
             if isinstance(field, forms.DateField):
                 field.widget = forms.DateInput(

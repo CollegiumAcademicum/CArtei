@@ -33,11 +33,6 @@ SECTIONS = [
         _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _OWNER, _OWNER),
     ]),
     Section("housing", "Wohnen", [
-        _f("is_sublet", "Untermiete", _OWN_MV, _MV),
-        _f("sublet_of_tenant", "Untervermietet von", _OWN_MV, _MV),
-        _f("sublet_from", "Untermiete von", _OWN_MV, _MV),
-        _f("sublet_to", "Untermiete bis", _OWN_MV, _MV),
-        _f("mailbox_key", "Briefkastenschlüssel", _OWN_MV, _MV),
         _f("move_in", "Ersteinzug", _OWN_MV, _MV),
         _f("move_out", "Auszug", _OWN_MV, _MV),
     ]),

@@ -139,6 +139,16 @@ body {
 .ca-room-assignment:focus-within .ca-room-edit-btn { opacity: 1; }
 @media (hover: none) { .ca-room-edit-btn { opacity: 1; } }  /* touch: no hover to reveal */
 
+/* ── Untermiete: visually distinct from normal renters ── */
+.ca-room-assignment--sublet {
+  border-left: 4px solid #d98324; background: #fdf6ec;
+}
+.ca-room-assignment--sublet:hover { background: #fbeed7; }
+.ca-room-badge--sublet {
+  color: #9a5a10; background: rgba(217,131,36,0.16);
+}
+.ca-sublet-line { border-left: 3px solid #d98324; padding-left: 0.5rem; }
+
 /* ── Dirty-section highlight ── */
 details.is-dirty {
   border: 2px solid #f5c518 !important;

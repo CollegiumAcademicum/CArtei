@@ -107,7 +107,7 @@ def test_mietverwaltung_sees_sublet_of_picker(settings):
     c = Client()
     _login(c, "mv2", groups=["ag.mietverwaltung"])
     body = c.get(f"/tenants/{t.pk}/").content.decode()
-    assert 'name="sublet_of_tenant"' in body
+    assert 'sublet_of_tenant' in body  # rendered on the room-assignment form (prefixed name)
 
 
 @pytest.mark.django_db

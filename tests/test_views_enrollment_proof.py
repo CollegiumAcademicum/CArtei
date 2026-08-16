@@ -15,10 +15,8 @@ def _tenant(username="uploader"):
         email="t@example.com",
         is_flinta=False,
         barrier_free_needed=False,
-        mailbox_key=False,
         mailbox_list_opt_in=False,
         soli_miete_wunsch=0,
-        is_sublet=False,
     )
 
 

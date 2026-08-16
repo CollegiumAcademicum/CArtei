@@ -1,5 +1,5 @@
 {# One editable room assignment. Read-only until "Bearbeiten"; needs: assignment, aform. #}
-<div class="ca-room-assignment">
+<div class="ca-room-assignment{% if assignment.is_sublet %} ca-room-assignment--sublet{% endif %}">
   <input type="hidden" name="assignment_ids" value="{{ assignment.pk }}">
   <div class="ca-room-display"{% if aform.errors %} style="display:none;"{% endif %}>
     <div class="ca-room-main">
@@ -7,7 +7,10 @@
       <span class="ca-room-meta">
         <span>Eingezogen {{ assignment.moved_in }}</span>
         <span>{% if assignment.moved_out %}Ausgezogen {{ assignment.moved_out }}{% else %}aktuell{% endif %}</span>
-        {% if assignment.key_handed_over %}<span class="ca-room-badge">Schlüssel übergeben</span>{% endif %}
+        {% if assignment.is_sublet %}<span class="ca-room-badge ca-room-badge--sublet">Untermiete{% if assignment.sublet_of_tenant %} von {{ assignment.sublet_of_tenant.first_name }} {{ assignment.sublet_of_tenant.last_name }}{% endif %}</span>{% endif %}
+        {% if assignment.mailbox_key %}<span class="ca-room-badge">Briefkastenschlüssel</span>{% endif %}
+        {% if assignment.key_received %}<span class="ca-room-badge">Schlüssel erhalten {{ assignment.key_received }}</span>{% endif %}
+        {% if assignment.key_returned %}<span class="ca-room-badge">Schlüssel abgegeben {{ assignment.key_returned }}</span>{% endif %}
       </span>
     </div>
     <button type="button" class="ca-room-edit-btn">✎ Bearbeiten</button>
@@ -30,8 +33,27 @@
         {% if aform.moved_out.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.moved_out.errors }}</div>{% endif %}
       </div>
       <div class="ca-field">
-        <span class="ca-field-label">Schlüssel übergeben</span>
-        {{ aform.key_handed_over }}
+        <span class="ca-field-label">Briefkastenschlüssel</span>
+        {{ aform.mailbox_key }}
+      </div>
+      <div class="ca-field">
+        <span class="ca-field-label">Schlüssel erhalten</span>
+        {{ aform.key_received }}
+        {% if aform.key_received.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.key_received.errors }}</div>{% endif %}
+      </div>
+      <div class="ca-field">
+        <span class="ca-field-label">Schlüssel wieder abgegeben</span>
+        {{ aform.key_returned }}
+        {% if aform.key_returned.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.key_returned.errors }}</div>{% endif %}
+      </div>
+      <div class="ca-field ca-sublet-toggle">
+        <span class="ca-field-label">Untermiete</span>
+        {{ aform.is_sublet }}
+      </div>
+      <div class="ca-field ca-sublet-dep">
+        <span class="ca-field-label">Untervermietet von</span>
+        {{ aform.sublet_of_tenant }}
+        {% if aform.sublet_of_tenant.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.sublet_of_tenant.errors }}</div>{% endif %}
       </div>
       <div class="ca-field">
         <span class="ca-field-label">Kaution IBAN</span>

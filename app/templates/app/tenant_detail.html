@@ -98,7 +98,7 @@
           <span class="ca-button-outline" style="padding:.1rem .55rem;font-size:1.1rem;border-radius:4px;line-height:1.4;">+</span>
           <span style="font-size:.9rem;color:#555;">Zimmer zuordnen</span>
         </summary>
-        <div class="ca-field-grid" style="margin-top:.5rem;">
+        <div class="ca-field-grid ca-room-assignment" style="margin-top:.5rem;">
           <div class="ca-field">
             <span class="ca-field-label">Zimmer</span>
             {{ new_room_form.room }}
@@ -112,8 +112,24 @@
             {{ new_room_form.moved_out }}
           </div>
           <div class="ca-field">
-            <span class="ca-field-label">Schlüssel übergeben</span>
-            {{ new_room_form.key_handed_over }}
+            <span class="ca-field-label">Briefkastenschlüssel</span>
+            {{ new_room_form.mailbox_key }}
+          </div>
+          <div class="ca-field">
+            <span class="ca-field-label">Schlüssel erhalten</span>
+            {{ new_room_form.key_received }}
+          </div>
+          <div class="ca-field">
+            <span class="ca-field-label">Schlüssel wieder abgegeben</span>
+            {{ new_room_form.key_returned }}
+          </div>
+          <div class="ca-field ca-sublet-toggle">
+            <span class="ca-field-label">Untermiete</span>
+            {{ new_room_form.is_sublet }}
+          </div>
+          <div class="ca-field ca-sublet-dep">
+            <span class="ca-field-label">Untervermietet von</span>
+            {{ new_room_form.sublet_of_tenant }}
           </div>
           <div class="ca-field">
             <span class="ca-field-label">Kaution IBAN</span>
@@ -148,9 +164,12 @@
     <p style="font-weight:500;margin:.25rem 0 .25rem;">Aktuelle Zimmer</p>
     <ul>
       {% for a in active_assignments %}
-      <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
+      <li{% if a.is_sublet %} class="ca-sublet-line"{% endif %}>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
           — eingezogen {{ a.moved_in }}
-          {% if a.key_handed_over %}· Schlüssel übergeben{% endif %}</li>
+          {% if a.is_sublet %}· <span class="ca-room-badge ca-room-badge--sublet">Untermiete</span>{% endif %}
+          {% if a.mailbox_key %}· Briefkastenschlüssel{% endif %}
+          {% if a.key_received %}· Schlüssel erhalten {{ a.key_received }}{% endif %}
+          {% if a.key_returned %}· abgegeben {{ a.key_returned }}{% endif %}</li>
       {% endfor %}
     </ul>
     {% endif %}
@@ -160,9 +179,11 @@
     <p style="font-weight:500;margin:.25rem 0 .25rem;">Frühere Zimmer</p>
     <ul>
       {% for a in past_assignments %}
-      <li>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
+      <li{% if a.is_sublet %} class="ca-sublet-line"{% endif %}>{{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
           — {{ a.moved_in }} bis {{ a.moved_out }}
-          {% if a.key_handed_over %}· Schlüssel übergeben{% endif %}</li>
+          {% if a.is_sublet %}· <span class="ca-room-badge ca-room-badge--sublet">Untermiete</span>{% endif %}
+          {% if a.key_received %}· Schlüssel erhalten {{ a.key_received }}{% endif %}
+          {% if a.key_returned %}· abgegeben {{ a.key_returned }}{% endif %}</li>
       {% endfor %}
     </ul>
     {% endif %}
@@ -481,22 +502,17 @@ document.querySelectorAll('.ca-notes-toggle').forEach(function(btn) {
   });
 });
 
-// Sublet field visibility: dependent fields only visible when is_sublet is checked.
+// Per-assignment sublet visibility: "Untervermietet von" only shows when its
+// card's Untermiete checkbox is checked.
 (function() {
-  var deps = ['sublet_of_tenant', 'sublet_from', 'sublet_to'];
-  function toggle(show) {
-    deps.forEach(function(name) {
-      var el = document.querySelector('[data-field="' + name + '"]');
-      if (el) el.style.display = show ? '' : 'none';
-    });
-  }
-  var cb = document.querySelector('[name="is_sublet"]');
-  if (cb) {
-    toggle(cb.checked);
-    cb.addEventListener('change', function() { toggle(cb.checked); });
-  } else {
-    toggle({{ tenant.is_sublet|yesno:"true,false" }});
-  }
+  document.querySelectorAll('.ca-room-assignment').forEach(function(card) {
+    var cb = card.querySelector('.ca-sublet-toggle input[type="checkbox"]');
+    var dep = card.querySelector('.ca-sublet-dep');
+    if (!cb || !dep) return;
+    function toggle() { dep.style.display = cb.checked ? '' : 'none'; }
+    toggle();
+    cb.addEventListener('change', toggle);
+  });
 })();
 </script>
 {% endblock %}

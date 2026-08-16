@@ -52,7 +52,7 @@ def test_stranger_sees_only_public_card():
 
 def test_mietverwaltung_can_edit_dob_and_contact():
     edt = editable_fields({"public", "mietverwaltung"})
-    assert {"date_of_birth", "email", "move_in", "mailbox_key"} <= edt
+    assert {"date_of_birth", "email", "move_in"} <= edt
     assert "soli_miete_wunsch" not in edt  # owner-only (admin override aside)
 
 
@@ -62,8 +62,7 @@ def test_editable_columns_are_real_tenant_fields():
     assert set(EDITABLE_COLUMNS) <= names
 
 
-def test_sublet_of_editable_by_mietverwaltung():
-    assert "sublet_of_tenant" in visible_fields({"public", "mietverwaltung"})
-    assert "sublet_of_tenant" in editable_fields({"public", "mietverwaltung"})
-    assert "sublet_of_tenant" not in visible_fields({"public"})       # not public
-    assert "sublet_of_tenant" not in editable_fields({"public", "owner"})  # owner cannot
+def test_sublet_is_no_longer_a_tenant_field():
+    # Untermiete moved to the room assignment; it is not governed by tenant field-access.
+    assert "sublet_of_tenant" not in visible_fields({"public", "mietverwaltung"})
+    assert "mailbox_key" not in editable_fields({"public", "mietverwaltung"})

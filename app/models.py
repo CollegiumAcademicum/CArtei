@@ -34,15 +34,8 @@ class Tenant(models.Model):
     phone = models.CharField(max_length=50, null=True, blank=True)
     is_flinta = models.BooleanField(default=False)
     barrier_free_needed = models.BooleanField(default=False)
-    mailbox_key = models.BooleanField(default=False)
     mailbox_list_opt_in = models.BooleanField(default=False)
     soli_miete_wunsch = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
-    is_sublet = models.BooleanField(default=False)
-    sublet_from = models.DateField(null=True, blank=True)
-    sublet_to = models.DateField(null=True, blank=True)
-    sublet_of_tenant = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.DO_NOTHING, db_constraint=False
-    )
     data_priv_signed_at = models.DateField(null=True, blank=True)
     photo_allowance_signed_at = models.DateField(null=True, blank=True)
     move_in = models.DateField(null=True, blank=True)
@@ -168,7 +161,14 @@ class TenantRoomAssignment(models.Model):
     room = models.ForeignKey(Room, on_delete=models.DO_NOTHING, db_constraint=False)
     moved_in = models.DateField()
     moved_out = models.DateField(null=True, blank=True)
-    key_handed_over = models.BooleanField(default=False)
+    mailbox_key = models.BooleanField(default=False)
+    is_sublet = models.BooleanField(default=False)
+    sublet_of_tenant = models.ForeignKey(
+        Tenant, null=True, blank=True, on_delete=models.DO_NOTHING,
+        db_constraint=False, related_name="+",
+    )
+    key_received = models.DateField(null=True, blank=True)
+    key_returned = models.DateField(null=True, blank=True)
     deposit_iban = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
