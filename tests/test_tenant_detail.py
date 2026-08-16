@@ -264,3 +264,4 @@ def test_new_room_without_moved_in_shows_error_not_silent(settings):
     # The error must be rendered in the page (not just present on the form object),
     # and the collapsible "Zimmer zuordnen" section must be opened so the user sees it.
     assert "errorlist" in body, "New-room field errors must be visible in the rendered page"
+    assert "ca-field-error" in body, "Errored required field must get the red-border class"

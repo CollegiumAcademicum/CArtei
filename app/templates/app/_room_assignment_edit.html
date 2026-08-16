@@ -18,12 +18,12 @@
   </div>
   <div class="ca-room-fields"{% if not aform.errors %} style="display:none;"{% endif %}>
     <div class="ca-field-grid">
-      <div class="ca-field">
+      <div class="ca-field{% if aform.room.errors %} ca-field-error{% endif %}">
         <span class="ca-field-label">Zimmer</span>
         {{ aform.room }}
         {% if aform.room.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.room.errors }}</div>{% endif %}
       </div>
-      <div class="ca-field">
+      <div class="ca-field{% if aform.moved_in.errors %} ca-field-error{% endif %}">
         <span class="ca-field-label">Eingezogen</span>
         {{ aform.moved_in }}
         {% if aform.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.moved_in.errors }}</div>{% endif %}

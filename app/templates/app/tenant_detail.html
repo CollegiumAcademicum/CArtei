@@ -100,11 +100,11 @@
         </summary>
         {% if new_room_form.errors %}<div style="color:#b00;font-size:.85rem;margin-top:.5rem;">{{ new_room_form.errors }}</div>{% endif %}
         <div class="ca-field-grid ca-room-assignment" style="margin-top:.5rem;">
-          <div class="ca-field">
+          <div class="ca-field{% if new_room_form.room.errors %} ca-field-error{% endif %}">
             <span class="ca-field-label">Zimmer</span>
             {{ new_room_form.room }}
           </div>
-          <div class="ca-field">
+          <div class="ca-field{% if new_room_form.moved_in.errors %} ca-field-error{% endif %}">
             <span class="ca-field-label">Eingezogen</span>
             {{ new_room_form.moved_in }}
           </div>

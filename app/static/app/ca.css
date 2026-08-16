@@ -82,6 +82,8 @@ body {
   padding: 0.5rem 0.6rem; font-family: inherit; font-size: 0.95rem;
   color: var(--ca-text); background: #fcfcfc;
 }
+/* Server-side validation error: highlight the offending input. */
+.ca-field-error input, .ca-field-error select { border-color: #b00; background: #fff5f5; }
 /* Boolean fields as an animated toggle slider (✕ = false, ✓ = true). */
 .ca-field input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
