@@ -142,6 +142,27 @@ def test_future_moved_out_shows_as_active_room(settings):
 
 
 @pytest.mark.django_db
+def test_past_assignment_is_editable_for_manager(settings):
+    """A past (moved_out in the past) assignment must render as an editable form for MV/Admin."""
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    t = _tenant("mvpast")
+    b = Building.objects.create(name="BauP")
+    wg = WG.objects.create(building=b, name="WGP", cluster="OG3")
+    room = Room.objects.create(wg=wg, name="301", size_sqm=15)
+    a = TenantRoomAssignment.objects.create(
+        tenant=t, room=room,
+        moved_in=datetime.date(2020, 1, 1), moved_out=datetime.date(2021, 1, 1),
+    )
+    c = Client()
+    _login(c, "mvp", groups=["ag.mietverwaltung"])
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert "Frühere Zimmer" in body
+    assert f'name="room_{a.pk}-room"' in body, "Past assignment must be editable, not read-only"
+
+
+@pytest.mark.django_db
 def test_housing_post_saves_without_new_room(settings):
     """Housing section should save existing assignment changes even when new-room form is blank."""
     import datetime

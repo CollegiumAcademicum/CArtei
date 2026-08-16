@@ -99,32 +99,37 @@ def tenant_detail(request: HttpRequest, pk: int):
     }
 
     # Room assignments — fetch for owners, mietverwaltung, admins.
+    today = date.today()
     if {"owner", "mietverwaltung", "admin"} & roles:
         assignments = list(
             TenantRoomAssignment.objects.filter(tenant=tenant)
             .select_related("room__wg__building")
             .order_by("-moved_in")
         )
-        today = date.today()
         active_assignments = [a for a in assignments if not a.moved_out or a.moved_out > today]
-        ctx["past_assignments"] = [a for a in assignments if a.moved_out and a.moved_out <= today]
+        past_assignments = [a for a in assignments if a.moved_out and a.moved_out <= today]
     else:
         active_assignments = []
-        ctx["past_assignments"] = []
+        past_assignments = []
+    ctx["active_assignments"] = active_assignments
+    ctx["past_assignments"] = past_assignments
 
     if can_manage_room:
-        if failed_assignment_forms is not None:
-            ctx["active_assignment_forms"] = failed_assignment_forms
-            ctx["new_room_form"] = failed_new_room_form or TenantRoomAssignmentForm(prefix="new_room")
-        else:
-            ctx["active_assignment_forms"] = [
-                (a, TenantRoomAssignmentForm(instance=a, prefix=f"room_{a.pk}"))
-                for a in active_assignments
-            ]
-            ctx["new_room_form"] = TenantRoomAssignmentForm(prefix="new_room")
+        # On a failed POST, reuse the bound forms (which hold the errors); otherwise
+        # build a fresh edit form per assignment. Both current and past are editable.
+        failed_by_pk = dict((a.pk, rf) for a, rf in (failed_assignment_forms or []))
+
+        def _form_for(a):
+            return failed_by_pk.get(a.pk) or TenantRoomAssignmentForm(
+                instance=a, prefix=f"room_{a.pk}"
+            )
+
+        ctx["active_assignment_forms"] = [(a, _form_for(a)) for a in active_assignments]
+        ctx["past_assignment_forms"] = [(a, _form_for(a)) for a in past_assignments]
+        ctx["new_room_form"] = failed_new_room_form or TenantRoomAssignmentForm(prefix="new_room")
     else:
         ctx["active_assignment_forms"] = []
-    ctx["active_assignments"] = active_assignments
+        ctx["past_assignment_forms"] = []
 
     if {"owner", "mietverwaltung", "admin"} & roles:
         proofs = list(EnrollmentProof.objects.filter(tenant=tenant).order_by("-uploaded_at"))

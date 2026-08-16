@@ -60,9 +60,6 @@
     <form id="form-housing" method="post" novalidate>
       {% csrf_token %}
       <input type="hidden" name="section" value="housing">
-      {% for assignment, aform in active_assignment_forms %}
-      <input type="hidden" name="assignment_ids" value="{{ assignment.pk }}">
-      {% endfor %}
       <div class="ca-field-grid">
         {% for row in section.rows %}
         <div class="ca-field" data-field="{{ row.name }}">
@@ -80,34 +77,16 @@
       <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
       <p style="font-weight:500;margin:.25rem 0 .4rem;">Aktuelle Zimmer</p>
       {% for assignment, aform in active_assignment_forms %}
-      {% if not forloop.first %}<hr style="margin:.5rem 0;border:none;border-top:1px solid #f0f0f0;">{% endif %}
-      <div class="ca-field-grid">
-        <div class="ca-field">
-          <span class="ca-field-label">Zimmer</span>
-          {{ aform.room }}
-          {% if aform.room.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.room.errors }}</div>{% endif %}
-        </div>
-        <div class="ca-field">
-          <span class="ca-field-label">Eingezogen</span>
-          {{ aform.moved_in }}
-          {% if aform.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.moved_in.errors }}</div>{% endif %}
-        </div>
-        <div class="ca-field">
-          <span class="ca-field-label">Ausgezogen</span>
-          {{ aform.moved_out }}
-        </div>
-        <div class="ca-field">
-          <span class="ca-field-label">Schlüssel übergeben</span>
-          {{ aform.key_handed_over }}
-        </div>
-        <div class="ca-field">
-          <span class="ca-field-label">Kaution IBAN</span>
-          {{ aform.deposit_iban }}
-        </div>
-      </div>
+      {% include "app/_room_assignment_edit.html" %}
       {% empty %}
       <p style="color:#888;font-size:.9rem;margin:.25rem 0;">Kein Zimmer zugeordnet.</p>
       {% endfor %}
+      {% if past_assignment_forms %}
+      <p style="font-weight:500;margin:.75rem 0 .4rem;">Frühere Zimmer</p>
+      {% for assignment, aform in past_assignment_forms %}
+      {% include "app/_room_assignment_edit.html" %}
+      {% endfor %}
+      {% endif %}
       <details style="margin-top:.75rem;">
         <summary style="cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:.5rem;">
           <span class="ca-button-outline" style="padding:.1rem .55rem;font-size:1.1rem;border-radius:4px;line-height:1.4;">+</span>
@@ -170,7 +149,7 @@
     </ul>
     {% endif %}
 
-    {% if section.key == "housing" and past_assignments %}
+    {% if section.key == "housing" and past_assignments and not can_manage_room %}
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
     <p style="font-weight:500;margin:.25rem 0 .25rem;">Frühere Zimmer</p>
     <ul>
@@ -461,6 +440,15 @@ document.querySelectorAll('details.ca-section').forEach(function(section) {
       var target = document.getElementById(btn.getAttribute('form'));
       if (target) target.requestSubmit(btn);
     });
+  });
+});
+
+// Room assignments are read-only until "Bearbeiten" reveals the edit fields.
+document.querySelectorAll('.ca-room-edit-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var wrap = btn.closest('.ca-room-assignment');
+    wrap.querySelector('.ca-room-display').style.display = 'none';
+    wrap.querySelector('.ca-room-fields').style.display = 'block';
   });
 });
 

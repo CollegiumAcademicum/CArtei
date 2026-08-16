@@ -1,0 +1,39 @@
+{# One editable room assignment. Read-only by default; "Bearbeiten" reveals the fields.
+   Requires context vars: assignment, aform. #}
+<div class="ca-room-assignment" style="margin:.4rem 0;">
+  <input type="hidden" name="assignment_ids" value="{{ assignment.pk }}">
+  <div class="ca-room-display" style="display:{% if aform.errors %}none{% else %}flex{% endif %};align-items:baseline;gap:.5rem;">
+    <span style="flex:1;">{{ assignment.room.wg.building.name }} · {{ assignment.room.wg.name }} · {{ assignment.room.name }}
+      — {{ assignment.moved_in }}{% if assignment.moved_out %} bis {{ assignment.moved_out }}{% else %} (aktuell){% endif %}
+      {% if assignment.key_handed_over %}· Schlüssel übergeben{% endif %}</span>
+    <button type="button" class="ca-room-edit-btn ca-button-outline" style="padding:.15rem .6rem;font-size:.8rem;flex-shrink:0;">Bearbeiten</button>
+  </div>
+  <div class="ca-room-fields" style="display:{% if aform.errors %}block{% else %}none{% endif %};">
+    <div class="ca-field-grid">
+      <div class="ca-field">
+        <span class="ca-field-label">Zimmer</span>
+        {{ aform.room }}
+        {% if aform.room.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.room.errors }}</div>{% endif %}
+      </div>
+      <div class="ca-field">
+        <span class="ca-field-label">Eingezogen</span>
+        {{ aform.moved_in }}
+        {% if aform.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.moved_in.errors }}</div>{% endif %}
+      </div>
+      <div class="ca-field">
+        <span class="ca-field-label">Ausgezogen</span>
+        {{ aform.moved_out }}
+        {% if aform.moved_out.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.moved_out.errors }}</div>{% endif %}
+      </div>
+      <div class="ca-field">
+        <span class="ca-field-label">Schlüssel übergeben</span>
+        {{ aform.key_handed_over }}
+      </div>
+      <div class="ca-field">
+        <span class="ca-field-label">Kaution IBAN</span>
+        {{ aform.deposit_iban }}
+        {% if aform.deposit_iban.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.deposit_iban.errors }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
