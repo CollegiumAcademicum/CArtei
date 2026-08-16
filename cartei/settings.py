@@ -157,6 +157,9 @@ def _group_list(env_key: str, default: str) -> list[str]:
 
 
 TENANT_ROLE_GROUPS = {
+    # "admins" is the synced marker name that CARTEI_ADMIN_GROUP maps to (see
+    # app/auth.CustomLDAPBackend); the "admin" role can view/edit all fields.
+    "admin": _group_list("TENANT_GROUP_ADMIN", "admins"),
     "cluster": _group_list("TENANT_GROUP_CLUSTER", "gr.cluster"),
     "mietverwaltung": _group_list("TENANT_GROUP_MIETVERWALTUNG", "ag.mietverwaltung"),
     "finanzierung": _group_list("TENANT_GROUP_FINANZIERUNG", "ag.finanzierung"),

@@ -3,9 +3,8 @@ from datetime import date
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
+from app.auth import ag_group_names
 from app.models import AGAbfrage, Tenant
-
-_SYSTEM_GROUPS = {"admins", "gr.cluster"}
 
 
 @login_required
@@ -15,10 +14,7 @@ def dashboard(request):
     except Tenant.DoesNotExist:
         tenant = None
 
-    user_groups = sorted(
-        g for g in request.user.groups.values_list("name", flat=True)
-        if g not in _SYSTEM_GROUPS
-    )
+    user_groups = ag_group_names(request.user)
 
     active_abfragen = AGAbfrage.objects.filter(grace_ends_at__gte=date.today()).order_by("-date")
 

@@ -1,5 +1,6 @@
 from app.tenant_access import (
-    viewer_roles, visible_fields, editable_fields, EDITABLE_COLUMNS, SYSTEM_ID_FIELDS,
+    viewer_roles, visible_fields, editable_fields, global_roles,
+    EDITABLE_COLUMNS, SYSTEM_ID_FIELDS,
 )
 
 
@@ -23,6 +24,12 @@ def test_owner_roles():
     t = FakeTenant(1)
     roles = viewer_roles(user, tenant=t, current_tenant=t)
     assert "owner" in roles and "public" in roles and "admin" not in roles
+
+
+def test_admin_role_derived_from_group_via_role_map():
+    # admin is now defined in TENANT_ROLE_GROUPS like every other role.
+    assert "admin" in global_roles(FakeUser(["admins"]))
+    assert "admin" not in global_roles(FakeUser(["ag.kueche"]))
 
 
 def test_public_only_for_stranger():

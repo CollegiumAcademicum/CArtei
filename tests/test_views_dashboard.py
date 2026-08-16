@@ -97,11 +97,17 @@ def test_dashboard_handles_missing_tenant():
 
 
 @pytest.mark.django_db
-def test_dashboard_shows_user_ags():
+def test_dashboard_shows_all_org_groups_but_not_rights_markers():
+    # ag./gr./in. groups are the user's working groups and must all appear;
+    # the non-prefixed "admins" rights marker must not.
     user = User.objects.create_user(username="member")
-    g, _ = Group.objects.get_or_create(name="kueche")
-    user.groups.add(g)
+    for name in ["ag.kueche", "gr.cluster", "in.finanzen", "admins"]:
+        g, _ = Group.objects.get_or_create(name=name)
+        user.groups.add(g)
     client = Client()
     client.force_login(user)
     response = client.get("/dashboard/")
-    assert b"kueche" in response.content
+    assert b"ag.kueche" in response.content
+    assert b"gr.cluster" in response.content
+    assert b"in.finanzen" in response.content
+    assert b"admins" not in response.content

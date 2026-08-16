@@ -73,8 +73,6 @@ def global_roles(user) -> set[str]:
     except 'owner', which is per-self. Used to gate columns in the tenant list."""
     roles = {"public"}
     group_names = set(user.groups.values_list("name", flat=True))
-    if "admins" in group_names:
-        roles.add("admin")
     for role, cns in settings.TENANT_ROLE_GROUPS.items():
         if group_names.intersection(cns):
             roles.add(role)

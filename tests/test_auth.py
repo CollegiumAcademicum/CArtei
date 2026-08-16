@@ -56,6 +56,48 @@ def test_sync_groups_adds_cluster(settings):
 
 
 @pytest.mark.django_db
+def test_sync_groups_adds_ag_gr_in_prefixed_groups(settings):
+    settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
+    settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
+
+    from app.auth import CustomLDAPBackend
+    user = User.objects.create_user(username="hans")
+    ldap_user = make_ldap_user([
+        "cn=ag.kueche,dc=test",
+        "cn=gr.vorstand,dc=test",
+        "cn=in.finanzen,dc=test",
+        "cn=ipausers,dc=test",  # unprefixed, ignored
+    ])
+    user.ldap_user = ldap_user
+
+    backend = CustomLDAPBackend()
+    backend._sync_groups(user)
+
+    names = set(user.groups.values_list("name", flat=True))
+    assert names == {"ag.kueche", "gr.vorstand", "in.finanzen"}
+
+
+@pytest.mark.django_db
+def test_sync_groups_admin_group_is_also_an_ag(settings):
+    # The IT AG doubles as the admin group: membership must grant admin AND
+    # keep ag.it as a normal AG so its members can submit engagement reports.
+    settings.CARTEI_ADMIN_GROUP = "cn=ag.it,dc=test"
+    settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
+
+    from app.auth import CustomLDAPBackend
+    user = User.objects.create_user(username="ida")
+    ldap_user = make_ldap_user(["cn=ag.it,dc=test"])
+    user.ldap_user = ldap_user
+
+    backend = CustomLDAPBackend()
+    backend._sync_groups(user)
+
+    group_names = set(user.groups.values_list("name", flat=True))
+    assert "admins" in group_names
+    assert "ag.it" in group_names
+
+
+@pytest.mark.django_db
 def test_sync_groups_removes_stale_groups(settings):
     settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
     settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
