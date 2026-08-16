@@ -238,3 +238,29 @@ def test_housing_post_with_all_browser_fields(settings):
     assert resp.status_code == 302, "Expected redirect on save"
     a.refresh_from_db()
     assert str(a.moved_out) == "2026-01-01"
+
+
+@pytest.mark.django_db
+def test_new_room_without_moved_in_shows_error_not_silent(settings):
+    """Adding a room but leaving Eingezogen blank must re-render with a visible
+    error, not silently drop the assignment."""
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    t = _tenant("mvnew")
+    b = Building.objects.create(name="Bau3")
+    wg = WG.objects.create(building=b, name="WG3", cluster="OG2")
+    room = Room.objects.create(wg=wg, name="303", size_sqm=15)
+    c = Client()
+    _login(c, "mvnewtest", groups=["ag.mietverwaltung"])
+    resp = c.post(f"/tenants/{t.pk}/", {
+        "section": "housing",
+        "new_room-room": str(room.pk),
+        "new_room-moved_in": "",
+    })
+    assert resp.status_code == 200, "Invalid new-room submit must re-render, not redirect"
+    assert not TenantRoomAssignment.objects.filter(tenant=t).exists(), "No assignment should be created"
+    body = resp.content.decode()
+    # The error must be rendered in the page (not just present on the form object),
+    # and the collapsible "Zimmer zuordnen" section must be opened so the user sees it.
+    assert "errorlist" in body, "New-room field errors must be visible in the rendered page"

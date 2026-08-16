@@ -195,7 +195,10 @@ def tenant_detail(request: HttpRequest, pk: int):
             return redirect("tenant_detail", pk=pk)
 
         failed_assignment_forms = a_forms
-        failed_new_room_form = new_rf
+        # Only surface the new-room form (with its errors) if the user actually
+        # tried to add one; otherwise a failing tenant-form submit would show
+        # spurious "required" errors on the untouched new-room fields.
+        failed_new_room_form = new_rf if new_room_selected else None
     else:
         form = TenantForm(instance=tenant, allowed_fields=editable)
 
