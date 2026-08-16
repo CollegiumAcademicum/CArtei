@@ -2,141 +2,210 @@
 {% block title %}Bewohner*innen — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
     <h1 style="font-size:1.4rem;font-weight:700;">Bewohner*innen</h1>
-    <span style="color:#7a7a7a;font-size:0.9rem;">{{ total }} Person{{ total|pluralize:"en" }}</span>
+    <span style="color:#7a7a7a;font-size:0.9rem;"><span id="visible-count">{{ total }}</span> / {{ total }} Person{{ total|pluralize:"en" }}</span>
   </div>
 
-  <form method="get" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;margin-bottom:1.25rem;">
-    <div>
-      <label class="label" style="font-size:0.8rem;">Suche</label>
-      <input type="text" name="q" value="{{ q }}" class="input" placeholder="Name…" style="min-width:14rem;">
-    </div>
+  {# ---- Scope controls (server round-trip: which records to load) ---- #}
+  <form method="get" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;margin-bottom:1rem;">
     <div>
       <label class="label" style="font-size:0.8rem;">Bewohner*innen</label>
       <div class="select">
-        <select name="residents">
+        <select name="residents" onchange="this.form.submit()">
           <option value="active" {% if residents == "active" %}selected{% endif %}>Aktuelle</option>
           <option value="former" {% if residents == "former" %}selected{% endif %}>Ehemalige</option>
           <option value="all" {% if residents == "all" %}selected{% endif %}>Alle</option>
         </select>
       </div>
     </div>
-    {% if show_room %}
-    <div>
-      <label class="label" style="font-size:0.8rem;">Untermiete</label>
-      <div class="select">
-        <select name="sublet">
-          <option value="all" {% if sublet == "all" %}selected{% endif %}>Alle</option>
-          <option value="only" {% if sublet == "only" %}selected{% endif %}>Nur Untermiete</option>
-          <option value="none" {% if sublet == "none" %}selected{% endif %}>Keine Untermiete</option>
-        </select>
-      </div>
-    </div>
-    {% endif %}
-    <div>
-      <label class="label" style="font-size:0.8rem;">Pro Seite</label>
-      <div class="select">
-        <select name="per_page">
-          {% for n in per_page_choices %}
-          <option value="{{ n }}" {% if n == per_page %}selected{% endif %}>{{ n }}</option>
-          {% endfor %}
-        </select>
-      </div>
-    </div>
-    <input type="hidden" name="sort" value="{{ sort }}">
-    <input type="hidden" name="dir" value="{{ dir }}">
-    <button type="submit" class="ca-button">Filtern</button>
-    {% if all_clusters or show_cluster %}
-    <div style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
-      <span style="font-size:0.8rem;color:#7a7a7a;">Cluster:</span>
-      {% for cl in all_clusters %}
-      <label style="font-size:0.85rem;"><input type="checkbox" name="cluster" value="{{ cl }}"
-        {% if cl in selected_clusters %}checked{% endif %}> {{ cl }}</label>
-      {% endfor %}
-      <label style="font-size:0.85rem;color:#7a7a7a;"><input type="checkbox" name="cluster" value=""
-        {% if no_cluster_selected %}checked{% endif %}> kein Cluster</label>
-    </div>
-    {% endif %}
     {% if show_surveys %}
-    <div style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:0.4rem 1rem;align-items:center;">
-      <span style="font-size:0.8rem;color:#7a7a7a;">Abfragen:</span>
-      {% for a in abfragen %}
-      <label style="font-size:0.85rem;"><input type="checkbox" name="surveys" value="{{ a.pk }}"
-        {% if a.pk in selected_ids %}checked{% endif %}> {{ a }}</label>
-      {% empty %}
-      <span style="font-size:0.85rem;color:#7a7a7a;">Keine Abfragen vorhanden.</span>
-      {% endfor %}
+    <div style="flex:1 1 20rem;">
+      <label class="label" style="font-size:0.8rem;">Abfragen (Engagement-Spalten)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem 1rem;">
+        {% for a in abfragen %}
+        <label style="font-size:0.85rem;"><input type="checkbox" name="surveys" value="{{ a.pk }}"
+          {% if a.pk in selected_ids %}checked{% endif %}> {{ a }}</label>
+        {% empty %}
+        <span style="font-size:0.85rem;color:#7a7a7a;">Keine Abfragen vorhanden.</span>
+        {% endfor %}
+      </div>
     </div>
+    <button type="submit" class="ca-button">Anwenden</button>
     {% endif %}
   </form>
 
+  {# ---- Column chooser (client-side, persisted in localStorage) ---- #}
+  <details style="margin-bottom:1rem;">
+    <summary style="cursor:pointer;font-size:0.85rem;color:var(--ca-teal);">Spalten</summary>
+    <div style="display:flex;flex-wrap:wrap;gap:0.4rem 1rem;margin-top:0.5rem;font-size:0.85rem;">
+      <label><input type="checkbox" checked disabled> Name</label>
+      {% if show_room %}<label><input type="checkbox" data-col-toggle="room" checked> Zimmer / WG</label>{% endif %}
+      {% if show_cluster %}<label><input type="checkbox" data-col-toggle="cluster" checked> Cluster</label>{% endif %}
+      {% if show_room %}<label><input type="checkbox" data-col-toggle="sublet" checked> Untermiete</label>{% endif %}
+      {% if show_realname %}<label><input type="checkbox" data-col-toggle="email" checked> E-Mail</label>{% endif %}
+      {% if show_realname %}<label><input type="checkbox" data-col-toggle="move_in" checked> Einzug</label>{% endif %}
+      {% for a in selected_abfragen %}<label><input type="checkbox" data-col-toggle="survey_{{ a.pk }}" checked> {{ a }}</label>{% endfor %}
+    </div>
+  </details>
+
+  {# ---- Per-cluster engagement summary (server-computed over the scope) ---- #}
+  {% if summary %}
+  <div class="engagement-summary" style="margin-bottom:1rem;">
+    {% for g in summary %}
+    <div style="padding:0.4rem 0;border-bottom:1px solid #ece7dc;">
+      <span style="font-weight:700;">{% if g.cluster %}Cluster {{ g.cluster }}{% else %}kein Cluster{% endif %}</span>
+      <span style="color:#7a7a7a;">— {{ g.count }} Bewohner*in{{ g.count|pluralize:"nen" }}</span>
+      {% for s in g.surveys %}
+      <div style="font-size:0.85rem;margin-top:0.15rem;">
+        <span style="color:#7a7a7a;">{{ s.abfrage }}:</span>
+        {% for b in s.badges %}<span class="badge badge-{{ b.status }}" style="margin-left:0.2rem;">{{ b.label }}: {{ b.count }}</span>{% empty %}<span style="color:#7a7a7a;">—</span>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <div style="overflow-x:auto;">
-    <table class="table is-fullwidth is-striped is-hoverable" style="font-size:0.9rem;">
+    <table id="tenant-table" class="table is-fullwidth is-hoverable" style="font-size:0.9rem;">
       <thead>
         <tr>
-          <th>{% include "app/_sort_th.html" with col="name" label="Name" %}</th>
-          {% if show_room %}<th>{% include "app/_sort_th.html" with col="room" label="Zimmer / WG" %}</th>{% endif %}
-          {% if show_cluster %}<th>{% include "app/_sort_th.html" with col="cluster" label="Cluster" %}</th>{% endif %}
-          {% if show_room %}<th>{% include "app/_sort_th.html" with col="sublet" label="Untermiete" %}</th>{% endif %}
-          {% if show_realname %}<th>{% include "app/_sort_th.html" with col="email" label="E-Mail" %}</th>{% endif %}
-          {% if show_realname %}<th>{% include "app/_sort_th.html" with col="move_in" label="Einzug" %}</th>{% endif %}
-          {% for a in selected_abfragen %}<th>{{ a }}</th>{% endfor %}
+          <th data-col="name" data-sort-type="text" class="ca-sortable">Name <span class="sort-ind"></span></th>
+          {% if show_room %}<th data-col="room" data-sort-type="text" class="ca-sortable">Zimmer / WG <span class="sort-ind"></span></th>{% endif %}
+          {% if show_cluster %}<th data-col="cluster" data-sort-type="text" class="ca-sortable">Cluster <span class="sort-ind"></span></th>{% endif %}
+          {% if show_room %}<th data-col="sublet" data-sort-type="text" class="ca-sortable">Untermiete <span class="sort-ind"></span></th>{% endif %}
+          {% if show_realname %}<th data-col="email" data-sort-type="text" class="ca-sortable">E-Mail <span class="sort-ind"></span></th>{% endif %}
+          {% if show_realname %}<th data-col="move_in" data-sort-type="text" class="ca-sortable">Einzug <span class="sort-ind"></span></th>{% endif %}
+          {% for a in selected_abfragen %}<th data-col="survey_{{ a.pk }}">{{ a }}</th>{% endfor %}
+        </tr>
+        <tr class="ca-filter-row">
+          <th data-col="name"><input type="text" class="col-filter input is-small" data-col="name" data-ftype="text" placeholder="Filter…"></th>
+          {% if show_room %}<th data-col="room"><input type="text" class="col-filter input is-small" data-col="room" data-ftype="text" placeholder="Filter…"></th>{% endif %}
+          {% if show_cluster %}<th data-col="cluster"><input type="text" class="col-filter input is-small" data-col="cluster" data-ftype="text" placeholder="Filter…"></th>{% endif %}
+          {% if show_room %}<th data-col="sublet"><div class="select is-small"><select class="col-filter" data-col="sublet" data-ftype="select"><option value="">Alle</option><option value="true">Ja</option><option value="false">Nein</option></select></div></th>{% endif %}
+          {% if show_realname %}<th data-col="email"><input type="text" class="col-filter input is-small" data-col="email" data-ftype="text" placeholder="Filter…"></th>{% endif %}
+          {% if show_realname %}<th data-col="move_in"><input type="date" class="col-filter input is-small" data-col="move_in" data-ftype="date" data-bound="from"><input type="date" class="col-filter input is-small" data-col="move_in" data-ftype="date" data-bound="to"></th>{% endif %}
+          {% for a in selected_abfragen %}<th data-col="survey_{{ a.pk }}"><input type="text" class="col-filter input is-small" data-col="survey_{{ a.pk }}" data-ftype="text" placeholder="Filter…"></th>{% endfor %}
         </tr>
       </thead>
       <tbody>
-      {% for row in page %}
+      {% for row in rows %}
         {% with t=row.tenant %}
-        {% if group_by_cluster %}{% ifchanged row.cluster_key %}
-        <tr class="cluster-summary">
-          <td colspan="{{ col_count }}" style="font-weight:700;background:#f4f1ea;">
-            {% if row.cluster %}Cluster {{ row.cluster }}{% else %}kein Cluster{% endif %}
-            <span style="color:#7a7a7a;font-weight:400;">— {{ row.stats.count }} Bewohner*in{{ row.stats.count|pluralize:"nen" }}</span>
-            {% for s in row.stats.surveys %}
-            <div style="font-weight:400;margin-top:0.2rem;font-size:0.85rem;">
-              <span style="color:#7a7a7a;">{{ s.abfrage }}:</span>
-              {% for b in s.badges %}<span class="badge badge-{{ b.status }}" style="margin-left:0.2rem;">{{ b.label }}: {{ b.count }}</span>{% empty %}<span style="color:#7a7a7a;">—</span>{% endfor %}
-            </div>
-            {% endfor %}
-          </td>
-        </tr>
-        {% endifchanged %}{% endif %}
         <tr>
-          <td>
+          <td data-col="name" data-sort="{{ t.last_name|lower }} {{ t.first_name|lower }}">
             <a href="{% url 'tenant_detail' t.pk %}" style="color:var(--ca-teal);font-weight:600;">
               {% if t.preferred_name %}{{ t.preferred_name }}{% else %}{{ t.first_name }} {{ t.last_name }}{% endif %}
             </a>
             {% if show_realname and t.preferred_name %}<span style="color:#7a7a7a;"> ({{ t.first_name }} {{ t.last_name }})</span>{% endif %}
           </td>
-          {% if show_room %}
-          <td>{% if row.assignment %}{{ row.assignment.room.name }} · {{ row.assignment.room.wg.name }}{% else %}—{% endif %}</td>
-          {% endif %}
-          {% if show_cluster %}<td>{{ row.cluster|default:"—" }}</td>{% endif %}
-          {% if show_room %}<td>{% if row.is_sublet %}Ja{% else %}—{% endif %}</td>{% endif %}
-          {% if show_realname %}<td>{{ t.email|default:"—" }}</td>{% endif %}
-          {% if show_realname %}<td>{{ t.move_in|default:"—" }}</td>{% endif %}
+          {% if show_room %}<td data-col="room" data-sort="{% if row.assignment %}{{ row.assignment.room.wg.name|lower }} {{ row.assignment.room.name|lower }}{% endif %}">{% if row.assignment %}{{ row.assignment.room.name }} · {{ row.assignment.room.wg.name }}{% else %}—{% endif %}</td>{% endif %}
+          {% if show_cluster %}<td data-col="cluster" data-sort="{{ row.cluster|lower }}">{{ row.cluster|default:"—" }}</td>{% endif %}
+          {% if show_room %}<td data-col="sublet" data-value="{{ row.is_sublet|yesno:'true,false' }}" data-sort="{{ row.is_sublet|yesno:'1,0' }}">{% if row.is_sublet %}Ja{% else %}—{% endif %}</td>{% endif %}
+          {% if show_realname %}<td data-col="email" data-sort="{{ t.email|lower }}">{{ t.email|default:"—" }}</td>{% endif %}
+          {% if show_realname %}<td data-col="move_in" data-value="{{ t.move_in|date:'Y-m-d' }}" data-sort="{{ t.move_in|date:'Y-m-d' }}">{{ t.move_in|default:"—" }}</td>{% endif %}
           {% for a, results in row.survey_results %}
-          <td>{% for r in results %}<span class="badge badge-{{ r.status }}" style="display:inline-block;margin:1px;">{{ r.ag_name }}: {{ r.get_status_display }}</span>{% empty %}—{% endfor %}</td>
+          <td data-col="survey_{{ a.pk }}">{% for r in results %}<span class="badge badge-{{ r.status }}" style="display:inline-block;margin:1px;">{{ r.ag_name }}: {{ r.get_status_display }}</span>{% empty %}—{% endfor %}</td>
           {% endfor %}
         </tr>
         {% endwith %}
       {% empty %}
-        <tr><td colspan="{{ col_count }}" style="color:#7a7a7a;">Keine Bewohner*innen gefunden.</td></tr>
+        <tr><td>Keine Bewohner*innen gefunden.</td></tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
-
-  {% if page.paginator.num_pages > 1 %}
-  <nav class="pagination is-small" role="navigation" style="margin-top:1rem;">
-    {% if page.has_previous %}
-    <a class="pagination-previous" href="{% querystring page=page.previous_page_number %}">Zurück</a>
-    {% endif %}
-    {% if page.has_next %}
-    <a class="pagination-next" href="{% querystring page=page.next_page_number %}">Weiter</a>
-    {% endif %}
-    <span class="pagination-list" style="color:#7a7a7a;">Seite {{ page.number }} / {{ page.paginator.num_pages }}</span>
-  </nav>
-  {% endif %}
+  <p id="no-match" style="display:none;color:#7a7a7a;">Keine Treffer für die aktuellen Filter.</p>
 </div>
+
+<script>
+(function () {
+  const table = document.getElementById("tenant-table");
+  if (!table || !table.tBodies.length) return;
+  const tbody = table.tBodies[0];
+  const rows = Array.from(tbody.rows).filter(r => r.querySelector("[data-col]"));
+  const COLKEY = "tenantlist.hiddencols";
+
+  const cell = (row, col) => row.querySelector('[data-col="' + col + '"]');
+
+  // --- Column visibility (localStorage) ---
+  let hidden = new Set(JSON.parse(localStorage.getItem(COLKEY) || "[]"));
+  function applyCols() {
+    table.querySelectorAll("[data-col]").forEach(el => {
+      el.style.display = hidden.has(el.getAttribute("data-col")) ? "none" : "";
+    });
+  }
+  document.querySelectorAll("[data-col-toggle]").forEach(cb => {
+    const col = cb.getAttribute("data-col-toggle");
+    cb.checked = !hidden.has(col);
+    cb.addEventListener("change", () => {
+      if (cb.checked) hidden.delete(col); else hidden.add(col);
+      localStorage.setItem(COLKEY, JSON.stringify([...hidden]));
+      applyCols();
+    });
+  });
+
+  // --- Typed per-column filtering ---
+  const filters = Array.from(table.querySelectorAll(".col-filter"));
+  const byCol = {};
+  filters.forEach(f => (byCol[f.dataset.col] = byCol[f.dataset.col] || []).push(f));
+
+  function rowMatches(row) {
+    for (const col in byCol) {
+      const group = byCol[col], c = cell(row, col);
+      if (!c) continue;
+      const ftype = group[0].dataset.ftype;
+      if (ftype === "text") {
+        const v = group[0].value.trim().toLowerCase();
+        if (v && !c.textContent.toLowerCase().includes(v)) return false;
+      } else if (ftype === "select") {
+        const v = group[0].value;
+        if (v && c.getAttribute("data-value") !== v) return false;
+      } else if (ftype === "date") {
+        const cv = c.getAttribute("data-value") || "";
+        const from = group.find(g => g.dataset.bound === "from").value;
+        const to = group.find(g => g.dataset.bound === "to").value;
+        if (from && (!cv || cv < from)) return false;
+        if (to && (!cv || cv > to)) return false;
+      }
+    }
+    return true;
+  }
+  const counter = document.getElementById("visible-count");
+  const noMatch = document.getElementById("no-match");
+  function applyFilters() {
+    let shown = 0;
+    rows.forEach(r => {
+      const ok = rowMatches(r);
+      r.style.display = ok ? "" : "none";
+      if (ok) shown++;
+    });
+    if (counter) counter.textContent = shown;
+    if (noMatch) noMatch.style.display = shown ? "none" : "";
+  }
+  filters.forEach(f => f.addEventListener("input", applyFilters));
+
+  // --- Client-side sorting (data-sort holds ISO dates / 0-1 / lowercased text,
+  //     so plain string compare orders correctly) ---
+  let sortCol = null, dir = 1;
+  table.querySelectorAll("th[data-sort-type]").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.col;
+      dir = sortCol === col ? -dir : 1;
+      sortCol = col;
+      rows.sort((a, b) => {
+        const av = cell(a, col) ? cell(a, col).getAttribute("data-sort") || "" : "";
+        const bv = cell(b, col) ? cell(b, col).getAttribute("data-sort") || "" : "";
+        return av < bv ? -dir : av > bv ? dir : 0;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+      table.querySelectorAll(".sort-ind").forEach(s => (s.textContent = ""));
+      const ind = th.querySelector(".sort-ind");
+      if (ind) ind.textContent = dir > 0 ? "↑" : "↓";
+    });
+  });
+
+  applyCols();
+})();
+</script>
 {% endblock %}

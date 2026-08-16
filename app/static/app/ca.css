@@ -428,3 +428,10 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   .ca-card { padding: 1rem; }
   .ca-card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
+
+/* Tenant list interactive table */
+.ca-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+.ca-sortable:hover { color: var(--ca-teal); }
+.ca-filter-row th { padding-top: 0.2rem; padding-bottom: 0.5rem; vertical-align: top; }
+.ca-filter-row .col-filter { max-width: 11rem; }
+.ca-filter-row input[type="date"] { max-width: 8.5rem; margin-bottom: 2px; }
