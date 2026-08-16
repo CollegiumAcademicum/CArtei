@@ -63,10 +63,10 @@
       <thead>
         <tr>
           <th>{% include "app/_sort_th.html" with col="name" label="Name" %}</th>
-          {% if show_room %}<th>Zimmer / WG</th>{% endif %}
+          {% if show_room %}<th>{% include "app/_sort_th.html" with col="room" label="Zimmer / WG" %}</th>{% endif %}
           {% if show_cluster %}<th>{% include "app/_sort_th.html" with col="cluster" label="Cluster" %}</th>{% endif %}
-          {% if show_room %}<th>Untermiete</th>{% endif %}
-          {% if show_realname %}<th>E-Mail</th>{% endif %}
+          {% if show_room %}<th>{% include "app/_sort_th.html" with col="sublet" label="Untermiete" %}</th>{% endif %}
+          {% if show_realname %}<th>{% include "app/_sort_th.html" with col="email" label="E-Mail" %}</th>{% endif %}
           {% if show_realname %}<th>{% include "app/_sort_th.html" with col="move_in" label="Einzug" %}</th>{% endif %}
         </tr>
       </thead>

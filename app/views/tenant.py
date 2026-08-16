@@ -70,14 +70,33 @@ def tenant_list(request: HttpRequest):
             continue
         rows.append({"tenant": t, "assignment": a, "cluster": cluster, "is_sublet": is_sublet})
 
+    def _room_key(r):
+        a = r["assignment"]
+        return (a.room.wg.name.lower(), a.room.name.lower()) if a else ("", "")
+
+    _name_key = lambda r: (r["tenant"].last_name.lower(), r["tenant"].first_name.lower())
+    sort_keys = {
+        "name": _name_key,
+        "move_in": lambda r: (r["tenant"].move_in or date.min, _name_key(r)),
+        "email": lambda r: (r["tenant"].email.lower(), _name_key(r)),
+        "room": lambda r: (_room_key(r), _name_key(r)),
+        "sublet": lambda r: (r["is_sublet"], _name_key(r)),
+        "cluster": lambda r: (r["cluster"] or "", _name_key(r)),
+    }
+    # Columns hidden from this viewer must not be sortable — fall back to name.
+    allowed_sorts = {"name"}
+    if show_realname:
+        allowed_sorts |= {"move_in", "email"}
+    if show_room:
+        allowed_sorts |= {"room", "sublet"}
+    if show_cluster:
+        allowed_sorts.add("cluster")
+
     sort = request.GET.get("sort", "name")
+    if sort not in allowed_sorts:
+        sort = "name"
     reverse = request.GET.get("dir", "asc") == "desc"
-    if sort == "move_in":
-        rows.sort(key=lambda r: (r["tenant"].move_in or date.min, r["tenant"].last_name.lower()), reverse=reverse)
-    elif sort == "cluster" and show_cluster:
-        rows.sort(key=lambda r: (r["cluster"] or "", r["tenant"].last_name.lower()), reverse=reverse)
-    else:
-        rows.sort(key=lambda r: (r["tenant"].last_name.lower(), r["tenant"].first_name.lower()), reverse=reverse)
+    rows.sort(key=sort_keys[sort], reverse=reverse)
 
     try:
         per_page = int(request.GET.get("per_page", 25))

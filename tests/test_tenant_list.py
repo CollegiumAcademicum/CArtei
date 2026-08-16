@@ -118,6 +118,28 @@ def test_sublet_filter(settings):
 
 
 @pytest.mark.django_db
+def test_sort_by_email(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    _tenant("b", preferred_name="Bea", email="b@ca.de")
+    _tenant("a", preferred_name="Ann", email="a@ca.de")
+    c = Client()
+    _login(c, "mv", groups=["ag.mietverwaltung"])
+    body = c.get("/tenants/?sort=email&dir=asc").content.decode()
+    assert body.index("a@ca.de") < body.index("b@ca.de")
+
+
+@pytest.mark.django_db
+def test_hidden_column_sort_falls_back_and_does_not_crash(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    _tenant("x", preferred_name="Xavier")
+    c = Client()
+    _login(c, "plain")  # no groups → can't see email/room columns
+    resp = c.get("/tenants/?sort=email")
+    assert resp.status_code == 200
+    assert "Xavier" in resp.content.decode()
+
+
+@pytest.mark.django_db
 def test_pagination(settings):
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
     for i in range(30):
