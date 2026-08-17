@@ -301,13 +301,13 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ca-stat-card {
   background: #f5fffe;
   border: 1px solid var(--ca-teal);
-  border-radius: 8px;
-  padding: 0.85rem 0.5rem;
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
   min-width: 0;
   text-align: center;
 }
-.ca-stat-value { font-size: 1.6rem; font-weight: 700; color: var(--ca-teal); }
-.ca-stat-label { font-size: 0.82rem; color: #555; margin-top: 0.25rem; }
+.ca-stat-value { font-size: 1.15rem; font-weight: 700; color: var(--ca-teal); }
+.ca-stat-label { font-size: 0.7rem; color: #555; margin-top: 0.1rem; }
 
 /* ── Cluster row colors (Belegium) ── */
 .cluster-row-0A { background: hsl(0,   55%, 94%) !important; }
