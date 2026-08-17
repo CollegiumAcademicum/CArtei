@@ -51,7 +51,7 @@ def test_tenant_str():
 
 
 @pytest.mark.django_db
-def test_tenant_create_without_move_in(db):
+def test_tenant_create_minimal(db):
     from app.models import Tenant
     import uuid
     t = Tenant.objects.create(
@@ -59,4 +59,3 @@ def test_tenant_create_without_move_in(db):
         intranet_username="bobtest", intranet_uuid=uuid.uuid4(),
     )
     assert t.pk is not None
-    assert t.move_in is None

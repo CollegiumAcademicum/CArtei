@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,6 +11,7 @@ from app import ldap_utils
 from app.auth import ag_group_names
 from app.decorators import require_group
 from app.models import AGAbfrage, AGAbfrageResult, Tenant
+from app.residency import has_active_assignment
 
 _STATUS_CHOICES = [
     ("ZU_AKTIV", "zu aktiv"),
@@ -126,7 +127,7 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
 @require_group("admins", "gr.cluster")
 def abfrage_tenants(request: HttpRequest, pk: int):
     abfrage = get_object_or_404(AGAbfrage, pk=pk)
-    tenants = Tenant.objects.filter(move_out__isnull=True)
+    tenants = Tenant.objects.filter(has_active_assignment(date.today()))
 
     results_by_tenant: dict[int, list] = {}
     for r in AGAbfrageResult.objects.filter(abfrage=abfrage):

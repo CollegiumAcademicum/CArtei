@@ -563,18 +563,5 @@ document.querySelectorAll('.ca-notes-toggle').forEach(function(btn) {
     roomSel.addEventListener('change', function() { refresh(true); });
   });
 })();
-
-// Click-toggle hint bubbles.
-(function() {
-  document.querySelectorAll('.ca-hint').forEach(function(h) {
-    h.addEventListener('click', function(e) { e.stopPropagation(); h.classList.toggle('open'); });
-    h.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); h.classList.toggle('open'); }
-    });
-  });
-  document.addEventListener('click', function() {
-    document.querySelectorAll('.ca-hint.open').forEach(function(h) { h.classList.remove('open'); });
-  });
-})();
 </script>
 {% endblock %}

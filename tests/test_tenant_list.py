@@ -19,8 +19,6 @@ def _tenant(username, **kw):
         intranet_uuid=uuid.uuid4(),
         preferred_name=kw.get("preferred_name", "Ada"),
         pronouns="sie/ihr",
-        move_out=kw.get("move_out"),
-        move_in=kw.get("move_in"),
     )
 
 
@@ -33,12 +31,12 @@ def _login(client, username, groups=()):
     return user
 
 
-def _assign(tenant, cluster=None, is_sublet=False):
+def _assign(tenant, cluster=None, is_sublet=False, moved_in=date(2024, 1, 1), moved_out=None):
     b = Building.objects.create(name=f"Haus-{uuid.uuid4().hex[:6]}")
     wg = WG.objects.create(building=b, name="WG1", cluster=cluster)
     room = Room.objects.create(wg=wg, name="R1", size_sqm=12)
     return TenantRoomAssignment.objects.create(
-        tenant=tenant, room=room, moved_in=date(2024, 1, 1), is_sublet=is_sublet
+        tenant=tenant, room=room, moved_in=moved_in, moved_out=moved_out, is_sublet=is_sublet
     )
 
 
@@ -75,7 +73,7 @@ def test_list_returns_200():
 @pytest.mark.django_db
 def test_plain_user_sees_preferred_but_not_email_or_realname(settings):
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    _tenant("owner", preferred_name="Owzy", last_name="Secret", email="owner@ca.de")
+    _assign(_tenant("owner", preferred_name="Owzy", last_name="Secret", email="owner@ca.de"))
     c = Client()
     _login(c, "stranger")
     body = c.get("/tenants/").content.decode()
@@ -87,7 +85,7 @@ def test_plain_user_sees_preferred_but_not_email_or_realname(settings):
 @pytest.mark.django_db
 def test_mietverwaltung_sees_email_and_realname(settings):
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    _tenant("owner", preferred_name="Owzy", last_name="Secret", email="owner@ca.de")
+    _assign(_tenant("owner", preferred_name="Owzy", last_name="Secret", email="owner@ca.de"))
     c = Client()
     _login(c, "mv", groups=["ag.mietverwaltung"])
     body = c.get("/tenants/").content.decode()
@@ -99,8 +97,8 @@ def test_mietverwaltung_sees_email_and_realname(settings):
 def test_active_default_excludes_former(settings):
     # residents scope stays server-side (decides which records are loaded).
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    _tenant("current", preferred_name="Current")
-    _tenant("gone", preferred_name="Gone", move_out=date.today() - timedelta(days=5))
+    _assign(_tenant("current", preferred_name="Current"))  # active assignment
+    _assign(_tenant("gone", preferred_name="Gone"), moved_out=date.today() - timedelta(days=5))
     c = Client()
     _login(c, "mv", groups=["ag.mietverwaltung"])
     active = c.get("/tenants/").content.decode()
@@ -116,30 +114,30 @@ def test_all_rows_rendered_no_pagination(settings):
         _tenant(f"t{i}", preferred_name=f"Person{i:02d}", last_name=f"N{i:02d}")
     c = Client()
     _login(c, "mv", groups=["ag.mietverwaltung"])
-    body = c.get("/tenants/").content.decode()
+    body = c.get("/tenants/?residents=all").content.decode()
     assert "Person00" in body and "Person29" in body
 
 
 @pytest.mark.django_db
 def test_move_in_column_has_date_filter(settings):
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    _tenant("ada", preferred_name="Ada")
+    _assign(_tenant("ada", preferred_name="Ada"))
     c = Client()
     _login(c, "mv", groups=["ag.mietverwaltung"])
     body = c.get("/tenants/").content.decode()
-    assert 'data-col="move_in"' in body
+    assert 'data-col="ersteinzug"' in body
     assert 'type="date"' in body
 
 
 @pytest.mark.django_db
 def test_rows_carry_sort_and_value_data_attributes(settings):
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    _tenant("ada", first_name="Ada", last_name="Lovelace", move_in=date(2024, 3, 15))
+    _assign(_tenant("ada", first_name="Ada", last_name="Lovelace"), moved_in=date(2024, 3, 15))
     c = Client()
     _login(c, "mv", groups=["ag.mietverwaltung"])
     body = c.get("/tenants/").content.decode()
     assert 'data-sort="lovelace ada"' in body           # name sorts by last, first
-    assert 'data-value="2024-03-15"' in body            # move_in machine value for date filter/sort
+    assert 'data-value="2024-03-15"' in body            # ersteinzug machine value for date filter/sort
 
 
 @pytest.mark.django_db
@@ -213,7 +211,7 @@ def test_survey_results_render_for_selected_survey(settings):
     _result(a, t, ag_name="ag.kueche", status="AKTIV")
     c = Client()
     _login(c, "cl", groups=["gr.cluster"])
-    body = c.get(f"/tenants/?surveys={a.pk}").content.decode()
+    body = c.get(f"/tenants/?surveys={a.pk}&residents=all").content.decode()
     assert "ag.kueche" in body
     assert "aktiv" in body
 

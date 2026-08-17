@@ -220,8 +220,6 @@ def test_housing_post_with_all_browser_fields(settings):
         "sublet_from": "",
         "sublet_to": "",
         "mailbox_key": "",
-        "move_in": "",
-        "move_out": "",
         # New room form empty
         "new_room-room": "",
         "new_room-moved_in": "",

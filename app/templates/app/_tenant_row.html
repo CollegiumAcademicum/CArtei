@@ -31,7 +31,7 @@
   <td data-col="flinta" data-value="{{ row.tenant.is_flinta|yesno:'true,false' }}" data-sort="{{ row.tenant.is_flinta|yesno:'1,0' }}">{% if row.tenant.is_flinta %}<span class="ca-pill ca-pill-flinta">Ja</span>{% else %}—{% endif %}</td>
   <td data-col="barrier" data-value="{{ row.tenant.barrier_free_needed|yesno:'true,false' }}" data-sort="{{ row.tenant.barrier_free_needed|yesno:'1,0' }}">{% if row.tenant.barrier_free_needed %}<span class="ca-pill ca-pill-bf">Ja</span>{% else %}—{% endif %}</td>
   <td data-col="email" data-sort="{{ row.tenant.email|lower }}">{{ row.tenant.email|default:"—" }}</td>
-  <td data-col="move_in" data-value="{{ row.tenant.move_in|date:'Y-m-d' }}" data-sort="{{ row.tenant.move_in|date:'Y-m-d' }}">{{ row.tenant.move_in|default:"—" }}</td>
+  <td data-col="ersteinzug" data-value="{{ row.tenant.ersteinzug|date:'Y-m-d' }}" data-sort="{{ row.tenant.ersteinzug|date:'Y-m-d' }}">{{ row.tenant.ersteinzug|default:"—" }}</td>
   {% endif %}
   {% for a, results, verdict in row.survey_results %}
   <td data-col="survey_{{ a.pk }}" data-value="{{ verdict|yesno:'flag,ok' }}" data-sort="{{ verdict|yesno:'1,0' }}"
