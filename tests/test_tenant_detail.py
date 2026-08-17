@@ -265,3 +265,25 @@ def test_new_room_without_moved_in_shows_error_not_silent(settings):
     # and the collapsible "Zimmer zuordnen" section must be opened so the user sees it.
     assert "errorlist" in body, "New-room field errors must be visible in the rendered page"
     assert "ca-field-error" in body, "Errored required field must get the red-border class"
+
+
+@pytest.mark.django_db
+def test_detail_shows_reverse_sublet(settings):
+    """A tenant who sublets their room out sees 'Untervermietet an <subletter>'."""
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"]}
+    landlord = _tenant("land", preferred_name="Vermieta")
+    subletter = _tenant("subby", preferred_name="Untermieta")
+    b = Building.objects.create(name="BauS")
+    wg = WG.objects.create(building=b, name="WGS")
+    room = Room.objects.create(wg=wg, name="401", size_sqm=13)
+    TenantRoomAssignment.objects.create(
+        tenant=subletter, room=room, moved_in=datetime.date(2024, 1, 1),
+        is_sublet=True, sublet_of_tenant=landlord,
+    )
+    c = Client()
+    _login(c, "mv", groups=["ag.mietverwaltung"])
+    body = c.get(f"/tenants/{landlord.pk}/").content.decode()
+    assert "Untervermietet an" in body
+    assert "Untermieta" in body

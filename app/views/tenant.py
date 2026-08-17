@@ -293,11 +293,21 @@ def tenant_detail(request: HttpRequest, pk: int):
         )
         active_assignments = [a for a in assignments if not a.moved_out or a.moved_out > today]
         past_assignments = [a for a in assignments if a.moved_out and a.moved_out <= today]
+        # Reverse sublets: other tenants currently renting one of this tenant's rooms.
+        sublet_out = list(
+            TenantRoomAssignment.objects
+            .filter(sublet_of_tenant=tenant)
+            .filter(Q(moved_out__isnull=True) | Q(moved_out__gt=today))
+            .select_related("tenant", "room__wg__building")
+            .order_by("room__name")
+        )
     else:
         active_assignments = []
         past_assignments = []
+        sublet_out = []
     ctx["active_assignments"] = active_assignments
     ctx["past_assignments"] = past_assignments
+    ctx["sublet_out"] = sublet_out
 
     if can_manage_room:
         # On a failed POST, reuse the bound forms (which hold the errors); otherwise
