@@ -142,6 +142,29 @@ def test_ag_status_widget_defaults_unevaluated_to_tot():
 
 
 @pytest.mark.django_db
+def test_ag_status_uses_latest_submission_across_abfragen():
+    """Health should be the latest submission per AG, even if it came from an
+    older Abfrage and the newest Abfrage has no submission for that AG."""
+    from app.models import AGAbfrage, AGAbfrageHealth
+    today = date.today()
+    old = AGAbfrage.objects.create(
+        date=today - timedelta(days=60), label="Alt",
+        ends_at=today - timedelta(days=53), grace_ends_at=today - timedelta(days=46),
+    )
+    AGAbfrage.objects.create(  # newer Abfrage, no health submitted
+        date=today, label="Neu",
+        ends_at=today + timedelta(days=7), grace_ends_at=today + timedelta(days=14),
+    )
+    Group.objects.get_or_create(name="ag.kueche")
+    AGAbfrageHealth.objects.create(abfrage=old, ag_name="ag.kueche", health="GESUND")
+
+    client = Client()
+    client.force_login(User.objects.create_user(username="cross_abfrage"))
+    html = client.get("/dashboard/").content.decode()
+    assert "ag.kueche" in html and "badge-GESUND" in html
+
+
+@pytest.mark.django_db
 def test_ag_status_widget_visible_to_unprivileged():
     from app.models import AGAbfrageHealth
     abfrage = _open_abfrage()

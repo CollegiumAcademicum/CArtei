@@ -31,18 +31,20 @@ def dashboard(request):
         if is_privileged and latest_abfrage else AGAbfrageHealth.objects.none()
     )
 
-    # Health of every AG for the latest Abfrage; AGs with no submission default to TOT.
+    # Latest health submission per AG across all Abfragen (newest Abfrage wins);
+    # AGs that never submitted default to TOT.
     # ponytail: AG roster = synced org Groups (ag./gr./in.) — the only app-side list we
     # have; an AG whose members never logged in won't appear until it does.
+    health_by_ag = {
+        h.ag_name: h.health
+        for h in AGAbfrageHealth.objects.select_related("abfrage").order_by("abfrage__date")
+    }
+    roster = {
+        g for g in Group.objects.values_list("name", flat=True)
+        if g.startswith(GROUP_PREFIXES)
+    } | set(health_by_ag)
     ag_status = []
-    if latest_abfrage:
-        health_by_ag = {
-            h.ag_name: h.health for h in AGAbfrageHealth.objects.filter(abfrage=latest_abfrage)
-        }
-        roster = {
-            g for g in Group.objects.values_list("name", flat=True)
-            if g.startswith(GROUP_PREFIXES)
-        } | set(health_by_ag)
+    if roster:
         labels = dict(AGHealth.choices)
         ag_status = sorted(
             (
