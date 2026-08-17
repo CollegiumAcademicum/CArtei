@@ -7,19 +7,27 @@
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;margin-bottom:2rem;">
     <div class="ca-stat-card">
       <div class="ca-stat-value">{{ flinta_quote }}%</div>
-      <div class="ca-stat-label">FLINTA-Quote</div>
+      <div class="ca-stat-label">FLINTA-Quote
+        <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Anteil FLINTA unter den aktuell im CA wohnenden Mieter:innen (mit laufender Zimmerbelegung).</span></span>
+      </div>
     </div>
     <div class="ca-stat-card">
       <div class="ca-stat-value">{{ azubi_quote }}%</div>
-      <div class="ca-stat-label">Azubi-Quote</div>
+      <div class="ca-stat-label">Azubi-Quote
+        <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Anteil Azubis unter den aktuell im CA wohnenden Mieter:innen (mit laufender Zimmerbelegung).</span></span>
+      </div>
     </div>
     <div class="ca-stat-card">
       <div class="ca-stat-value">{{ current_tenants }}</div>
-      <div class="ca-stat-label">Aktuelle Mieter*innen</div>
+      <div class="ca-stat-label">Aktuelle Mieter*innen
+        <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Mieter:innen mit heute laufender Zimmerbelegung (eingezogen, nicht ausgezogen).</span></span>
+      </div>
     </div>
     <div class="ca-stat-card">
       <div class="ca-stat-value">{{ total_tenants }}</div>
-      <div class="ca-stat-label">All-Time Mietende</div>
+      <div class="ca-stat-label">All-Time Mietende
+        <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Alle je erfassten Mieter:innen, unabhängig von Ein- oder Auszug.</span></span>
+      </div>
     </div>
   </div>
 

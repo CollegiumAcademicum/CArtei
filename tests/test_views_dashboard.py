@@ -3,7 +3,13 @@ from datetime import date, timedelta
 import pytest
 from django.contrib.auth.models import User, Group
 from django.test import Client
-from app.models import AGAbfrage, Tenant
+from app.models import AGAbfrage, Building, Room, Tenant, TenantRoomAssignment, WG
+
+
+def _room():
+    b = Building.objects.create(name=f"Haus-{uuid.uuid4().hex[:6]}")
+    wg = WG.objects.create(building=b, name="WG1")
+    return Room.objects.create(wg=wg, name="R1", size_sqm=12)
 
 
 def _open_abfrage():
@@ -59,6 +65,27 @@ def test_dashboard_shows_tenant_name():
     client.force_login(user)
     response = client.get("/dashboard/")
     assert b"Ada" in response.content
+
+
+@pytest.mark.django_db
+def test_quotes_count_only_current_residents():
+    # living flinta tenant; a moved-out flinta tenant must not inflate the quota.
+    living = _make_tenant("living")
+    living.is_flinta = True
+    living.save()
+    TenantRoomAssignment.objects.create(tenant=living, room=_room(), moved_in=date(2024, 1, 1))
+    former = _make_tenant("former")
+    former.is_flinta = True
+    former.save()
+    TenantRoomAssignment.objects.create(
+        tenant=former, room=_room(), moved_in=date(2020, 1, 1),
+        moved_out=date.today() - timedelta(days=1),
+    )
+    resp = Client()
+    resp.force_login(User.objects.create_user(username="quota_viewer"))
+    ctx = resp.get("/dashboard/").context
+    assert ctx["current_tenants"] == 1
+    assert ctx["flinta_quote"] == 100.0
 
 
 @pytest.mark.django_db

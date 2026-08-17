@@ -49,9 +49,10 @@ def dashboard(request):
         )
 
     total = Tenant.objects.count()
-    current = Tenant.objects.filter(has_active_assignment(date.today())).count()
-    flinta = Tenant.objects.filter(is_flinta=True).count()
-    azubi = Tenant.objects.filter(
+    living = Tenant.objects.filter(has_active_assignment(date.today()))
+    current = living.count()
+    flinta = living.filter(is_flinta=True).count()
+    azubi = living.filter(
         enrollment_proofs__enrollment_type=EnrollmentType.APPRENTICESHIP
     ).distinct().count()
 
@@ -62,6 +63,6 @@ def dashboard(request):
         "ag_status": ag_status,
         "current_tenants": current,
         "total_tenants": total,
-        "flinta_quote": round(flinta / total * 100, 1) if total else 0,
-        "azubi_quote": round(azubi / total * 100, 1) if total else 0,
+        "flinta_quote": round(flinta / current * 100, 1) if current else 0,
+        "azubi_quote": round(azubi / current * 100, 1) if current else 0,
     })
