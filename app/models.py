@@ -225,25 +225,47 @@ class DocumentType(models.TextChoices):
     PHOTOERLAUBNIS = "photoerlaubnis", "Fotoerlaubnis"
 
 
-class Document(models.Model):
-    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="documents")
-    document_type = models.CharField(max_length=50, choices=DocumentType.choices)
+class DocumentBase(models.Model):
+    """Shared columns for every per-type document mirror. Abstract — each
+    concrete subclass maps its own managed=False table."""
+    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="%(class)ss")
     file_name = models.CharField(max_length=255)
     file_data = models.BinaryField()
     signed_at = models.DateField()
     uploaded_at = models.DateTimeField()
-    uploaded_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="uploaded_documents", db_column="uploaded_by_id")
+    uploaded_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="%(class)s_uploaded", db_column="uploaded_by_id")
     revoked_at = models.DateTimeField(null=True, blank=True)
-    revoked_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True, related_name="revoked_documents", db_column="revoked_by_id")
+    revoked_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True, related_name="%(class)s_revoked", db_column="revoked_by_id")
     revoked_note = models.TextField(null=True, blank=True)
 
     class Meta:
+        abstract = True
+
+
+class DatenschutzDocument(DocumentBase):
+    class Meta:
         managed = False
-        db_table = "document"
+        db_table = "datenschutz_document"
+
+
+class PhotoerlaubnisDocument(DocumentBase):
+    class Meta:
+        managed = False
+        db_table = "photoerlaubnis_document"
+
+
+# document_type value -> mirror model. Single source for views/templates.
+DOCUMENT_MODELS = {
+    DocumentType.DATENSCHUTZ.value: DatenschutzDocument,
+    DocumentType.PHOTOERLAUBNIS.value: PhotoerlaubnisDocument,
+}
 
 
 class DocumentSigner(models.Model):
-    document = models.ForeignKey(Document, on_delete=models.DO_NOTHING, db_constraint=False, related_name="signers")
+    """Polymorphic signer shared across the per-type document tables
+    (mirrors cartei_db: document_type + document_id, no FK)."""
+    document_type = models.CharField(max_length=50, choices=DocumentType.choices)
+    document_id = models.IntegerField()
     tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="signed_documents")
 
     class Meta:

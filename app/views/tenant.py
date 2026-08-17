@@ -9,8 +9,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
-    AGAbfrage, AGAbfrageResult, AGStatus, Document, EnrollmentProof, InternalNote,
-    Tenant, TenantRoomAssignment,
+    AGAbfrage, AGAbfrageResult, AGStatus, DOCUMENT_MODELS, DocumentSigner, DocumentType,
+    EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
 )
 from app.residency import has_active_assignment, set_move_dates
 from app.tenant_access import (
@@ -366,13 +366,20 @@ def tenant_detail(request: HttpRequest, pk: int):
 
     ctx["can_see_documents"] = bool({"owner", "mietverwaltung", "admin"} & roles)
     if ctx["can_see_documents"]:
-        ctx["documents"] = list(
-            Document.objects.filter(tenant=tenant)
-            .prefetch_related("signers__tenant")
-            .order_by("document_type", "-uploaded_at")
-        )
+        docs = []
+        for dtype, model in DOCUMENT_MODELS.items():
+            for d in model.objects.filter(tenant=tenant).order_by("-uploaded_at"):
+                d.doc_type = dtype
+                d.doc_type_label = DocumentType(dtype).label
+                signer_ids = DocumentSigner.objects.filter(
+                    document_type=dtype, document_id=d.pk
+                ).values_list("tenant_id", flat=True)
+                d.signer_list = list(Tenant.objects.filter(pk__in=signer_ids))
+                docs.append(d)
+        docs.sort(key=lambda d: (d.doc_type, -d.uploaded_at.timestamp()))
+        ctx["documents"] = docs
         ctx["can_manage_documents"] = bool({"mietverwaltung", "admin"} & roles) or "owner" in roles
-        ctx["document_types"] = Document._meta.get_field("document_type").choices
+        ctx["document_types"] = DocumentType.choices
 
     return render(request, "app/tenant_detail.html", ctx)
 

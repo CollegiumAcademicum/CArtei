@@ -4,7 +4,7 @@ import pytest
 from django.contrib.auth.models import User
 from django.urls import reverse
 
-from app.models import Document, DocumentSigner, DocumentType, Tenant
+from app.models import DatenschutzDocument, DocumentSigner, DocumentType, Tenant
 
 
 @pytest.fixture
@@ -36,26 +36,35 @@ def _upload(client, tenant, **overrides):
 def test_upload_creates_document_and_signer(client, owner):
     _login(client)
     _upload(client, owner)
-    doc = Document.objects.get(tenant=owner)
-    assert doc.document_type == "datenschutz"
+    doc = DatenschutzDocument.objects.get(tenant=owner)
     assert doc.signed_at == datetime.date(2026, 8, 1)
     assert doc.uploaded_by_id == owner.pk
     assert doc.revoked_at is None
-    assert DocumentSigner.objects.filter(document=doc, tenant=owner).exists()
+    assert DocumentSigner.objects.filter(
+        document_type="datenschutz", document_id=doc.pk, tenant=owner
+    ).exists()
+
+
+def test_upload_photoerlaubnis_goes_to_its_own_table(client, owner):
+    from app.models import PhotoerlaubnisDocument
+    _login(client)
+    _upload(client, owner, document_type=DocumentType.PHOTOERLAUBNIS)
+    assert PhotoerlaubnisDocument.objects.filter(tenant=owner).count() == 1
+    assert DatenschutzDocument.objects.filter(tenant=owner).count() == 0
 
 
 def test_second_upload_leaves_first(client, owner):
     _login(client)
     _upload(client, owner)
     _upload(client, owner)
-    assert Document.objects.filter(tenant=owner, document_type="datenschutz").count() == 2
+    assert DatenschutzDocument.objects.filter(tenant=owner).count() == 2
 
 
 def test_revoke_sets_fields(client, owner):
     _login(client)
     _upload(client, owner)
-    doc = Document.objects.get(tenant=owner)
-    client.post(reverse("document_revoke", args=[owner.pk, doc.pk]), {"revoked_note": "Widerruf"})
+    doc = DatenschutzDocument.objects.get(tenant=owner)
+    client.post(reverse("document_revoke", args=[owner.pk, "datenschutz", doc.pk]), {"revoked_note": "Widerruf"})
     doc.refresh_from_db()
     assert doc.revoked_at is not None
     assert doc.revoked_by_id == owner.pk
@@ -65,8 +74,8 @@ def test_revoke_sets_fields(client, owner):
 def test_revoke_without_note_rejected(client, owner):
     _login(client)
     _upload(client, owner)
-    doc = Document.objects.get(tenant=owner)
-    resp = client.post(reverse("document_revoke", args=[owner.pk, doc.pk]), {"revoked_note": "  "})
+    doc = DatenschutzDocument.objects.get(tenant=owner)
+    resp = client.post(reverse("document_revoke", args=[owner.pk, "datenschutz", doc.pk]), {"revoked_note": "  "})
     assert resp.status_code == 400
     doc.refresh_from_db()
     assert doc.revoked_at is None
@@ -75,7 +84,7 @@ def test_revoke_without_note_rejected(client, owner):
 def test_download_returns_bytes(client, owner):
     _login(client)
     _upload(client, owner)
-    doc = Document.objects.get(tenant=owner)
-    resp = client.get(reverse("document_download", args=[owner.pk, doc.pk]))
+    doc = DatenschutzDocument.objects.get(tenant=owner)
+    resp = client.get(reverse("document_download", args=[owner.pk, "datenschutz", doc.pk]))
     assert resp.status_code == 200
     assert resp.content == b"%PDF-1.4 x"

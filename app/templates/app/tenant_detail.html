@@ -366,10 +366,10 @@
       <tbody>
         {% for d in documents %}
         <tr>
-          <td style="padding:.25rem .5rem;">{{ d.get_document_type_display }}</td>
-          <td style="padding:.25rem .5rem;"><a href="{% url 'document_download' pk=tenant.pk doc_pk=d.pk %}" style="color:var(--ca-teal);">{{ d.file_name }}</a></td>
+          <td style="padding:.25rem .5rem;">{{ d.doc_type_label }}</td>
+          <td style="padding:.25rem .5rem;"><a href="{% url 'document_download' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="color:var(--ca-teal);">{{ d.file_name }}</a></td>
           <td style="padding:.25rem .5rem;">{{ d.signed_at|date:"d.m.Y" }}</td>
-          <td style="padding:.25rem .5rem;">{% for s in d.signers.all %}{{ s.tenant.first_name }} {{ s.tenant.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+          <td style="padding:.25rem .5rem;">{% for s in d.signer_list %}{{ s.first_name }} {{ s.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
           <td style="padding:.25rem .5rem;">
             {% if d.revoked_at %}<span style="color:#a00;">Widerrufen ({{ d.revoked_at|date:"d.m.Y" }})</span>{% if d.revoked_note %}<br><small>{{ d.revoked_note }}</small>{% endif %}
             {% else %}<span style="color:#0a0;">Aktiv</span>{% endif %}
@@ -377,7 +377,7 @@
           {% if can_manage_documents %}
           <td style="padding:.25rem .5rem;">
             {% if not d.revoked_at %}
-            <form method="post" action="{% url 'document_revoke' pk=tenant.pk doc_pk=d.pk %}" style="display:flex;gap:.3rem;align-items:center;">
+            <form method="post" action="{% url 'document_revoke' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="display:flex;gap:.3rem;align-items:center;">
               {% csrf_token %}
               <input name="revoked_note" type="text" required placeholder="Grund des Widerrufs" style="padding:.2rem;">
               <button type="submit" onclick="return confirm('Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.');">Widerrufen</button>

@@ -2,7 +2,9 @@ import datetime
 
 import pytest
 
-from app.models import Document, DocumentSigner, DocumentType, Tenant
+from app.models import (
+    DatenschutzDocument, PhotoerlaubnisDocument, DocumentSigner, Tenant,
+)
 
 
 @pytest.fixture
@@ -13,16 +15,21 @@ def tenant(db):
     )
 
 
-def test_document_and_signers_roundtrip(db, tenant):
-    doc = Document.objects.create(
-        tenant=tenant, document_type=DocumentType.DATENSCHUTZ,
-        file_name="d.pdf", file_data=b"x", signed_at=datetime.date(2026, 8, 1),
+@pytest.mark.parametrize("model,dtype", [
+    (DatenschutzDocument, "datenschutz"),
+    (PhotoerlaubnisDocument, "photoerlaubnis"),
+])
+def test_document_and_signers_roundtrip(db, tenant, model, dtype):
+    doc = model.objects.create(
+        tenant=tenant, file_name="d.pdf", file_data=b"x",
+        signed_at=datetime.date(2026, 8, 1),
         uploaded_at=datetime.datetime(2026, 8, 2, 9, 0, tzinfo=datetime.timezone.utc),
         uploaded_by=tenant,
     )
-    DocumentSigner.objects.create(document=doc, tenant=tenant)
-    assert doc.signers.count() == 1
-    assert Document.objects.get(pk=doc.pk).document_type == "datenschutz"
+    DocumentSigner.objects.create(document_type=dtype, document_id=doc.pk, tenant=tenant)
+    signers = DocumentSigner.objects.filter(document_type=dtype, document_id=doc.pk)
+    assert signers.count() == 1
+    assert model.objects.get(pk=doc.pk).file_name == "d.pdf"
 
 
 def test_tenant_has_no_consent_date_fields():

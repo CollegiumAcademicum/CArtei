@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
-from app.models import Document, DocumentSigner, DocumentType, Tenant
+from app.models import DOCUMENT_MODELS, DocumentSigner, DocumentType, Tenant
 
 MAX_DOCUMENT_SIZE = 10 * 1024 * 1024  # 10 MB
 
@@ -37,6 +37,11 @@ def upload_document(request, pk):
     if caller.pk != pk and not _is_mv(request.user):
         raise PermissionDenied
 
+    document_type = request.POST.get("document_type", "")
+    model = DOCUMENT_MODELS.get(document_type)
+    if model is None:
+        return HttpResponseBadRequest()
+
     f = request.FILES.get("document_file")
     if not f:
         return HttpResponseBadRequest()
@@ -44,9 +49,6 @@ def upload_document(request, pk):
         messages.error(request, "Die Datei ist zu groß (max. 10 MB).")
         return redirect("tenant_detail", pk=pk)
 
-    document_type = request.POST.get("document_type", "")
-    if document_type not in DocumentType.values:
-        return HttpResponseBadRequest()
     try:
         signed_at = datetime.date.fromisoformat(request.POST.get("signed_at", ""))
     except ValueError:
@@ -62,9 +64,8 @@ def upload_document(request, pk):
     if not signer_ids:
         signer_ids = {tenant.pk}
 
-    doc = Document.objects.create(
+    doc = model.objects.create(
         tenant=tenant,
-        document_type=document_type,
         file_name=f.name,
         file_data=f.read(),
         signed_at=signed_at,
@@ -72,36 +73,43 @@ def upload_document(request, pk):
         uploaded_by=caller,
     )
     DocumentSigner.objects.bulk_create(
-        [DocumentSigner(document=doc, tenant_id=sid) for sid in signer_ids]
+        [DocumentSigner(document_type=document_type, document_id=doc.pk, tenant_id=sid)
+         for sid in signer_ids]
     )
     return redirect("tenant_detail", pk=pk)
 
 
 @login_required
 @require_POST
-def revoke_document(request, pk, doc_pk):
+def revoke_document(request, pk, document_type, doc_pk):
     get_object_or_404(Tenant, pk=pk)
     caller = _caller(request.user)
     if caller is None or (caller.pk != pk and not _is_mv(request.user)):
         raise PermissionDenied
-    doc = get_object_or_404(Document, pk=doc_pk, tenant_id=pk)
+    model = DOCUMENT_MODELS.get(document_type)
+    if model is None:
+        return HttpResponseBadRequest()
+    doc = get_object_or_404(model, pk=doc_pk, tenant_id=pk)
     note = (request.POST.get("revoked_note") or "").strip()
     if not note:
         return HttpResponseBadRequest()
     if doc.revoked_at is not None:
         return redirect("tenant_detail", pk=pk)  # already revoked; trigger would reject
-    Document.objects.filter(pk=doc.pk).update(
+    model.objects.filter(pk=doc.pk).update(
         revoked_at=now(), revoked_by_id=caller.pk, revoked_note=note,
     )
     return redirect("tenant_detail", pk=pk)
 
 
 @login_required
-def download_document(request, pk, doc_pk):
+def download_document(request, pk, document_type, doc_pk):
     caller = _caller(request.user)
     if caller is None or (caller.pk != pk and not _is_mv(request.user)):
         raise PermissionDenied
-    doc = get_object_or_404(Document, pk=doc_pk, tenant_id=pk)
+    model = DOCUMENT_MODELS.get(document_type)
+    if model is None:
+        return HttpResponseBadRequest()
+    doc = get_object_or_404(model, pk=doc_pk, tenant_id=pk)
     content_type, _ = mimetypes.guess_type(doc.file_name)
     response = HttpResponse(bytes(doc.file_data), content_type=content_type or "application/octet-stream")
     response["Content-Disposition"] = f'inline; filename="{doc.file_name}"'
