@@ -23,7 +23,7 @@ _ACTIVE_STATES = {"AKTIV", "ZU_AKTIV"}
 ProofStatus = namedtuple("ProofStatus", "state count")
 
 
-_DOC_SHORT = {"datenschutz": "DS", "photoerlaubnis": "FoE"}
+_DOC_SHORT = {"datenschutz": "DS", "photoerlaubnis": "FoE", "vertraulichkeitserklaerung": "VE"}
 
 
 def _proof_status(proofs, today):

@@ -104,7 +104,7 @@ def test_documents_column_shows_missing_type(settings):
     resp = c.get("/tenants/?residents=all")
     row = {r["tenant"].pk: r for r in resp.context["rows"]}[t.pk]
     present = {d["short"]: d["present"] for d in row["documents"]}
-    assert present == {"DS": True, "FoE": False}
+    assert present == {"DS": True, "FoE": False, "VE": False}
     assert 'data-col="documents"' in resp.content.decode()
 
 
@@ -115,7 +115,7 @@ def test_documents_column_ignores_revoked(settings):
     _datenschutz(t, revoked=True)  # revoked -> counts as missing
     c = Client(); _login(c, "mv", groups=["ag.mietverwaltung"])
     row = {r["tenant"].pk: r for r in c.get("/tenants/?residents=all").context["rows"]}[t.pk]
-    assert {d["short"]: d["present"] for d in row["documents"]} == {"DS": False, "FoE": False}
+    assert {d["short"]: d["present"] for d in row["documents"]} == {"DS": False, "FoE": False, "VE": False}
 
 
 @pytest.mark.django_db

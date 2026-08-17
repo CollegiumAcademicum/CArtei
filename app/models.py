@@ -223,6 +223,7 @@ class EnrollmentProof(models.Model):
 class DocumentType(models.TextChoices):
     DATENSCHUTZ = "datenschutz", "Datenschutz"
     PHOTOERLAUBNIS = "photoerlaubnis", "Fotoerlaubnis"
+    VERTRAULICHKEITSERKLAERUNG = "vertraulichkeitserklaerung", "Vertraulichkeitserklärung"
 
 
 class DocumentBase(models.Model):
@@ -254,10 +255,17 @@ class PhotoerlaubnisDocument(DocumentBase):
         db_table = "photoerlaubnis_document"
 
 
+class VertraulichkeitserklaerungDocument(DocumentBase):
+    class Meta:
+        managed = False
+        db_table = "vertraulichkeitserklaerung_document"
+
+
 # document_type value -> mirror model. Single source for views/templates.
 DOCUMENT_MODELS = {
     DocumentType.DATENSCHUTZ.value: DatenschutzDocument,
     DocumentType.PHOTOERLAUBNIS.value: PhotoerlaubnisDocument,
+    DocumentType.VERTRAULICHKEITSERKLAERUNG.value: VertraulichkeitserklaerungDocument,
 }
 
 
