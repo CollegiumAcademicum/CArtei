@@ -77,6 +77,7 @@ body {
   letter-spacing: 0.06em; color: #7a7a7a; margin-bottom: 0.3rem;
 }
 .ca-field-value { font-size: 0.95rem; color: var(--ca-text); word-break: break-word; }
+.ca-hint { color: var(--ca-teal); cursor: help; font-weight: 400; text-transform: none; }
 .ca-field input, .ca-field select, .ca-field textarea {
   width: 100%; box-sizing: border-box; border: 1px solid #dbdbdb; border-radius: 4px;
   padding: 0.5rem 0.6rem; font-family: inherit; font-size: 0.95rem;
