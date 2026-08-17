@@ -42,19 +42,22 @@ class CustomLDAPBackend(LDAPBackend):
     def _sync_groups(self, user) -> None:
         admin_dn = getattr(settings, "CARTEI_ADMIN_GROUP", "").lower()
         cluster_dn = getattr(settings, "CARTEI_CLUSTER_GROUP", "").lower()
+        mietverwaltung_dn = getattr(settings, "CARTEI_MIETVERWALTUNG_GROUP", "").lower()
         try:
             member_of: list[str] = user.ldap_user.attrs.get("memberOf", [])
             desired: set[str] = set()
             for dn in member_of:
                 dn_l = dn.lower()
-                # A DN can grant admin/cluster AND be a normal AG at the same
-                # time: the IT AG (ag.it) doubles as the admin group, so its
-                # members must stay in "ag.it" to appear in the dashboard and
-                # submit engagement reports. Checks are independent, not elif.
+                # Rights groups (cartei_admin/cluster/cartei_mietverwaltung) map to
+                # fixed marker names; they aren't AG-prefixed so they never appear
+                # in the dashboard AG list. A DN could still be a rights group AND
+                # a prefixed AG, so checks are independent (not elif).
                 if dn_l == admin_dn:
                     desired.add("admins")
                 if dn_l == cluster_dn:
                     desired.add("gr.cluster")
+                if dn_l == mietverwaltung_dn:
+                    desired.add("cartei_mietverwaltung")
                 cn = _dn_to_cn(dn)
                 if cn.startswith(GROUP_PREFIXES):
                     desired.add(cn)

@@ -131,11 +131,17 @@ except ImportError:
 
 CARTEI_ADMIN_GROUP = os.environ.get(
     "CARTEI_ADMIN_GROUP",
-    "cn=ag.it,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
+    "cn=cartei_admin,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
 )
 CARTEI_CLUSTER_GROUP = os.environ.get(
     "CARTEI_CLUSTER_GROUP",
     "cn=gr.cluster,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
+)
+# Read+write tenant access. Like the admin/cluster groups it is not an AG-prefixed
+# cn, so _sync_groups maps this DN to the "cartei_mietverwaltung" marker.
+CARTEI_MIETVERWALTUNG_GROUP = os.environ.get(
+    "CARTEI_MIETVERWALTUNG_GROUP",
+    "cn=cartei_mietverwaltung,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
 )
 LDAP_USER_SEARCH_BASE = os.environ.get(
     "LDAP_USER_SEARCH_BASE",
@@ -161,7 +167,7 @@ TENANT_ROLE_GROUPS = {
     # app/auth.CustomLDAPBackend); the "admin" role can view/edit all fields.
     "admin": _group_list("TENANT_GROUP_ADMIN", "admins"),
     "cluster": _group_list("TENANT_GROUP_CLUSTER", "gr.cluster"),
-    "mietverwaltung": _group_list("TENANT_GROUP_MIETVERWALTUNG", "ag.mietverwaltung"),
+    "mietverwaltung": _group_list("TENANT_GROUP_MIETVERWALTUNG", "cartei_mietverwaltung"),
     "finanzierung": _group_list("TENANT_GROUP_FINANZIERUNG", "ag.finanzierung"),
 }
 

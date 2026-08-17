@@ -56,6 +56,22 @@ def test_sync_groups_adds_cluster(settings):
 
 
 @pytest.mark.django_db
+def test_sync_groups_adds_mietverwaltung(settings):
+    # cartei_mietverwaltung has no AG prefix, so it is only synced via its DN.
+    settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
+    settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
+    settings.CARTEI_MIETVERWALTUNG_GROUP = "cn=cartei_mietverwaltung,dc=test"
+
+    from app.auth import CustomLDAPBackend
+    user = User.objects.create_user(username="mara")
+    user.ldap_user = make_ldap_user(["cn=cartei_mietverwaltung,dc=test"])
+
+    CustomLDAPBackend()._sync_groups(user)
+
+    assert user.groups.filter(name="cartei_mietverwaltung").exists()
+
+
+@pytest.mark.django_db
 def test_sync_groups_adds_ag_gr_in_prefixed_groups(settings):
     settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
     settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
