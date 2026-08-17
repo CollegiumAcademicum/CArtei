@@ -8,3 +8,6 @@ data/
 *.sqlite3
 uv.lock
 .idea/
+
+# Superpowers brainstorm companion artifacts
+.superpowers/

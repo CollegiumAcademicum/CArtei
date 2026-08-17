@@ -1,0 +1,42 @@
+{# One tenant row. Expects `row` (+ show_* flags from parent context). #}
+<tr>
+  <td data-col="name" data-sort="{{ row.tenant.last_name|lower }} {{ row.tenant.first_name|lower }}">
+    <a href="{% url 'tenant_detail' row.tenant.pk %}" class="ca-tl-name">
+      {% if row.tenant.preferred_name %}{{ row.tenant.preferred_name }}{% else %}{{ row.tenant.first_name }} {{ row.tenant.last_name }}{% endif %}
+    </a>
+    {% if show_realname and row.tenant.preferred_name %}<span class="ca-tl-muted">({{ row.tenant.first_name }} {{ row.tenant.last_name }})</span>{% endif %}
+  </td>
+  {% if show_room %}
+  <td data-col="room" data-sort="{% for a, sf in row.rooms %}{{ a.room.wg.name|lower }} {{ a.room.name|lower }} {% endfor %}">
+    {% for a, sf in row.rooms %}
+    <div>{{ a.room.name }} · {{ a.room.wg.name }}
+      {% if sf %}<div class="ca-sublet-sub">↳ Untermiete von {{ sf }}</div>{% endif %}
+    </div>
+    {% empty %}—{% endfor %}
+    {% for name in row.sublet_to %}<div class="ca-sublet-sub">↳ Untervermietet an {{ name }}</div>{% endfor %}
+  </td>
+  {% endif %}
+  {% if show_cluster and not grouped %}
+  <td data-col="cluster" data-sort="{{ row.cluster|lower }}">{{ row.cluster|default:"—" }}</td>
+  {% endif %}
+  {% if show_realname %}
+  <td data-col="mailbox" data-value="{{ row.tenant.mailbox_list_opt_in|yesno:'true,false' }}" data-sort="{{ row.tenant.mailbox_list_opt_in|yesno:'1,0' }}">
+    {% if row.tenant.mailbox_list_opt_in %}<span class="ca-pill ca-pill-yes">Ja</span>{% else %}<span class="ca-pill ca-pill-no">Nein</span>{% endif %}
+  </td>
+  <td data-col="proof" data-value="{{ row.proof.state }}" data-sort="{{ row.proof.state }}">
+    {% if row.proof.state == "gueltig" %}<span class="ca-pill ca-pill-green">gültig</span>
+    {% elif row.proof.state == "pruefung" %}<span class="ca-pill ca-pill-amber">Prüfung ({{ row.proof.count }})</span>
+    {% else %}<span class="ca-pill ca-pill-red">fehlt</span>{% endif %}
+  </td>
+  <td data-col="flinta" data-value="{{ row.tenant.is_flinta|yesno:'true,false' }}" data-sort="{{ row.tenant.is_flinta|yesno:'1,0' }}">{% if row.tenant.is_flinta %}<span class="ca-pill ca-pill-flinta">Ja</span>{% else %}—{% endif %}</td>
+  <td data-col="barrier" data-value="{{ row.tenant.barrier_free_needed|yesno:'true,false' }}" data-sort="{{ row.tenant.barrier_free_needed|yesno:'1,0' }}">{% if row.tenant.barrier_free_needed %}<span class="ca-pill ca-pill-bf">Ja</span>{% else %}—{% endif %}</td>
+  <td data-col="email" data-sort="{{ row.tenant.email|lower }}">{{ row.tenant.email|default:"—" }}</td>
+  <td data-col="move_in" data-value="{{ row.tenant.move_in|date:'Y-m-d' }}" data-sort="{{ row.tenant.move_in|date:'Y-m-d' }}">{{ row.tenant.move_in|default:"—" }}</td>
+  {% endif %}
+  {% for a, results, verdict in row.survey_results %}
+  <td data-col="survey_{{ a.pk }}" data-value="{{ verdict|yesno:'flag,ok' }}" data-sort="{{ verdict|yesno:'1,0' }}"
+      title="{% for r in results %}{{ r.ag_name }}: {{ r.get_status_display }}{% if not forloop.last %}, {% endif %}{% empty %}kein Ergebnis{% endfor %}">
+    {% if verdict %}<span class="ca-pill ca-pill-red verdict-flag">⚠ Flag</span>{% else %}<span class="ca-pill ca-pill-green verdict-ok">✓ aktiv</span>{% endif %}
+  </td>
+  {% endfor %}
+</tr>

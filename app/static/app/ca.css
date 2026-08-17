@@ -435,3 +435,31 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ca-filter-row th { padding-top: 0.2rem; padding-bottom: 0.5rem; vertical-align: top; }
 .ca-filter-row .col-filter { max-width: 11rem; }
 .ca-filter-row input[type="date"] { max-width: 8.5rem; margin-bottom: 2px; }
+
+/* ── Tenant overview: rail + table ── */
+.ca-tl-layout { display: flex; gap: 1rem; align-items: flex-start; }
+.ca-tl-rail { width: 190px; flex-shrink: 0; }
+.ca-tl-main { flex: 1; min-width: 0; }
+.ca-facet { border: 1px solid #ece7dc; border-radius: 8px; padding: 0.6rem 0.75rem; margin-bottom: 0.75rem; background: #fff; }
+.ca-facet h5 { margin: 0 0 0.4rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: #999; }
+.ca-facet-line { display: block; margin: 0.2rem 0; font-size: 0.85rem; color: #444; }
+.ca-tl-name { color: var(--ca-teal); font-weight: 600; }
+.ca-tl-muted { color: #7a7a7a; }
+.ca-sublet-sub { font-size: 0.78rem; color: #9a5a10; margin-top: 2px; }
+.cluster-group-header td { background: #efeae0; font-weight: 700; padding: 0.35rem 0.6rem; }
+.ca-grp-tally { font-weight: 400; color: #777; font-size: 0.85rem; }
+
+@media (max-width: 780px) {
+  .ca-tl-layout { flex-direction: column; }
+  .ca-tl-rail { width: 100%; }
+}
+
+/* Overview status pills */
+.ca-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.ca-pill-green  { background: #d9f0e0; color: #1c6b3a; }
+.ca-pill-amber  { background: #fdecc8; color: #8a5a00; }
+.ca-pill-red    { background: #f7d4d4; color: #a11111; }
+.ca-pill-yes    { background: #d9f0e0; color: #1c6b3a; }
+.ca-pill-no     { background: #e7e7e7; color: #555; }
+.ca-pill-flinta { background: #e7ddf3; color: #5b3a8a; }
+.ca-pill-bf     { background: #d7eaf7; color: #1c5a80; }
