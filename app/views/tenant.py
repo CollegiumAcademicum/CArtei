@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
-    AGAbfrage, AGAbfrageResult, AGStatus, EnrollmentProof, InternalNote,
+    AGAbfrage, AGAbfrageResult, AGStatus, Document, EnrollmentProof, InternalNote,
     Tenant, TenantRoomAssignment,
 )
 from app.residency import has_active_assignment, set_move_dates
@@ -363,6 +363,16 @@ def tenant_detail(request: HttpRequest, pk: int):
 
     ctx["mv_notes"] = list(_note_qs.filter(source_group="mietverwaltung")) if can_write_mv else []
     ctx["cluster_notes"] = list(_note_qs.filter(source_group="clustersprechende")) if can_write_cluster else []
+
+    ctx["can_see_documents"] = bool({"owner", "mietverwaltung", "admin"} & roles)
+    if ctx["can_see_documents"]:
+        ctx["documents"] = list(
+            Document.objects.filter(tenant=tenant)
+            .prefetch_related("signers__tenant")
+            .order_by("document_type", "-uploaded_at")
+        )
+        ctx["can_manage_documents"] = bool({"mietverwaltung", "admin"} & roles) or "owner" in roles
+        ctx["document_types"] = Document._meta.get_field("document_type").choices
 
     return render(request, "app/tenant_detail.html", ctx)
 

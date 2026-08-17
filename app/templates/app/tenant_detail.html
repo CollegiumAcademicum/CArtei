@@ -351,6 +351,60 @@
   </details>
   {% endif %}
 
+  {% if can_see_documents %}
+  <details id="section-documents" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+    <summary style="cursor:pointer;font-weight:600;">Rechtsdokumente (Datenschutz &amp; Fotoerlaubnis)</summary>
+    <table style="width:100%;border-collapse:collapse;margin-top:.5rem;">
+      <thead><tr>
+        <th style="text-align:left;padding:.25rem .5rem;">Typ</th>
+        <th style="text-align:left;padding:.25rem .5rem;">Datei</th>
+        <th style="text-align:left;padding:.25rem .5rem;">Unterschrieben am</th>
+        <th style="text-align:left;padding:.25rem .5rem;">Unterschrieben von</th>
+        <th style="text-align:left;padding:.25rem .5rem;">Status</th>
+        {% if can_manage_documents %}<th></th>{% endif %}
+      </tr></thead>
+      <tbody>
+        {% for d in documents %}
+        <tr>
+          <td style="padding:.25rem .5rem;">{{ d.get_document_type_display }}</td>
+          <td style="padding:.25rem .5rem;"><a href="{% url 'document_download' pk=tenant.pk doc_pk=d.pk %}" style="color:var(--ca-teal);">{{ d.file_name }}</a></td>
+          <td style="padding:.25rem .5rem;">{{ d.signed_at|date:"d.m.Y" }}</td>
+          <td style="padding:.25rem .5rem;">{% for s in d.signers.all %}{{ s.tenant.first_name }} {{ s.tenant.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+          <td style="padding:.25rem .5rem;">
+            {% if d.revoked_at %}<span style="color:#a00;">Widerrufen ({{ d.revoked_at|date:"d.m.Y" }})</span>{% if d.revoked_note %}<br><small>{{ d.revoked_note }}</small>{% endif %}
+            {% else %}<span style="color:#0a0;">Aktiv</span>{% endif %}
+          </td>
+          {% if can_manage_documents %}
+          <td style="padding:.25rem .5rem;">
+            {% if not d.revoked_at %}
+            <form method="post" action="{% url 'document_revoke' pk=tenant.pk doc_pk=d.pk %}" style="display:flex;gap:.3rem;align-items:center;">
+              {% csrf_token %}
+              <input name="revoked_note" type="text" required placeholder="Grund des Widerrufs" style="padding:.2rem;">
+              <button type="submit" onclick="return confirm('Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.');">Widerrufen</button>
+            </form>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if can_manage_documents %}
+    <form method="post" action="{% url 'document_upload' pk=tenant.pk %}" enctype="multipart/form-data" style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
+      {% csrf_token %}
+      <select name="document_type" required style="padding:.3rem;">
+        {% for value, label in document_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select>
+      <label>Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
+      <input type="hidden" name="signer_ids" value="{{ tenant.pk }}">
+      <input name="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:160px;">
+      <button type="submit">Hochladen</button>
+    </form>
+    {% endif %}
+  </details>
+  {% endif %}
+
   {% if engagement or can_write_cluster %}
   <details id="section-engagement" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
