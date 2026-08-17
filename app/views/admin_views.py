@@ -1,4 +1,5 @@
 import uuid as uuid_module
+from datetime import date
 
 from django.contrib import messages
 from django.shortcuts import redirect, render
@@ -7,6 +8,7 @@ from django.views.decorators.http import require_POST
 from app import ldap_utils
 from app.decorators import require_group
 from app.models import EnrollmentProof, EnrollmentType, Tenant
+from app.residency import has_active_assignment
 from app.tenant_access import RESOURCE_SECTIONS, SECTIONS
 
 _ROLE_LABELS = {
@@ -22,10 +24,12 @@ _ROLE_LABELS = {
 @require_group("admins")
 def admin_portal(request):
     total = Tenant.objects.count()
+    current = Tenant.objects.filter(has_active_assignment(date.today())).count()
     flinta = Tenant.objects.filter(is_flinta=True).count()
     azubi = Tenant.objects.filter(enrollment_proofs__enrollment_type=EnrollmentType.APPRENTICESHIP).distinct().count()
     return render(request, "app/admin/portal.html", {
-        "total": total,
+        "current_tenants": current,
+        "total_tenants": total,
         "flinta_quote": round(flinta / total * 100, 1) if total else 0,
         "azubi_quote": round(azubi / total * 100, 1) if total else 0,
     })
