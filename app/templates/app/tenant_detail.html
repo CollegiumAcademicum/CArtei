@@ -383,7 +383,7 @@
         <form method="post" action="{% url 'document_revoke' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;">
           {% csrf_token %}
           <input name="revoked_note" type="text" required placeholder="Grund des Widerrufs" style="padding:.2rem;">
-          <button type="submit" onclick="return confirm('Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.');">Widerrufen</button>
+          <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;" onclick="return confirm('Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.');">Widerrufen</button>
         </form>
         {% endif %}
       </div>
@@ -401,7 +401,7 @@
           <input type="hidden" name="signer_ids" value="{{ tenant.pk }}">
           <input type="text" class="ca-signer-add" list="ca-tenant-options" placeholder="Mitunterzeichnende hinzufügen…" style="padding:.2rem;min-width:200px;">
         </div>
-        <button type="submit">Hochladen</button>
+        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Hochladen</button>
       </form>
       {% endif %}
     </div>
