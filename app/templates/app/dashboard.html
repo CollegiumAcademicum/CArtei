@@ -60,6 +60,19 @@
         </div>
       </div>
     {% endif %}
+    {% if ag_status %}
+      <div class="ca-card">
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.75rem;">AG-Status</h2>
+        <div style="display:flex;flex-direction:column;gap:0.35rem;">
+          {% for ag in ag_status %}
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+            <span>{{ ag.ag_name }}</span>
+            <span class="badge badge-{{ ag.health }}">{{ ag.label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
     {% if active_abfragen %}
       <div class="ca-card">
         <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;"><a href="{% url 'abfragen_list' %}">Engagement-Abfragen</a></h2>

@@ -1,11 +1,15 @@
 from datetime import date
 
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import Group
 from django.shortcuts import render
 
-from app.auth import ag_group_names
-from app.models import AGAbfrage, AGAbfrageHealth, EnrollmentType, Tenant
+from app.auth import GROUP_PREFIXES, ag_group_names
+from app.models import AGAbfrage, AGAbfrageHealth, AGHealth, EnrollmentType, Tenant
 from app.residency import has_active_assignment
+
+# Worst first, so struggling AGs surface at the top of the widget.
+_HEALTH_RANK = {"TOT": 0, "KRITISCH": 1, "KERNAUFGABEN": 2, "GESUND": 3}
 
 
 @login_required
@@ -27,6 +31,27 @@ def dashboard(request):
         if is_privileged and latest_abfrage else AGAbfrageHealth.objects.none()
     )
 
+    # Health of every AG for the latest Abfrage; AGs with no submission default to TOT.
+    # ponytail: AG roster = synced org Groups (ag./gr./in.) — the only app-side list we
+    # have; an AG whose members never logged in won't appear until it does.
+    ag_status = []
+    if latest_abfrage:
+        health_by_ag = {
+            h.ag_name: h.health for h in AGAbfrageHealth.objects.filter(abfrage=latest_abfrage)
+        }
+        roster = {
+            g for g in Group.objects.values_list("name", flat=True)
+            if g.startswith(GROUP_PREFIXES)
+        } | set(health_by_ag)
+        labels = dict(AGHealth.choices)
+        ag_status = sorted(
+            (
+                {"ag_name": name, "health": (h := health_by_ag.get(name, "TOT")), "label": labels[h]}
+                for name in roster
+            ),
+            key=lambda a: (_HEALTH_RANK[a["health"]], a["ag_name"]),
+        )
+
     total = Tenant.objects.count()
     current = Tenant.objects.filter(has_active_assignment(date.today())).count()
     flinta = Tenant.objects.filter(is_flinta=True).count()
@@ -39,6 +64,7 @@ def dashboard(request):
         "user_groups": user_groups,
         "active_abfragen": active_abfragen,
         "ags_in_not": ags_in_not,
+        "ag_status": ag_status,
         "current_tenants": current,
         "total_tenants": total,
         "flinta_quote": round(flinta / total * 100, 1) if total else 0,
