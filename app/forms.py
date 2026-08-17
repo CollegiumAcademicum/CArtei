@@ -1,4 +1,7 @@
+from datetime import date
+
 from django import forms
+from django.db.models import Q
 
 from app.models import Room, Tenant, TenantRoomAssignment
 from app.tenant_access import EDITABLE_COLUMNS
@@ -53,3 +56,21 @@ class TenantRoomAssignmentForm(forms.ModelForm):
                 field.input_formats = ["%Y-%m-%d"]
             elif hasattr(field, "widget") and not isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.setdefault("class", "ca-input")
+
+    def clean(self):
+        cleaned = super().clean()
+        room, source = cleaned.get("room"), cleaned.get("sublet_of_tenant")
+        # "Untervermietet von" must actually rent the selected room (active assignment).
+        if room and source:
+            today = date.today()
+            rents = (
+                TenantRoomAssignment.objects.filter(room=room, tenant=source)
+                .filter(Q(moved_out__isnull=True) | Q(moved_out__gt=today))
+                .exists()
+            )
+            if not rents:
+                self.add_error(
+                    "sublet_of_tenant",
+                    "Diese Person mietet das ausgewählte Zimmer nicht.",
+                )
+        return cleaned

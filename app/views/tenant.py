@@ -4,7 +4,7 @@ from datetime import date
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.http import HttpRequest
+from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import TenantForm, TenantRoomAssignmentForm
@@ -355,3 +355,18 @@ def tenant_detail(request: HttpRequest, pk: int):
     ctx["cluster_notes"] = list(_note_qs.filter(source_group="clustersprechende")) if can_write_cluster else []
 
     return render(request, "app/tenant_detail.html", ctx)
+
+
+@login_required
+def room_renters(request: HttpRequest, room_id: int):
+    """Current renters of one room — feeds the 'Untervermietet von' dropdown.
+    Only room managers may ask; returns [] otherwise so the UI just shows nobody."""
+    if not ({"mietverwaltung", "admin"} & global_roles(request.user)):
+        return JsonResponse([], safe=False)
+    ids = list(
+        TenantRoomAssignment.objects
+        .filter(room_id=room_id)
+        .filter(Q(moved_out__isnull=True) | Q(moved_out__gt=date.today()))
+        .values_list("tenant_id", flat=True)
+    )
+    return JsonResponse(ids, safe=False)
