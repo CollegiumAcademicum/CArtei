@@ -277,11 +277,11 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   background: #f5fffe;
   border: 1px solid var(--ca-teal);
   border-radius: 8px;
-  padding: 1rem 1.5rem;
-  min-width: 140px;
+  padding: 0.85rem 0.5rem;
+  min-width: 0;
   text-align: center;
 }
-.ca-stat-value { font-size: 2rem; font-weight: 700; color: var(--ca-teal); }
+.ca-stat-value { font-size: 1.6rem; font-weight: 700; color: var(--ca-teal); }
 .ca-stat-label { font-size: 0.82rem; color: #555; margin-top: 0.25rem; }
 
 /* ── Cluster row colors (Belegium) ── */
