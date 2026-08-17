@@ -524,16 +524,41 @@ document.querySelectorAll('.ca-notes-toggle').forEach(function(btn) {
   });
 });
 
-// Per-assignment sublet visibility: "Untervermietet von" only shows when its
-// card's Untermiete checkbox is checked.
+// Per-assignment sublet UI: (a) "Untervermietet von" only shows when Untermiete is
+// checked; (b) it only offers people who actually rent the selected room. Renters
+// are fetched per room on demand, so we never ship the whole occupancy map.
 (function() {
   document.querySelectorAll('.ca-room-assignment').forEach(function(card) {
     var cb = card.querySelector('.ca-sublet-toggle input[type="checkbox"]');
     var dep = card.querySelector('.ca-sublet-dep');
-    if (!cb || !dep) return;
-    function toggle() { dep.style.display = cb.checked ? '' : 'none'; }
-    toggle();
-    cb.addEventListener('change', toggle);
+    if (cb && dep) {
+      function toggle() { dep.style.display = cb.checked ? '' : 'none'; }
+      toggle();
+      cb.addEventListener('change', toggle);
+    }
+    var roomSel = card.querySelector('select[name$="-room"]');
+    var subSel = card.querySelector('select[name$="-sublet_of_tenant"]');
+    if (!roomSel || !subSel) return;
+
+    function apply(allowed, reset) {
+      var keep = subSel.value;  // never hide the current selection on load
+      Array.prototype.forEach.call(subSel.options, function(opt) {
+        if (opt.value === '') return;
+        var ok = allowed.indexOf(parseInt(opt.value, 10)) !== -1 || opt.value === keep;
+        opt.hidden = !ok;
+        opt.disabled = !ok;
+      });
+      if (reset && keep && allowed.indexOf(parseInt(keep, 10)) === -1) subSel.value = '';
+    }
+    function refresh(reset) {
+      if (!roomSel.value) { apply([], reset); return; }
+      var url = "{% url 'room_renters' 0 %}".replace('/0/', '/' + roomSel.value + '/');
+      fetch(url).then(function(r) { return r.json(); })
+        .then(function(ids) { apply(ids, reset); })
+        .catch(function() {});
+    }
+    refresh(false);
+    roomSel.addEventListener('change', function() { refresh(true); });
   });
 })();
 </script>

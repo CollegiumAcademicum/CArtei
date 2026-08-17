@@ -287,3 +287,28 @@ def test_detail_shows_reverse_sublet(settings):
     body = c.get(f"/tenants/{landlord.pk}/").content.decode()
     assert "Untervermietet an" in body
     assert "Untermieta" in body
+
+
+@pytest.mark.django_db
+def test_room_renters_endpoint_lists_only_active_and_gates_access(settings):
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    b = Building.objects.create(name="BauR")
+    wg = WG.objects.create(building=b, name="WGR", cluster="OG1")
+    room = Room.objects.create(wg=wg, name="401", size_sqm=14)
+    cur = _tenant("cur"); cur.email = "cur@ca.de"; cur.save()
+    old = Tenant.objects.create(first_name="Old", last_name="T", email="old@ca.de",
+                                intranet_username="old", intranet_uuid=uuid.uuid4())
+    TenantRoomAssignment.objects.create(tenant=cur, room=room, moved_in=datetime.date(2024, 1, 1))
+    TenantRoomAssignment.objects.create(tenant=old, room=room,
+        moved_in=datetime.date(2020, 1, 1), moved_out=datetime.date(2021, 1, 1))
+
+    c = Client()
+    _login(c, "mv", groups=["ag.mietverwaltung"])
+    assert c.get(f"/rooms/{room.pk}/renters/").json() == [cur.pk]
+
+    # Non-manager gets an empty list, not the occupancy.
+    c2 = Client()
+    _login(c2, "nobody", groups=[])
+    assert c2.get(f"/rooms/{room.pk}/renters/").json() == []

@@ -13,6 +13,7 @@ urlpatterns = [
     path("abfragen/<int:pk>/delete/", abfragen.abfrage_delete, name="abfrage_delete"),
     path("tenants/", tenant.tenant_list, name="tenant_list"),
     path("tenants/<int:pk>/", tenant.tenant_detail, name="tenant_detail"),
+    path("rooms/<int:room_id>/renters/", tenant.room_renters, name="room_renters"),
     path("tenants/<int:pk>/enrollment-proof/upload/", enrollment_proof.upload_proof, name="enrollment_proof_upload"),
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/verify/", enrollment_proof.verify_proof, name="enrollment_proof_verify"),
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/revert/", enrollment_proof.revert_proof, name="enrollment_proof_revert"),
