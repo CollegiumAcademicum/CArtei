@@ -45,6 +45,22 @@ def test_upload_creates_document_and_signer(client, owner):
     ).exists()
 
 
+def test_upload_with_cosigner_records_both_signers(client, owner):
+    other = Tenant.objects.create(
+        first_name="Co", last_name="Signer", email="c@example.com",
+        intranet_username="co_signer",
+        intranet_uuid="00000000-0000-0000-0000-000000000011",
+    )
+    _login(client)
+    _upload(client, owner, signer_ids=[str(owner.pk), str(other.pk)])
+    doc = DatenschutzDocument.objects.get(tenant=owner)
+    signer_ids = set(
+        DocumentSigner.objects.filter(document_type="datenschutz", document_id=doc.pk)
+        .values_list("tenant_id", flat=True)
+    )
+    assert signer_ids == {owner.pk, other.pk}
+
+
 def test_upload_photoerlaubnis_goes_to_its_own_table(client, owner):
     from app.models import PhotoerlaubnisDocument
     _login(client)

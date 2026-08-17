@@ -366,8 +366,9 @@ def tenant_detail(request: HttpRequest, pk: int):
 
     ctx["can_see_documents"] = bool({"owner", "mietverwaltung", "admin"} & roles)
     if ctx["can_see_documents"]:
-        docs = []
+        groups = []
         for dtype, model in DOCUMENT_MODELS.items():
+            docs = []
             for d in model.objects.filter(tenant=tenant).order_by("-uploaded_at"):
                 d.doc_type = dtype
                 d.doc_type_label = DocumentType(dtype).label
@@ -376,10 +377,20 @@ def tenant_detail(request: HttpRequest, pk: int):
                 ).values_list("tenant_id", flat=True)
                 d.signer_list = list(Tenant.objects.filter(pk__in=signer_ids))
                 docs.append(d)
-        docs.sort(key=lambda d: (d.doc_type, -d.uploaded_at.timestamp()))
-        ctx["documents"] = docs
+            groups.append({
+                "type": dtype,
+                "label": DocumentType(dtype).label,
+                "docs": docs,
+                "has_active": any(d.revoked_at is None for d in docs),
+            })
+        ctx["document_groups"] = groups
         ctx["can_manage_documents"] = bool({"mietverwaltung", "admin"} & roles) or "owner" in roles
-        ctx["document_types"] = DocumentType.choices
+        if ctx["can_manage_documents"]:
+            # ponytail: every tenant rendered inline into a datalist; swap for an
+            # async search endpoint if the tenant count ever gets large.
+            ctx["cosigner_candidates"] = list(
+                Tenant.objects.exclude(pk=tenant.pk).order_by("last_name", "first_name")
+            )
 
     return render(request, "app/tenant_detail.html", ctx)
 
