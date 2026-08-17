@@ -23,32 +23,26 @@ def dashboard(request):
 
     active_abfragen = AGAbfrage.objects.filter(grace_ends_at__gte=date.today()).order_by("-date")
 
-    # AGs that self-reported critical/dead in the most recent Abfrage (privileged view only).
-    is_privileged = request.user.groups.filter(name__in=["admins", "gr.cluster"]).exists()
-    latest_abfrage = AGAbfrage.objects.order_by("-date").first()
-    ags_in_not = (
-        AGAbfrageHealth.objects.filter(abfrage=latest_abfrage, health__in=["KRITISCH", "TOT"])
-        if is_privileged and latest_abfrage else AGAbfrageHealth.objects.none()
-    )
-
-    # Latest health submission per AG across all Abfragen (newest Abfrage wins);
-    # AGs that never submitted default to TOT.
-    # ponytail: AG roster = synced org Groups (ag./gr./in.) — the only app-side list we
-    # have; an AG whose members never logged in won't appear until it does.
-    health_by_ag = {
+    # Latest health submission per AG across all Abfragen (newest Abfrage wins).
+    # Iterate oldest-first so newer rows overwrite older ones in the dict.
+    latest_health = {
         h.ag_name: h.health
         for h in AGAbfrageHealth.objects.select_related("abfrage").order_by("abfrage__date")
     }
+
+    # AG-Status widget: every AG with its latest health; AGs that never submitted default to TOT.
+    # ponytail: AG roster = synced org Groups (ag./gr./in.) — the only app-side list we
+    # have; an AG whose members never logged in won't appear until it does.
     roster = {
         g for g in Group.objects.values_list("name", flat=True)
         if g.startswith(GROUP_PREFIXES)
-    } | set(health_by_ag)
+    } | set(latest_health)
     ag_status = []
     if roster:
         labels = dict(AGHealth.choices)
         ag_status = sorted(
             (
-                {"ag_name": name, "health": (h := health_by_ag.get(name, "TOT")), "label": labels[h]}
+                {"ag_name": name, "health": (hv := latest_health.get(name, "TOT")), "label": labels[hv]}
                 for name in roster
             ),
             key=lambda a: (_HEALTH_RANK[a["health"]], a["ag_name"]),
@@ -65,7 +59,6 @@ def dashboard(request):
         "tenant": tenant,
         "user_groups": user_groups,
         "active_abfragen": active_abfragen,
-        "ags_in_not": ags_in_not,
         "ag_status": ag_status,
         "current_tenants": current,
         "total_tenants": total,
