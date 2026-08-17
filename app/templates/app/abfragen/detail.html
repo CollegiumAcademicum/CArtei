@@ -47,17 +47,20 @@
   <hr class="ca-divider">
 
   <h2 class="ca-label" style="font-size:1rem;margin-bottom:1rem;">Ergebnisse nach AG</h2>
-  {% if by_ag %}
+  {% if ags %}
   <div style="overflow-x:auto;">
     <table class="table is-fullwidth is-striped is-hoverable" style="font-size:0.9rem;">
-      <thead><tr><th>AG</th><th>Bewohner:in</th><th>Status</th><th>Notiz</th></tr></thead>
+      <thead><tr><th>AG</th><th>Zustand</th><th>Bewohner:in</th><th>Status</th><th>Notiz</th></tr></thead>
       <tbody>
-      {% for ag_name, results in by_ag.items %}
-      {% for r in results %}
+      {% for ag in ags %}
+      {% for r in ag.results %}
       <tr>
         {% if forloop.first %}
-        <td rowspan="{{ results|length }}">
-          <a href="{% url 'ag_edit' abfrage.pk ag_name %}" style="color:var(--ca-teal);font-weight:600;">{{ ag_name }}</a>
+        <td rowspan="{{ ag.results|length }}">
+          <a href="{% url 'ag_edit' abfrage.pk ag.name %}" style="color:var(--ca-teal);font-weight:600;">{{ ag.name }}</a>
+        </td>
+        <td rowspan="{{ ag.results|length }}">
+          {% if ag.health %}<span class="badge badge-{{ ag.health.health }}" title="{{ ag.health.note|default:'' }}">{{ ag.health.get_health_display }}</span>{% else %}<span style="color:#bbb;">—</span>{% endif %}
         </td>
         {% endif %}
         <td><a href="{% url 'tenant_detail' r.tenant.pk %}" style="color:var(--ca-teal);">{{ r.tenant }}</a></td>

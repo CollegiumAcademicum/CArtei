@@ -11,6 +11,13 @@ class AGStatus(models.TextChoices):
     INAKTIV = "INAKTIV", "inaktiv"
 
 
+class AGHealth(models.TextChoices):
+    GESUND = "GESUND", "gesund"
+    KERNAUFGABEN = "KERNAUFGABEN", "nur Kernaufgaben"
+    KRITISCH = "KRITISCH", "kritisch"
+    TOT = "TOT", "tot"
+
+
 class NoteSourceGroup(models.TextChoices):
     MIETVERWALTUNG = "mietverwaltung", "Mietverwaltung"
     CLUSTERSPRECHENDE = "clustersprechende", "Clustersprechende"
@@ -90,6 +97,17 @@ class AGAbfrageResult(models.Model):
     class Meta:
         managed = False
         db_table = "ag_abfrage_result"
+
+
+class AGAbfrageHealth(models.Model):
+    abfrage = models.ForeignKey(AGAbfrage, on_delete=models.DO_NOTHING, db_constraint=False)
+    ag_name = models.CharField(max_length=255)
+    health = models.CharField(max_length=50, choices=AGHealth.choices)
+    note = models.TextField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "ag_abfrage_health"
 
 
 class InternalNote(models.Model):

@@ -245,6 +245,31 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .badge-IM_GESPRAECH      { background: #fff3cd; color: #856404; }
 .badge-INAKTIV           { background: #B61B29; color: #fff; }
 
+/* AG health (green → black) */
+.badge-GESUND       { background: #2e7d32; color: #fff; }
+.badge-KERNAUFGABEN { background: #c9a400; color: #3a2f00; }
+.badge-KRITISCH     { background: #c62828; color: #fff; }
+.badge-TOT          { background: #111;    color: #fff; }
+
+/* ── Slider (engagement + AG health) ── */
+.ca-slider { display: flex; align-items: center; gap: 0.6rem; }
+.ca-slider input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  height: 6px; border-radius: 3px; background: #ddd; outline: none;
+  flex: 1; min-width: 90px; max-width: 220px;
+}
+.ca-slider input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--thumb, #555); cursor: pointer; border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+}
+.ca-slider input[type=range]::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--thumb, #555); cursor: pointer; border: 2px solid #fff;
+}
+.ca-slider-out { font-weight: 700; font-size: 0.85em; white-space: nowrap; min-width: 8.5rem; }
+
 /* ── Login page ── */
 .ca-login-wrap {
   display: flex; flex-direction: column; align-items: center;

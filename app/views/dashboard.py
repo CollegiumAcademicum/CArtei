@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from app.auth import ag_group_names
-from app.models import AGAbfrage, EnrollmentType, Tenant
+from app.models import AGAbfrage, AGAbfrageHealth, EnrollmentType, Tenant
 from app.residency import has_active_assignment
 
 
@@ -19,6 +19,14 @@ def dashboard(request):
 
     active_abfragen = AGAbfrage.objects.filter(grace_ends_at__gte=date.today()).order_by("-date")
 
+    # AGs that self-reported critical/dead in the most recent Abfrage (privileged view only).
+    is_privileged = request.user.groups.filter(name__in=["admins", "gr.cluster"]).exists()
+    latest_abfrage = AGAbfrage.objects.order_by("-date").first()
+    ags_in_not = (
+        AGAbfrageHealth.objects.filter(abfrage=latest_abfrage, health__in=["KRITISCH", "TOT"])
+        if is_privileged and latest_abfrage else AGAbfrageHealth.objects.none()
+    )
+
     total = Tenant.objects.count()
     current = Tenant.objects.filter(has_active_assignment(date.today())).count()
     flinta = Tenant.objects.filter(is_flinta=True).count()
@@ -30,6 +38,7 @@ def dashboard(request):
         "tenant": tenant,
         "user_groups": user_groups,
         "active_abfragen": active_abfragen,
+        "ags_in_not": ags_in_not,
         "current_tenants": current,
         "total_tenants": total,
         "flinta_quote": round(flinta / total * 100, 1) if total else 0,

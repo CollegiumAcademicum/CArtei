@@ -144,6 +144,55 @@ def test_ag_edit_post_saves_result():
 
 
 @pytest.mark.django_db
+def test_ag_edit_post_saves_health():
+    from app.models import AGAbfrageHealth
+    abfrage = _open_abfrage()
+    user = _user_in_group("health_user", "ag.kueche")
+    client = Client()
+    client.force_login(user)
+
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=[]):
+        response = client.post(
+            f"/abfragen/{abfrage.pk}/ag/ag.kueche/",
+            {"health": "KRITISCH", "health_note": "kaum noch Leute"},
+        )
+    assert response.status_code == 302
+    h = AGAbfrageHealth.objects.get(abfrage=abfrage, ag_name="ag.kueche")
+    assert h.health == "KRITISCH"
+    assert h.note == "kaum noch Leute"
+
+
+@pytest.mark.django_db
+def test_ag_edit_shows_health_slider():
+    abfrage = _open_abfrage()
+    user = _user_in_group("slider_user", "ag.kueche")
+    client = Client()
+    client.force_login(user)
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=[]):
+        response = client.get(f"/abfragen/{abfrage.pk}/ag/ag.kueche/")
+    assert b"ca-slider" in response.content
+    assert b'name="health"' in response.content
+
+
+@pytest.mark.django_db
+def test_detail_shows_ag_health_badge():
+    from app.models import AGAbfrageHealth, AGAbfrageResult, Tenant
+    abfrage = _open_abfrage()
+    tenant = Tenant.objects.create(
+        first_name="D", last_name="T", email="dt@ca.de",
+        intranet_username="dt_detail", intranet_uuid=uuid.uuid4(),
+    )
+    AGAbfrageResult.objects.create(abfrage=abfrage, ag_name="ag.kueche", tenant=tenant, status="AKTIV")
+    AGAbfrageHealth.objects.create(abfrage=abfrage, ag_name="ag.kueche", health="TOT")
+
+    client = Client()
+    client.force_login(_user_in_group("cluster_detail", "gr.cluster"))
+    response = client.get(f"/abfragen/{abfrage.pk}/")
+    assert response.status_code == 200
+    assert b"badge-TOT" in response.content
+
+
+@pytest.mark.django_db
 def test_initiative_edit_allowed():
     abfrage = _open_abfrage()
     user = _user_in_group("in_user", "in.gemeinschaft")
