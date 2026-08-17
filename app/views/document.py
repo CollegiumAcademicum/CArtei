@@ -32,9 +32,7 @@ def _is_mv(user):
 def upload_document(request, pk):
     tenant = get_object_or_404(Tenant, pk=pk)
     caller = _caller(request.user)
-    if caller is None:
-        raise PermissionDenied
-    if caller.pk != pk and not _is_mv(request.user):
+    if caller is None or not _is_mv(request.user):
         raise PermissionDenied
 
     document_type = request.POST.get("document_type", "")
@@ -84,7 +82,7 @@ def upload_document(request, pk):
 def revoke_document(request, pk, document_type, doc_pk):
     get_object_or_404(Tenant, pk=pk)
     caller = _caller(request.user)
-    if caller is None or (caller.pk != pk and not _is_mv(request.user)):
+    if caller is None or not _is_mv(request.user):
         raise PermissionDenied
     model = DOCUMENT_MODELS.get(document_type)
     if model is None:

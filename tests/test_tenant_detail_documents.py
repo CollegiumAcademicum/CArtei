@@ -1,7 +1,7 @@
 import datetime
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.urls import reverse
 
 from app.models import DatenschutzDocument, DocumentSigner, Tenant
@@ -50,7 +50,10 @@ def test_detail_shows_missing_type_when_no_active_doc(client, owner):
 
 
 def test_detail_offers_any_tenant_as_cosigner(client, owner):
-    # A co-signer can be any tenant, not just co-residents.
+    # The co-signer picker is a Mietverwaltung-only management control.
+    User.objects.get(username="owner_dd").groups.add(
+        Group.objects.get_or_create(name="ag.mietverwaltung")[0]
+    )
     other = Tenant.objects.create(
         first_name="Cosign", last_name="Er", email="cs@example.com",
         intranet_username="cosign_er",

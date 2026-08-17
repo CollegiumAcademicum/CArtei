@@ -408,7 +408,7 @@ def tenant_detail(request: HttpRequest, pk: int):
                 "has_active": any(d.revoked_at is None for d in docs),
             })
         ctx["document_groups"] = groups
-        ctx["can_manage_documents"] = bool({"mietverwaltung", "admin"} & roles) or "owner" in roles
+        ctx["can_manage_documents"] = bool({"mietverwaltung", "admin"} & roles)
         if ctx["can_manage_documents"]:
             # ponytail: every tenant rendered inline into a datalist; swap for an
             # async search endpoint if the tenant count ever gets large.

@@ -1,7 +1,7 @@
 import datetime
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.urls import reverse
 
 from app.models import DatenschutzDocument, DocumentSigner, DocumentType, Tenant
@@ -9,11 +9,13 @@ from app.models import DatenschutzDocument, DocumentSigner, DocumentType, Tenant
 
 @pytest.fixture
 def owner(db):
+    # Documents are managed by Mietverwaltung only, so the acting user is MV.
     t = Tenant.objects.create(
         first_name="Owner", last_name="Self", email="o@example.com",
         intranet_username="owner_doc", intranet_uuid="00000000-0000-0000-0000-000000000010",
     )
-    User.objects.create_user(username="owner_doc", password="x")
+    u = User.objects.create_user(username="owner_doc", password="x")
+    u.groups.add(Group.objects.get_or_create(name="ag.mietverwaltung")[0])
     return t
 
 
@@ -104,3 +106,16 @@ def test_download_returns_bytes(client, owner):
     resp = client.get(reverse("document_download", args=[owner.pk, "datenschutz", doc.pk]))
     assert resp.status_code == 200
     assert resp.content == b"%PDF-1.4 x"
+
+
+def test_tenant_cannot_upload_own_document(client, db):
+    # A plain tenant (not Mietverwaltung) may not add documents to their own record.
+    t = Tenant.objects.create(
+        first_name="Plain", last_name="Tenant", email="p@example.com",
+        intranet_username="plain_t", intranet_uuid="00000000-0000-0000-0000-000000000099",
+    )
+    User.objects.create_user(username="plain_t", password="x")
+    client.login(username="plain_t", password="x")
+    resp = _upload(client, t)
+    assert resp.status_code == 403
+    assert not DatenschutzDocument.objects.filter(tenant=t).exists()
