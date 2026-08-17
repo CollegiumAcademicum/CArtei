@@ -122,6 +122,39 @@ def test_dashboard_hides_ags_in_not_for_unprivileged():
 
 
 @pytest.mark.django_db
+def test_ag_status_widget_defaults_unevaluated_to_tot():
+    from app.models import AGAbfrageHealth
+    abfrage = _open_abfrage()
+    Group.objects.get_or_create(name="ag.kueche")
+    Group.objects.get_or_create(name="ag.garten")
+    Group.objects.get_or_create(name="gr.cluster")
+    # kueche submitted gesund; garten and gr.cluster never submitted → tot
+    AGAbfrageHealth.objects.create(abfrage=abfrage, ag_name="ag.kueche", health="GESUND")
+
+    client = Client()
+    client.force_login(User.objects.create_user(username="widget_viewer"))
+    html = client.get("/dashboard/").content.decode()
+
+    assert "AG-Status" in html
+    assert "ag.garten" in html and "badge-TOT" in html
+    assert "ag.kueche" in html and "badge-GESUND" in html
+    assert "gr.cluster" in html  # Gremien included in the roster
+
+
+@pytest.mark.django_db
+def test_ag_status_widget_visible_to_unprivileged():
+    from app.models import AGAbfrageHealth
+    abfrage = _open_abfrage()
+    Group.objects.get_or_create(name="ag.kueche")
+    AGAbfrageHealth.objects.create(abfrage=abfrage, ag_name="ag.kueche", health="KRITISCH")
+    client = Client()
+    client.force_login(User.objects.create_user(username="plain_widget"))
+    html = client.get("/dashboard/").content.decode()
+    assert "AG-Status" in html
+    assert "AGs in Not" not in html  # privileged-only card stays hidden
+
+
+@pytest.mark.django_db
 def test_dashboard_shows_all_org_groups_but_not_rights_markers():
     # ag./gr./in. groups are the user's working groups and must all appear;
     # the non-prefixed "admins" rights marker must not.
