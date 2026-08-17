@@ -196,6 +196,20 @@
     </ul>
     {% endif %}
 
+    {% if section.key == "housing" and sublet_out %}
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    <p style="font-weight:500;margin:.25rem 0 .25rem;">Untervermietet an</p>
+    <ul>
+      {% for a in sublet_out %}
+      <li class="ca-sublet-line">
+        <a href="{% url 'tenant_detail' a.tenant.pk %}" style="color:var(--ca-teal);">{% if a.tenant.preferred_name %}{{ a.tenant.preferred_name }}{% else %}{{ a.tenant.first_name }} {{ a.tenant.last_name }}{% endif %}</a>
+        — {{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
+        (seit {{ a.moved_in }}{% if a.moved_out %} bis {{ a.moved_out }}{% endif %})
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
   </details>
   {% endfor %}
 
