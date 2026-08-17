@@ -23,6 +23,9 @@ _ACTIVE_STATES = {"AKTIV", "ZU_AKTIV"}
 ProofStatus = namedtuple("ProofStatus", "state count")
 
 
+_DOC_SHORT = {"datenschutz": "DS", "photoerlaubnis": "FoE"}
+
+
 def _proof_status(proofs, today):
     """Overview verdict for a tenant's Ausbildungsnachweise. Priority:
     pending/needs-review (actionable) beats a still-valid proof, which beats none."""
@@ -127,6 +130,17 @@ def tenant_list(request: HttpRequest):
             by_tid.setdefault(p.tenant_id, []).append(p)
         proof_by_tenant = {tid: _proof_status(ps, today) for tid, ps in by_tid.items()}
 
+    # Consent-document completeness (Datenschutz + Fotoerlaubnis), same gate as
+    # proofs: one query per type for tenants holding a non-revoked doc.
+    active_doc_ids: dict[str, set[int]] = {}
+    if show_realname:
+        tenant_ids = [t.pk for t in tenants]
+        for dtype, model in DOCUMENT_MODELS.items():
+            active_doc_ids[dtype] = set(
+                model.objects.filter(tenant_id__in=tenant_ids, revoked_at__isnull=True)
+                .values_list("tenant_id", flat=True)
+            )
+
     # AG-engagement scope (cluster/admin): which surveys' results to load.
     abfragen = list(AGAbfrage.objects.all()) if show_surveys else []
     selected_ids = {int(x) for x in request.GET.getlist("surveys") if x.isdigit()} if show_surveys else set()
@@ -151,6 +165,13 @@ def tenant_list(request: HttpRequest):
             "sublet_to": reverse_by_tenant.get(t.pk, []),
             "proof": proof_by_tenant.get(t.pk, ProofStatus("fehlt", 0)) if show_realname else None,
         }
+        if show_realname:
+            row["documents"] = [
+                {"short": _DOC_SHORT[dt], "label": DocumentType(dt).label,
+                 "present": t.pk in active_doc_ids[dt]}
+                for dt in DOCUMENT_MODELS
+            ]
+            row["documents_missing"] = sum(1 for d in row["documents"] if not d["present"])
         if show_surveys:
             tr = results_by_tenant.get(t.pk, {})
             row["survey_results"] = [
@@ -169,7 +190,8 @@ def tenant_list(request: HttpRequest):
         buckets: dict[str, dict] = {}
         for row in rows:
             g = buckets.setdefault(row["cluster_key"], {
-                "cluster": row["cluster"], "rows": [], "flags": 0, "proofs_due": 0, "mailbox_yes": 0,
+                "cluster": row["cluster"], "rows": [], "flags": 0, "proofs_due": 0,
+                "mailbox_yes": 0, "docs_incomplete": 0,
             })
             g["rows"].append(row)
             if any(v for _ab, _r, v in row.get("survey_results", [])):
@@ -179,6 +201,8 @@ def tenant_list(request: HttpRequest):
                     g["proofs_due"] += 1
                 if row["tenant"].mailbox_list_opt_in:
                     g["mailbox_yes"] += 1
+                if not all(d["present"] for d in row["documents"]):
+                    g["docs_incomplete"] += 1
         groups = [buckets[k] for k in sorted(buckets)]
 
     return render(request, "app/tenant_list.html", {
