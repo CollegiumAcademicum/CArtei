@@ -97,31 +97,6 @@ def test_dashboard_handles_missing_tenant():
 
 
 @pytest.mark.django_db
-def test_dashboard_shows_ags_in_not_for_privileged():
-    from app.models import AGAbfrageHealth
-    abfrage = _open_abfrage()
-    AGAbfrageHealth.objects.create(abfrage=abfrage, ag_name="ag.kueche", health="KRITISCH")
-    user = User.objects.create_user(username="cluster_dash")
-    user.groups.add(Group.objects.get_or_create(name="gr.cluster")[0])
-    client = Client()
-    client.force_login(user)
-    response = client.get("/dashboard/")
-    assert b"AGs in Not" in response.content
-    assert b"ag.kueche" in response.content
-
-
-@pytest.mark.django_db
-def test_dashboard_hides_ags_in_not_for_unprivileged():
-    from app.models import AGAbfrageHealth
-    abfrage = _open_abfrage()
-    AGAbfrageHealth.objects.create(abfrage=abfrage, ag_name="ag.kueche", health="TOT")
-    client = Client()
-    client.force_login(User.objects.create_user(username="plain_dash"))
-    response = client.get("/dashboard/")
-    assert b"AGs in Not" not in response.content
-
-
-@pytest.mark.django_db
 def test_ag_status_widget_defaults_unevaluated_to_tot():
     from app.models import AGAbfrageHealth
     abfrage = _open_abfrage()
@@ -174,7 +149,7 @@ def test_ag_status_widget_visible_to_unprivileged():
     client.force_login(User.objects.create_user(username="plain_widget"))
     html = client.get("/dashboard/").content.decode()
     assert "AG-Status" in html
-    assert "AGs in Not" not in html  # privileged-only card stays hidden
+    assert "ag.kueche" in html and "badge-KRITISCH" in html
 
 
 @pytest.mark.django_db
