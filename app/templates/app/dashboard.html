@@ -48,13 +48,10 @@
     </div>
     {% if ag_status %}
       <div class="ca-card">
-        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.75rem;">AG-Status</h2>
-        <div style="display:flex;flex-direction:column;gap:0.35rem;">
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.6rem;">AG-Status</h2>
+        <div style="display:flex;flex-wrap:wrap;gap:0.35rem;">
           {% for ag in ag_status %}
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-            <span>{{ ag.ag_name }}</span>
-            <span class="badge badge-{{ ag.health }}">{{ ag.label }}</span>
-          </div>
+          <span class="badge badge-{{ ag.health }}" title="{{ ag.label }}">{{ ag.ag_name }}</span>
           {% endfor %}
         </div>
       </div>
