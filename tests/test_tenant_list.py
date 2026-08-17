@@ -143,16 +143,24 @@ def test_rows_carry_sort_and_value_data_attributes(settings):
 
 
 @pytest.mark.django_db
-def test_sublet_column_has_select_filter_only_for_room_users(settings):
+def test_sublet_shown_in_room_cell_only_for_room_users(settings):
+    # Sublet now lives inside the room cell (both directions), gated by room access.
     settings.TENANT_ROLE_GROUPS = _MV_GROUPS
-    _tenant("ada", preferred_name="Ada")
+    landlord = _tenant("land", preferred_name="Vermieta")
+    t = _tenant("ada", preferred_name="Ada")
+    a = _assign(t, is_sublet=True)
+    a.sublet_of_tenant = landlord
+    a.save()
     c = Client()
     _login(c, "mv", groups=["ag.mietverwaltung"])
     body = c.get("/tenants/").content.decode()
-    assert 'data-col="sublet"' in body
+    assert 'data-col="room"' in body
+    assert "Untermiete von" in body
     c2 = Client()
     _login(c2, "plain")
-    assert 'data-col="sublet"' not in c2.get("/tenants/").content.decode()
+    plain = c2.get("/tenants/").content.decode()
+    assert 'data-col="room"' not in plain
+    assert "Untermiete von" not in plain
 
 
 @pytest.mark.django_db

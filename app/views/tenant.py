@@ -1,3 +1,4 @@
+from collections import namedtuple
 from datetime import date
 
 from django.contrib import messages
@@ -15,6 +16,35 @@ from app.tenant_access import (
     SECTIONS, editable_fields, global_roles, viewer_roles, visible_fields,
 )
 
+# Statuses that clear the engagement flag: being reported active in an AG.
+_ACTIVE_STATES = {"AKTIV", "ZU_AKTIV"}
+
+ProofStatus = namedtuple("ProofStatus", "state count")
+
+
+def _proof_status(proofs, today):
+    """Overview verdict for a tenant's Ausbildungsnachweise. Priority:
+    pending/needs-review (actionable) beats a still-valid proof, which beats none."""
+    pending = sum(1 for p in proofs if p.verified_at is None or p.needs_human_review)
+    if pending:
+        return ProofStatus("pruefung", pending)
+    if any(
+        p.verified_at is not None and not p.needs_human_review and p.valid_until >= today
+        for p in proofs
+    ):
+        return ProofStatus("gueltig", 0)
+    return ProofStatus("fehlt", 0)
+
+
+def _engagement_verdict(results):
+    """True = flagged for the Clustersprechende. One 'aktiv'/'zu aktiv' AG clears it;
+    only insufficient/in-conversation/inactive statuses (or no report) flag it."""
+    return not any(r.status in _ACTIVE_STATES for r in results)
+
+
+def _display(t):
+    return t.preferred_name or f"{t.first_name} {t.last_name}".strip()
+
 
 def _engagement_summary(rows, selected_abfragen):
     """Per-cluster tallies over the current scope (server-side, not affected by
@@ -27,7 +57,7 @@ def _engagement_summary(rows, selected_abfragen):
             "counts": {a.pk: {} for a in selected_abfragen},
         })
         st["count"] += 1
-        for a, results in row["survey_results"]:
+        for a, results, _verdict in row["survey_results"]:
             counts = st["counts"][a.pk]
             for r in results:
                 counts[r.status] = counts.get(r.status, 0) + 1
@@ -68,15 +98,30 @@ def tenant_list(request: HttpRequest):
         qs = qs.filter(move_out__isnull=False, move_out__lte=today)
     tenants = list(qs)
 
-    # One active assignment per tenant (room/wg/cluster/sublet), keyed by tenant_id.
-    assign_by_tenant = {}
+    grouped = show_cluster and request.GET.get("group") == "cluster"
+
+    # All active assignments per tenant (a tenant may hold several rooms) + the
+    # reverse-sublet map ("subletting to …"), both built in one pass.
+    assigns_by_tenant: dict[int, list] = {}
+    reverse_by_tenant: dict[int, list[str]] = {}
     if show_room or show_cluster:
         for a in (
             TenantRoomAssignment.objects
             .filter(Q(moved_out__isnull=True) | Q(moved_out__gt=today))
-            .select_related("room__wg")
+            .select_related("room__wg", "tenant", "sublet_of_tenant")
+            .order_by("moved_in")
         ):
-            assign_by_tenant.setdefault(a.tenant_id, a)
+            assigns_by_tenant.setdefault(a.tenant_id, []).append(a)
+            if a.is_sublet and a.sublet_of_tenant_id:
+                reverse_by_tenant.setdefault(a.sublet_of_tenant_id, []).append(_display(a.tenant))
+
+    # Proof status per tenant (one bulk query, gated with the personal columns).
+    proof_by_tenant = {}
+    if show_realname:
+        by_tid: dict[int, list] = {}
+        for p in EnrollmentProof.objects.filter(tenant_id__in=[t.pk for t in tenants]):
+            by_tid.setdefault(p.tenant_id, []).append(p)
+        proof_by_tenant = {tid: _proof_status(ps, today) for tid, ps in by_tid.items()}
 
     # AG-engagement scope (cluster/admin): which surveys' results to load.
     abfragen = list(AGAbfrage.objects.all()) if show_surveys else []
@@ -89,20 +134,53 @@ def tenant_list(request: HttpRequest):
 
     rows = []
     for t in tenants:
-        a = assign_by_tenant.get(t.pk)
-        cluster = a.room.wg.cluster if a else None
-        row = {"tenant": t, "assignment": a, "cluster": cluster,
-               "cluster_key": cluster or "", "is_sublet": bool(a and a.is_sublet)}
+        assigns = assigns_by_tenant.get(t.pk, [])
+        # ponytail: cluster column/grouping keys off the earliest active room; a
+        # tenant with rooms in two clusters lands under one (all rooms still shown).
+        cluster = assigns[0].room.wg.cluster if assigns else None
+        row = {
+            "tenant": t, "cluster": cluster, "cluster_key": cluster or "",
+            "rooms": [
+                (a, _display(a.sublet_of_tenant) if a.is_sublet and a.sublet_of_tenant_id else None)
+                for a in assigns
+            ],
+            "sublet_to": reverse_by_tenant.get(t.pk, []),
+            "proof": proof_by_tenant.get(t.pk, ProofStatus("fehlt", 0)) if show_realname else None,
+        }
         if show_surveys:
             tr = results_by_tenant.get(t.pk, {})
-            row["survey_results"] = [(ab, tr.get(ab.pk, [])) for ab in selected_abfragen]
+            row["survey_results"] = [
+                (ab, tr.get(ab.pk, []), _engagement_verdict(tr.get(ab.pk, [])))
+                for ab in selected_abfragen
+            ]
         rows.append(row)
 
     # Default order by name; client-side sorting takes over on header click.
     rows.sort(key=lambda r: (r["tenant"].last_name.lower(), r["tenant"].first_name.lower()))
 
+    # Grouped mode: bucket rows per cluster with server-side tallies (mirrors the
+    # engagement-summary pattern — tallies reflect scope, not live per-column filters).
+    groups = None
+    if grouped:
+        buckets: dict[str, dict] = {}
+        for row in rows:
+            g = buckets.setdefault(row["cluster_key"], {
+                "cluster": row["cluster"], "rows": [], "flags": 0, "proofs_due": 0, "mailbox_yes": 0,
+            })
+            g["rows"].append(row)
+            if any(v for _ab, _r, v in row.get("survey_results", [])):
+                g["flags"] += 1
+            if show_realname:
+                if row["proof"].state == "pruefung":
+                    g["proofs_due"] += 1
+                if row["tenant"].mailbox_list_opt_in:
+                    g["mailbox_yes"] += 1
+        groups = [buckets[k] for k in sorted(buckets)]
+
     return render(request, "app/tenant_list.html", {
         "rows": rows,
+        "groups": groups,
+        "grouped": grouped,
         "total": len(rows),
         "show_realname": show_realname,
         "show_room": show_room,
