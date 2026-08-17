@@ -43,8 +43,6 @@ class Tenant(models.Model):
     barrier_free_needed = models.BooleanField(default=False)
     mailbox_list_opt_in = models.BooleanField(default=False)
     soli_miete_wunsch = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
-    data_priv_signed_at = models.DateField(null=True, blank=True)
-    photo_allowance_signed_at = models.DateField(null=True, blank=True)
     comments = models.TextField(null=True, blank=True)
 
     class Meta:
@@ -220,3 +218,34 @@ class EnrollmentProof(models.Model):
     class Meta:
         managed = False
         db_table = "enrollment_proof"
+
+
+class DocumentType(models.TextChoices):
+    DATENSCHUTZ = "datenschutz", "Datenschutz"
+    PHOTOERLAUBNIS = "photoerlaubnis", "Fotoerlaubnis"
+
+
+class Document(models.Model):
+    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="documents")
+    document_type = models.CharField(max_length=50, choices=DocumentType.choices)
+    file_name = models.CharField(max_length=255)
+    file_data = models.BinaryField()
+    signed_at = models.DateField()
+    uploaded_at = models.DateTimeField()
+    uploaded_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="uploaded_documents", db_column="uploaded_by_id")
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True, related_name="revoked_documents", db_column="revoked_by_id")
+    revoked_note = models.TextField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "document"
+
+
+class DocumentSigner(models.Model):
+    document = models.ForeignKey(Document, on_delete=models.DO_NOTHING, db_constraint=False, related_name="signers")
+    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="signed_documents")
+
+    class Meta:
+        managed = False
+        db_table = "document_signer"
