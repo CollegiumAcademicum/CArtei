@@ -334,7 +334,9 @@ def tenant_detail(request: HttpRequest, pk: int):
         ctx["active_assignment_forms"] = []
         ctx["past_assignment_forms"] = []
 
-    if {"owner", "mietverwaltung", "admin"} & roles:
+    can_see_proofs = bool({"owner", "mietverwaltung", "admin"} & roles)
+    ctx["can_see_proofs"] = can_see_proofs
+    if can_see_proofs:
         proofs = list(EnrollmentProof.objects.filter(tenant=tenant).order_by("-uploaded_at"))
         ctx["pending_proofs"] = [p for p in proofs if not p.verified_at or p.needs_human_review]
         ctx["verified_proofs"] = [p for p in proofs if p.verified_at and not p.needs_human_review]

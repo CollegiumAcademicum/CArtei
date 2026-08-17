@@ -215,6 +215,7 @@
   </details>
   {% endfor %}
 
+  {% if can_see_proofs %}
   <details id="section-proofs" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
       <span>Ausbildungsnachweis</span>
@@ -348,6 +349,7 @@
     </form>
     {% endif %}
   </details>
+  {% endif %}
 
   {% if engagement or can_write_cluster %}
   <details id="section-engagement" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
