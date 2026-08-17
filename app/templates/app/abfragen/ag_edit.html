@@ -28,6 +28,17 @@
   {% else %}
   <form method="post">
     {% csrf_token %}
+
+    <div style="margin-bottom:1.5rem;padding:1rem;background:#fafafa;border-radius:6px;">
+      <label class="ca-label" style="display:block;margin-bottom:0.6rem;">Gesamtzustand der AG</label>
+      <div class="ca-slider" data-values="GESUND,KERNAUFGABEN,KRITISCH,TOT" data-labels="gesund,nur Kernaufgaben,kritisch,tot">
+        <input type="range" min="0" max="3" step="1" data-initial="{{ health.health|default:'GESUND' }}">
+        <input type="hidden" name="health" value="{{ health.health|default:'GESUND' }}">
+        <output class="ca-slider-out"></output>
+      </div>
+      <input class="input is-small" type="text" name="health_note" value="{{ health.note|default:'' }}" placeholder="Notiz zum Zustand (optional) …" style="margin-top:0.6rem;max-width:420px;">
+    </div>
+
     <div style="overflow-x:auto;">
       <table class="table is-fullwidth is-striped" style="font-size:0.9rem;">
         <thead>
@@ -41,12 +52,10 @@
           </td>
           {% if row.tenant %}
           <td>
-            <div class="select is-small">
-              <select name="status_{{ row.tenant.pk }}" required>
-              {% for val, label in status_choices %}
-              <option value="{{ val }}"{% if row.result and row.result.status == val %} selected{% elif not row.result and val == "INAKTIV" %} selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-              </select>
+            <div class="ca-slider" data-values="ZU_AKTIV,AKTIV,NICHT_AUSREICHEND,IM_GESPRAECH,INAKTIV" data-labels="zu aktiv,aktiv,nicht ausreichend,im Gespräch,inaktiv">
+              <input type="range" min="0" max="4" step="1" data-initial="{{ row.result.status|default:'INAKTIV' }}">
+              <input type="hidden" name="status_{{ row.tenant.pk }}" value="{{ row.result.status|default:'INAKTIV' }}">
+              <output class="ca-slider-out"></output>
             </div>
           </td>
           <td>
@@ -64,6 +73,35 @@
     </div>
     <button type="submit" class="ca-button">Speichern</button>
   </form>
+
+  <script>
+  (function () {
+    var COLORS = {
+      GESUND:'#2e7d32', KERNAUFGABEN:'#c9a400', KRITISCH:'#c62828', TOT:'#111',
+      ZU_AKTIV:'#155724', AKTIV:'#2e7d32', NICHT_AUSREICHEND:'#e08a00',
+      IM_GESPRAECH:'#c9a400', INAKTIV:'#B61B29'
+    };
+    document.querySelectorAll('.ca-slider').forEach(function (w) {
+      var values = w.dataset.values.split(',');
+      var labels = w.dataset.labels.split(',');
+      var range = w.querySelector('input[type=range]');
+      var hidden = w.querySelector('input[type=hidden]');
+      var out = w.querySelector('.ca-slider-out');
+      function sync() {
+        var v = values[parseInt(range.value, 10)];
+        hidden.value = v;
+        out.textContent = labels[parseInt(range.value, 10)];
+        var c = COLORS[v] || '#555';
+        out.style.color = c;
+        range.style.setProperty('--thumb', c);
+      }
+      var i = values.indexOf(range.dataset.initial);
+      range.value = i < 0 ? 0 : i;
+      range.addEventListener('input', sync);
+      sync();
+    });
+  })();
+  </script>
   {% endif %}
 </div>
 {% endblock %}

@@ -10,15 +10,23 @@ from django.views.decorators.http import require_POST
 from app import ldap_utils
 from app.auth import ag_group_names
 from app.decorators import require_group
-from app.models import AGAbfrage, AGAbfrageResult, Tenant
+from app.models import AGAbfrage, AGAbfrageHealth, AGAbfrageResult, Tenant
 from app.residency import has_active_assignment
 
+# Ordered worst-last so the slider index maps green→black / active→inactive.
 _STATUS_CHOICES = [
     ("ZU_AKTIV", "zu aktiv"),
     ("AKTIV", "aktiv"),
     ("NICHT_AUSREICHEND", "nicht ausreichend"),
     ("IM_GESPRAECH", "im Gespräch"),
     ("INAKTIV", "inaktiv"),
+]
+
+_HEALTH_CHOICES = [
+    ("GESUND", "gesund"),
+    ("KERNAUFGABEN", "nur Kernaufgaben"),
+    ("KRITISCH", "kritisch"),
+    ("TOT", "tot"),
 ]
 
 
@@ -54,10 +62,17 @@ def abfrage_detail(request: HttpRequest, pk: int):
     by_ag: dict[str, list] = {}
     for r in results:
         by_ag.setdefault(r.ag_name, []).append(r)
+    health_by_ag = {
+        h.ag_name: h for h in AGAbfrageHealth.objects.filter(abfrage=abfrage)
+    }
+    ags = [
+        {"name": name, "results": rs, "health": health_by_ag.get(name)}
+        for name, rs in by_ag.items()
+    ]
     is_privileged = request.user.groups.filter(name__in=["admins", "gr.cluster"]).exists()
     return render(request, "app/abfragen/detail.html", {
         "abfrage": abfrage,
-        "by_ag": by_ag,
+        "ags": ags,
         "is_privileged": is_privileged,
     })
 
@@ -100,12 +115,22 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
                         "note": request.POST.get(f"note_{tenant.pk}", "").strip() or None,
                     },
                 )
+        if request.POST.get("health"):
+            AGAbfrageHealth.objects.update_or_create(
+                abfrage=abfrage,
+                ag_name=ag_name,
+                defaults={
+                    "health": request.POST["health"],
+                    "note": request.POST.get("health_note", "").strip() or None,
+                },
+            )
         return redirect("ag_edit", pk=pk, ag_name=ag_name)
 
     existing = {
         r.tenant_id: r
         for r in AGAbfrageResult.objects.filter(abfrage=abfrage, ag_name=ag_name)
     }
+    health = AGAbfrageHealth.objects.filter(abfrage=abfrage, ag_name=ag_name).first()
     rows = [
         {
             "member": m,
@@ -119,6 +144,8 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
         "ag_name": ag_name,
         "rows": rows,
         "status_choices": _STATUS_CHOICES,
+        "health_choices": _HEALTH_CHOICES,
+        "health": health,
         "closed": False,
         "is_privileged": is_privileged,
     })

@@ -97,6 +97,31 @@ def test_dashboard_handles_missing_tenant():
 
 
 @pytest.mark.django_db
+def test_dashboard_shows_ags_in_not_for_privileged():
+    from app.models import AGAbfrageHealth
+    abfrage = _open_abfrage()
+    AGAbfrageHealth.objects.create(abfrage=abfrage, ag_name="ag.kueche", health="KRITISCH")
+    user = User.objects.create_user(username="cluster_dash")
+    user.groups.add(Group.objects.get_or_create(name="gr.cluster")[0])
+    client = Client()
+    client.force_login(user)
+    response = client.get("/dashboard/")
+    assert b"AGs in Not" in response.content
+    assert b"ag.kueche" in response.content
+
+
+@pytest.mark.django_db
+def test_dashboard_hides_ags_in_not_for_unprivileged():
+    from app.models import AGAbfrageHealth
+    abfrage = _open_abfrage()
+    AGAbfrageHealth.objects.create(abfrage=abfrage, ag_name="ag.kueche", health="TOT")
+    client = Client()
+    client.force_login(User.objects.create_user(username="plain_dash"))
+    response = client.get("/dashboard/")
+    assert b"AGs in Not" not in response.content
+
+
+@pytest.mark.django_db
 def test_dashboard_shows_all_org_groups_but_not_rights_markers():
     # ag./gr./in. groups are the user's working groups and must all appear;
     # the non-prefixed "admins" rights marker must not.

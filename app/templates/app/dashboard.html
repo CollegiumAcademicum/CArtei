@@ -46,6 +46,20 @@
         <div class="ca-stat-label">Mieter*innen gesamt</div>
       </div>
     </div>
+    {% if ags_in_not %}
+      <div class="ca-card" style="border-left:4px solid #c62828;">
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;">AGs in Not</h2>
+        <div style="display:flex;flex-direction:column;gap:0.4rem;">
+          {% for h in ags_in_not %}
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <a href="{% url 'ag_edit' h.abfrage_id h.ag_name %}" style="color:var(--ca-teal);font-weight:600;">{{ h.ag_name }}</a>
+            <span class="badge badge-{{ h.health }}">{{ h.get_health_display }}</span>
+            {% if h.note %}<span style="color:#7a7a7a;font-size:0.85rem;">— {{ h.note }}</span>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
     {% if active_abfragen %}
       <div class="ca-card">
         <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;"><a href="{% url 'abfragen_list' %}">Engagement-Abfragen</a></h2>
