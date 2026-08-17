@@ -355,12 +355,6 @@
   <details id="section-documents" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="cursor:pointer;font-weight:600;">Rechtsdokumente (Datenschutz, Fotoerlaubnis &amp; Vertraulichkeitserklärung)</summary>
 
-    {% if can_manage_documents %}
-    <datalist id="ca-tenant-options">
-      {% for c in cosigner_candidates %}<option value="{{ c.first_name }} {{ c.last_name }}" data-id="{{ c.pk }}"></option>{% endfor %}
-    </datalist>
-    {% endif %}
-
     {% for g in document_groups %}
     <div class="ca-doc-card" style="margin-top:.75rem;border:1px solid #e2e2e2;border-radius:6px;padding:.5rem .75rem;">
       <div style="display:flex;align-items:center;gap:.5rem;">
@@ -376,7 +370,6 @@
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.4rem;font-size:.9rem;{% if d.revoked_at %}opacity:.6;{% endif %}">
         <a href="{% url 'document_download' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="color:var(--ca-teal);">{{ d.file_name }}</a>
         <span>· {{ d.signed_at|date:"d.m.Y" }}</span>
-        <span>· {% for s in d.signer_list %}{{ s.first_name }} {{ s.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
         {% if d.revoked_at %}
         <span style="color:#a00;">· Widerrufen ({{ d.revoked_at|date:"d.m.Y" }}{% if d.revoked_note %}: {{ d.revoked_note }}{% endif %})</span>
         {% elif can_manage_documents %}
@@ -395,12 +388,6 @@
         <input type="hidden" name="document_type" value="{{ g.type }}">
         <label style="font-size:.85rem;">Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
         <input name="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:160px;">
-        <div class="ca-signer-picker" style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;font-size:.85rem;">
-          <span>Unterzeichnende:</span>
-          <span class="ca-chip" style="background:#eef;border-radius:10px;padding:.1rem .5rem;">{{ tenant.first_name }} {{ tenant.last_name }}</span>
-          <input type="hidden" name="signer_ids" value="{{ tenant.pk }}">
-          <input type="text" class="ca-signer-add" list="ca-tenant-options" placeholder="Mitunterzeichnende hinzufügen…" style="padding:.2rem;min-width:200px;">
-        </div>
         <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Hochladen</button>
       </form>
       {% endif %}
@@ -624,40 +611,5 @@ document.querySelectorAll('.ca-notes-toggle').forEach(function(btn) {
   });
 })();
 
-// Co-signer picker: a signer can be any tenant. The datalist gives name
-// autocomplete; committing a name adds a removable chip with a hidden
-// signer_ids input so the upload posts all chosen tenant ids.
-(function() {
-  var options = document.getElementById('ca-tenant-options');
-  if (!options) return;
-  document.querySelectorAll('.ca-signer-picker').forEach(function(picker) {
-    var add = picker.querySelector('.ca-signer-add');
-    function chosenIds() {
-      return Array.prototype.map.call(
-        picker.querySelectorAll('input[name="signer_ids"]'), function(i) { return i.value; });
-    }
-    add.addEventListener('change', function() {
-      var name = add.value.trim();
-      if (!name) return;
-      var opt = Array.prototype.find.call(options.options, function(o) { return o.value === name; });
-      if (!opt) return;  // free text that isn't a tenant — ignore
-      var id = opt.getAttribute('data-id');
-      if (chosenIds().indexOf(id) !== -1) { add.value = ''; return; }  // already added
-      var chip = document.createElement('span');
-      chip.className = 'ca-chip';
-      chip.style.cssText = 'background:#eef;border-radius:10px;padding:.1rem .5rem;';
-      chip.textContent = name + ' ';
-      var hidden = document.createElement('input');
-      hidden.type = 'hidden'; hidden.name = 'signer_ids'; hidden.value = id;
-      var rm = document.createElement('button');
-      rm.type = 'button'; rm.textContent = '×';
-      rm.style.cssText = 'border:none;background:none;cursor:pointer;font-size:1rem;line-height:1;';
-      rm.addEventListener('click', function() { chip.remove(); });
-      chip.appendChild(hidden); chip.appendChild(rm);
-      add.parentNode.insertBefore(chip, add);
-      add.value = '';
-    });
-  });
-})();
 </script>
 {% endblock %}

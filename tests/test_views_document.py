@@ -28,39 +28,23 @@ def _upload(client, tenant, **overrides):
     data = {
         "document_type": DocumentType.DATENSCHUTZ,
         "signed_at": "2026-08-01",
-        "signer_ids": str(tenant.pk),
         "document_file": SimpleUploadedFile("d.pdf", b"%PDF-1.4 x", content_type="application/pdf"),
     }
     data.update(overrides)
     return client.post(reverse("document_upload", args=[tenant.pk]), data)
 
 
-def test_upload_creates_document_and_signer(client, owner):
+def test_upload_creates_document(client, owner):
     _login(client)
     _upload(client, owner)
     doc = DatenschutzDocument.objects.get(tenant=owner)
     assert doc.signed_at == datetime.date(2026, 8, 1)
     assert doc.uploaded_by_id == owner.pk
     assert doc.revoked_at is None
-    assert DocumentSigner.objects.filter(
-        document_type="datenschutz", document_id=doc.pk, tenant=owner
+    # The signer is implicitly the tenant; document_signer is left unlinked.
+    assert not DocumentSigner.objects.filter(
+        document_type="datenschutz", document_id=doc.pk
     ).exists()
-
-
-def test_upload_with_cosigner_records_both_signers(client, owner):
-    other = Tenant.objects.create(
-        first_name="Co", last_name="Signer", email="c@example.com",
-        intranet_username="co_signer",
-        intranet_uuid="00000000-0000-0000-0000-000000000011",
-    )
-    _login(client)
-    _upload(client, owner, signer_ids=[str(owner.pk), str(other.pk)])
-    doc = DatenschutzDocument.objects.get(tenant=owner)
-    signer_ids = set(
-        DocumentSigner.objects.filter(document_type="datenschutz", document_id=doc.pk)
-        .values_list("tenant_id", flat=True)
-    )
-    assert signer_ids == {owner.pk, other.pk}
 
 
 def test_upload_photoerlaubnis_goes_to_its_own_table(client, owner):

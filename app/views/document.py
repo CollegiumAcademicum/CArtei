@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
-from app.models import DOCUMENT_MODELS, DocumentSigner, DocumentType, Tenant
+from app.models import DOCUMENT_MODELS, DocumentType, Tenant
 
 MAX_DOCUMENT_SIZE = 10 * 1024 * 1024  # 10 MB
 
@@ -52,27 +52,15 @@ def upload_document(request, pk):
     except ValueError:
         return HttpResponseBadRequest()
 
-    # Signers are always tenants. Default to the subject; MV may add co-signers
-    # by tenant id.
-    # ponytail: signer_ids is a plain id list, not a tenant-picker widget —
-    # swap in a picker if MV needs to search tenants by name.
-    raw_ids = request.POST.getlist("signer_ids") or [str(tenant.pk)]
-    signer_ids = {int(s) for s in raw_ids if s.strip().isdigit()}
-    signer_ids &= set(Tenant.objects.filter(pk__in=signer_ids).values_list("pk", flat=True))
-    if not signer_ids:
-        signer_ids = {tenant.pk}
-
-    doc = model.objects.create(
+    # The signer is always the tenant themselves — no co-signers. The
+    # document_signer table is left unlinked from the document tables.
+    model.objects.create(
         tenant=tenant,
         file_name=f.name,
         file_data=f.read(),
         signed_at=signed_at,
         uploaded_at=now(),
         uploaded_by=caller,
-    )
-    DocumentSigner.objects.bulk_create(
-        [DocumentSigner(document_type=document_type, document_id=doc.pk, tenant_id=sid)
-         for sid in signer_ids]
     )
     return redirect("tenant_detail", pk=pk)
 

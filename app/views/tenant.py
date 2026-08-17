@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
-    AGAbfrage, AGAbfrageResult, AGStatus, DOCUMENT_MODELS, DocumentSigner, DocumentType,
+    AGAbfrage, AGAbfrageResult, AGStatus, DOCUMENT_MODELS, DocumentType,
     EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
 )
 from app.residency import has_active_assignment, set_move_dates
@@ -396,10 +396,6 @@ def tenant_detail(request: HttpRequest, pk: int):
             for d in model.objects.filter(tenant=tenant).order_by("-uploaded_at"):
                 d.doc_type = dtype
                 d.doc_type_label = DocumentType(dtype).label
-                signer_ids = DocumentSigner.objects.filter(
-                    document_type=dtype, document_id=d.pk
-                ).values_list("tenant_id", flat=True)
-                d.signer_list = list(Tenant.objects.filter(pk__in=signer_ids))
                 docs.append(d)
             groups.append({
                 "type": dtype,
@@ -409,12 +405,6 @@ def tenant_detail(request: HttpRequest, pk: int):
             })
         ctx["document_groups"] = groups
         ctx["can_manage_documents"] = bool({"mietverwaltung", "admin"} & roles)
-        if ctx["can_manage_documents"]:
-            # ponytail: every tenant rendered inline into a datalist; swap for an
-            # async search endpoint if the tenant count ever gets large.
-            ctx["cosigner_candidates"] = list(
-                Tenant.objects.exclude(pk=tenant.pk).order_by("last_name", "first_name")
-            )
 
     return render(request, "app/tenant_detail.html", ctx)
 
