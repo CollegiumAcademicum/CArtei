@@ -1,6 +1,6 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, dashboard, enrollment_proof, landing, notes, tenant
+from app.views import abfragen, admin_views, dashboard, document, enrollment_proof, landing, notes, tenant
 
 urlpatterns = [
     path("info/", landing.landing, name="landing"),
@@ -20,6 +20,9 @@ urlpatterns = [
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/reject/", enrollment_proof.reject_proof, name="enrollment_proof_reject"),
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/edit/", enrollment_proof.edit_proof, name="enrollment_proof_edit"),
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/download/", enrollment_proof.download_proof, name="enrollment_proof_download"),
+    path("tenants/<int:pk>/documents/upload/", document.upload_document, name="document_upload"),
+    path("tenants/<int:pk>/documents/<int:doc_pk>/revoke/", document.revoke_document, name="document_revoke"),
+    path("tenants/<int:pk>/documents/<int:doc_pk>/download/", document.download_document, name="document_download"),
     path("notes/add/", notes.add_note, name="note_add"),
     path("notes/<int:pk>/delete/", notes.delete_note, name="note_delete"),
     path("admin/", admin_views.admin_portal, name="admin_portal"),
