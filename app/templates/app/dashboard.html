@@ -51,7 +51,7 @@
         <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.6rem;">AG-Status</h2>
         <div style="display:flex;flex-wrap:wrap;gap:0.35rem 0.9rem;">
           {% for ag in ag_status %}
-          <span style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.85rem;">
+          <span style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.85rem;padding:0.25rem 0.5rem;border:1px solid #e0e0e0;border-radius:6px;background:#fafafa;">
             {{ ag.ag_name }}
             <span class="badge badge-{{ ag.health }}">{{ ag.label }}</span>
           </span>
