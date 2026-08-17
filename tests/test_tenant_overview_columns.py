@@ -92,7 +92,8 @@ def test_reverse_sublet_shows_both_directions(settings):
     landlord = _tenant("owner", preferred_name="Vermieta")
     subletter = _tenant("subby", preferred_name="Untermieta")
     room = _room()
-    # subletter rents landlord's room
+    # landlord holds the room; subletter rents it from them
+    TenantRoomAssignment.objects.create(tenant=landlord, room=room, moved_in=date(2024, 1, 1))
     TenantRoomAssignment.objects.create(
         tenant=subletter, room=room, moved_in=date(2024, 1, 1),
         is_sublet=True, sublet_of_tenant=landlord,
@@ -122,7 +123,7 @@ def test_engagement_verdict_flag_for_inactive(settings):
     a = _abfrage()
     AGAbfrageResult.objects.create(abfrage=a, tenant=t, ag_name="ag.kueche", status="INAKTIV")
     c = Client(); _login(c, "cl", groups=["gr.cluster"])
-    body = c.get(f"/tenants/?surveys={a.pk}").content.decode()
+    body = c.get(f"/tenants/?surveys={a.pk}&residents=all").content.decode()
     assert "verdict-flag" in body
 
 
@@ -133,7 +134,7 @@ def test_engagement_verdict_cleared_for_active(settings):
     a = _abfrage()
     AGAbfrageResult.objects.create(abfrage=a, tenant=t, ag_name="ag.kueche", status="AKTIV")
     c = Client(); _login(c, "cl", groups=["gr.cluster"])
-    body = c.get(f"/tenants/?surveys={a.pk}").content.decode()
+    body = c.get(f"/tenants/?surveys={a.pk}&residents=all").content.decode()
     assert "verdict-ok" in body
 
 

@@ -3,7 +3,7 @@ from datetime import date
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Min, Q
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -12,6 +12,7 @@ from app.models import (
     AGAbfrage, AGAbfrageResult, AGStatus, EnrollmentProof, InternalNote,
     Tenant, TenantRoomAssignment,
 )
+from app.residency import has_active_assignment, set_move_dates
 from app.tenant_access import (
     SECTIONS, editable_fields, global_roles, viewer_roles, visible_fields,
 )
@@ -90,12 +91,15 @@ def tenant_list(request: HttpRequest):
 
     # Server-side *scope* only (which records to load). Column filtering, sorting
     # and visibility are all client-side (see tenant_list.html).
-    qs = Tenant.objects.all()
+    # Ersteinzug = earliest move-in across the tenant's room assignments (computed).
+    qs = Tenant.objects.annotate(ersteinzug=Min("tenantroomassignment__moved_in"))
     residents = request.GET.get("residents", "active")
+    active = has_active_assignment(today)
     if residents == "active":
-        qs = qs.filter(Q(move_out__isnull=True) | Q(move_out__gt=today))
+        qs = qs.filter(active)
     elif residents == "former":
-        qs = qs.filter(move_out__isnull=False, move_out__lte=today)
+        # Had a room but holds none now.
+        qs = qs.filter(ersteinzug__isnull=False).filter(~active)
     tenants = list(qs)
 
     grouped = show_cluster and request.GET.get("group") == "cluster"
@@ -219,6 +223,7 @@ def _build_sections(tenant, form, visible, editable):
 @login_required
 def tenant_detail(request: HttpRequest, pk: int):
     tenant = get_object_or_404(Tenant, pk=pk)
+    set_move_dates(tenant, date.today())  # computed .ersteinzug / .auszug
     roles = viewer_roles(request.user, tenant, _current_tenant(request))
     visible = visible_fields(roles)
     editable = editable_fields(roles)
@@ -233,7 +238,10 @@ def tenant_detail(request: HttpRequest, pk: int):
         section_fields = {f.name for s in SECTIONS if s.key == section_key for f in s.fields}
         allowed = editable & section_fields if section_key else editable
 
-        if not allowed:
+        # Housing carries no editable tenant fields (Ersteinzug/Auszug are computed);
+        # it's still submittable to manage room assignments.
+        housing_room_edit = section_key == "housing" and can_manage_room
+        if not allowed and not housing_room_edit:
             messages.error(request, "Keine Berechtigung zum Bearbeiten.")
             return redirect("tenant_detail", pk=pk)
 

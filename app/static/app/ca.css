@@ -90,7 +90,7 @@ body {
   text-transform: none; letter-spacing: normal; padding: 0.5rem 0.65rem; border-radius: 6px;
   width: 230px; text-align: left; box-shadow: 0 4px 14px rgba(0,0,0,0.18); z-index: 10;
 }
-.ca-hint.open .ca-hint-bubble { display: block; }
+.ca-hint:hover .ca-hint-bubble, .ca-hint:focus .ca-hint-bubble, .ca-hint.open .ca-hint-bubble { display: block; }
 .ca-hint-bubble::after {
   content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
   border: 6px solid transparent; border-top-color: var(--ca-text);

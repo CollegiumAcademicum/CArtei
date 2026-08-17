@@ -38,8 +38,6 @@ class Tenant(models.Model):
     soli_miete_wunsch = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
     data_priv_signed_at = models.DateField(null=True, blank=True)
     photo_allowance_signed_at = models.DateField(null=True, blank=True)
-    move_in = models.DateField(null=True, blank=True)
-    move_out = models.DateField(null=True, blank=True)
     comments = models.TextField(null=True, blank=True)
 
     class Meta:

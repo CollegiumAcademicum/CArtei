@@ -59,7 +59,7 @@ def test_stranger_sees_only_public_card():
 
 def test_mietverwaltung_can_edit_dob_and_contact():
     edt = editable_fields({"public", "mietverwaltung"})
-    assert {"date_of_birth", "email", "move_in"} <= edt
+    assert {"date_of_birth", "email", "barrier_free_needed"} <= edt
     assert "soli_miete_wunsch" not in edt  # owner-only (admin override aside)
 
 

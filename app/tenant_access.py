@@ -33,8 +33,9 @@ SECTIONS = [
         _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _OWNER, _OWNER),
     ]),
     Section("housing", "Wohnen", [
-        _f("move_in", "Ersteinzug", _OWN_MV, _MV),
-        _f("move_out", "Auszug", _OWN_MV, _MV),
+        # Computed from room assignments — view-only, no editors.
+        _f("ersteinzug", "Ersteinzug", _OWN_MV, frozenset()),
+        _f("auszug", "Auszug", _OWN_MV, frozenset()),
     ]),
     Section("legal", "Rechtliches", [
         _f("data_priv_signed_at", "Datenschutz unterschrieben", _OWN_MV, _MV),

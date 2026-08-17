@@ -58,7 +58,7 @@
         <label class="ca-facet-line"><input type="checkbox" data-col-toggle="flinta"> FLINTA</label>
         <label class="ca-facet-line"><input type="checkbox" data-col-toggle="barrier"> Barrierefrei</label>
         <label class="ca-facet-line"><input type="checkbox" data-col-toggle="email" checked> E-Mail</label>
-        <label class="ca-facet-line"><input type="checkbox" data-col-toggle="move_in"> Einzug</label>
+        <label class="ca-facet-line"><input type="checkbox" data-col-toggle="ersteinzug"> Einzug</label>
         {% endif %}
         {% for a in selected_abfragen %}<label class="ca-facet-line"><input type="checkbox" data-col-toggle="survey_{{ a.pk }}" checked> {{ a }}</label>{% endfor %}
       </div>
@@ -96,7 +96,7 @@
               <th data-col="flinta" {% if not grouped %}data-sort-type="text" class="ca-sortable"{% endif %}>FLINTA <span class="sort-ind"></span></th>
               <th data-col="barrier" {% if not grouped %}data-sort-type="text" class="ca-sortable"{% endif %}>Barrierefrei <span class="sort-ind"></span></th>
               <th data-col="email" {% if not grouped %}data-sort-type="text" class="ca-sortable"{% endif %}>E-Mail <span class="sort-ind"></span></th>
-              <th data-col="move_in" {% if not grouped %}data-sort-type="text" class="ca-sortable"{% endif %}>Einzug <span class="sort-ind"></span></th>
+              <th data-col="ersteinzug" {% if not grouped %}data-sort-type="text" class="ca-sortable"{% endif %}>Einzug <span class="sort-ind"></span></th>
               {% endif %}
               {% for a in selected_abfragen %}<th data-col="survey_{{ a.pk }}" {% if not grouped %}data-sort-type="text" class="ca-sortable"{% endif %}>{{ a }} <span class="sort-ind"></span></th>{% endfor %}
             </tr>
@@ -110,7 +110,7 @@
               <th data-col="flinta"><div class="select is-small"><select class="col-filter" data-col="flinta" data-ftype="select"><option value="">Alle</option><option value="true">Ja</option><option value="false">Nein</option></select></div></th>
               <th data-col="barrier"><div class="select is-small"><select class="col-filter" data-col="barrier" data-ftype="select"><option value="">Alle</option><option value="true">Ja</option><option value="false">Nein</option></select></div></th>
               <th data-col="email"><input type="text" class="col-filter input is-small" data-col="email" data-ftype="text" placeholder="Filter…"></th>
-              <th data-col="move_in"><input type="date" class="col-filter input is-small" data-col="move_in" data-ftype="date" data-bound="from"><input type="date" class="col-filter input is-small" data-col="move_in" data-ftype="date" data-bound="to"></th>
+              <th data-col="ersteinzug"><input type="date" class="col-filter input is-small" data-col="ersteinzug" data-ftype="date" data-bound="from"><input type="date" class="col-filter input is-small" data-col="ersteinzug" data-ftype="date" data-bound="to"></th>
               {% endif %}
               {% for a in selected_abfragen %}<th data-col="survey_{{ a.pk }}"><div class="select is-small"><select class="col-filter" data-col="survey_{{ a.pk }}" data-ftype="select"><option value="">Alle</option><option value="flag">⚠ Flag</option><option value="ok">OK</option></select></div></th>{% endfor %}
             </tr>
@@ -147,7 +147,7 @@
   const tbody = table.tBodies[0];
   const rows = Array.from(tbody.rows).filter(r => r.querySelector("[data-col]"));
   const COLKEY = "tenantlist.hiddencols";
-  const DEFAULT_HIDDEN = ["flinta", "barrier", "move_in"];  // less-used columns off until toggled
+  const DEFAULT_HIDDEN = ["flinta", "barrier", "ersteinzug"];  // less-used columns off until toggled
 
   const cell = (row, col) => row.querySelector('[data-col="' + col + '"]');
 
