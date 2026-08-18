@@ -11,8 +11,7 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
 from app.models import ASSIGNMENT_DOCUMENT_MODELS, DOCUMENT_MODELS, DocumentType, Tenant, TenantRoomAssignment
-
-MAX_DOCUMENT_SIZE = 10 * 1024 * 1024  # 10 MB
+from app.uploads import upload_error
 
 
 def _caller(user):
@@ -43,8 +42,9 @@ def upload_document(request, pk):
     f = request.FILES.get("document_file")
     if not f:
         return HttpResponseBadRequest()
-    if f.size > MAX_DOCUMENT_SIZE:
-        messages.error(request, "Die Datei ist zu groß (max. 10 MB).")
+    err = upload_error(f)
+    if err:
+        messages.error(request, err)
         return redirect("tenant_detail", pk=pk)
 
     try:
@@ -136,8 +136,9 @@ def upload_assignment_document(request, assignment_pk):
     f = request.FILES.get("document_file")
     if not f:
         return HttpResponseBadRequest()
-    if f.size > MAX_DOCUMENT_SIZE:
-        messages.error(request, "Die Datei ist zu groß (max. 10 MB).")
+    err = upload_error(f)
+    if err:
+        messages.error(request, err)
         return redirect("tenant_detail", pk=assignment.tenant_id)
 
     values = {}

@@ -11,8 +11,7 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
 from app.models import EnrollmentProof, EnrollmentType, Tenant
-
-MAX_PROOF_SIZE = 10 * 1024 * 1024  # 10 MB
+from app.uploads import upload_error
 
 
 def _next_semester_end(today=None):
@@ -42,8 +41,9 @@ def upload_proof(request, pk):
     f = request.FILES.get("proof_file")
     if not f:
         return HttpResponseBadRequest()
-    if f.size > MAX_PROOF_SIZE:
-        messages.error(request, "Die Datei ist zu groß (max. 10 MB).")
+    err = upload_error(f)
+    if err:
+        messages.error(request, err)
         return redirect("tenant_detail", pk=pk)
 
     enrollment_type = request.POST.get("enrollment_type", "")
