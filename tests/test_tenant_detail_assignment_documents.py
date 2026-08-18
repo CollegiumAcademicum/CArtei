@@ -57,6 +57,10 @@ def test_assignment_field_associates_with_housing_form(client, scene):
     ), "assignment field is not associated with form-housing"
     # And the document upload form for the same assignment is present in the page.
     assert reverse("assignment_document_upload", args=[pk]) in body
+    # The partial's template comment must not leak into the rendered page
+    # (multi-line {# #} comments render as literal text in Django).
+    assert "mode (" not in body
+    assert "Needs: assignment" not in body
 
 
 def test_existing_document_shows_download_link(client, scene):
