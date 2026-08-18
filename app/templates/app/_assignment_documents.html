@@ -60,6 +60,9 @@ can_manage_documents, all_tenants.
     {% else %}
       <span class="ca-doc-missing">fehlt</span>
     {% endif %}
+    {% for d in g.docs %}{% if d.revoked_at %}
+      <span class="ca-doc-past">↩ <a href="{% url 'assignment_document_download' assignment_pk=assignment.pk document_type=g.type doc_pk=d.pk %}" style="color:#888;">{{ d.file_name }}</a> (widerrufen {{ d.revoked_at|date:"Y-m-d" }}{% if d.revoked_note %} · {{ d.revoked_note }}{% endif %})</span>
+    {% endif %}{% endfor %}
   </span>
   {% endfor %}
 </div>
