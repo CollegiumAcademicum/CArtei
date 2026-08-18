@@ -58,10 +58,14 @@ def test_assignment_field_associates_with_per_assignment_form(client, scene):
     ), "assignment field is not associated with its per-assignment form"
     # And the document upload form for the same assignment is present in the page.
     assert reverse("assignment_document_upload", args=[pk]) in body
-    # The partial's template comment must not leak into the rendered page
-    # (multi-line {# #} comments render as literal text in Django).
+    # The partial's template comments must not leak into the rendered page
+    # (multi-line {# #} comments render as literal text in Django — and a leaked
+    # "<form>" in the text suppresses the real per-assignment form in the browser,
+    # silently breaking Speichern).
     assert "mode (" not in body
     assert "Needs: assignment" not in body
+    assert "Empty by design" not in body
+    assert "never nests" not in body
 
 
 def test_existing_document_shows_download_link(client, scene):

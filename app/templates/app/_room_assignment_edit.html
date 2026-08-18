@@ -1,8 +1,8 @@
 {# One editable room assignment. Read-only until "Bearbeiten"; needs: assignment, aform. #}
 <div class="ca-room-assignment{% if assignment.is_sublet %} ca-room-assignment--sublet{% endif %}">
-  {# Per-assignment save form. Empty by design: the field widgets and the Speichern
-     button attach via form="form-room-{pk}" so this form never wraps (and thus never
-     nests) the document upload/revoke <form>s living inside .ca-room-fields. #}
+  {% comment %}Per-assignment save form. Empty by design: the field widgets and the
+  Speichern button attach via form="form-room-{pk}" so this form never wraps (and thus
+  never nests) the document upload/revoke <form>s living inside .ca-room-fields.{% endcomment %}
   <form id="form-room-{{ assignment.pk }}" method="post">
     {% csrf_token %}
     <input type="hidden" name="section" value="housing">

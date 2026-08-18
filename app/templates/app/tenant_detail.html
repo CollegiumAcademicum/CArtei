@@ -96,8 +96,7 @@
           <span style="font-size:.9rem;color:#555;">Zimmer zuordnen</span>
         </summary>
         {% if new_room_form.errors %}<div style="color:#b00;font-size:.85rem;margin-top:.5rem;">{{ new_room_form.errors }}</div>{% endif %}
-        {# novalidate: server-side validation surfaces errors (see test); HTML5
-           required would otherwise block the empty-field POST. #}
+        {# novalidate: server-side validation surfaces errors; HTML5 required would block the empty POST. #}
         <form method="post" novalidate>
         {% csrf_token %}
         <input type="hidden" name="section" value="housing">
