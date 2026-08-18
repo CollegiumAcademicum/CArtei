@@ -75,8 +75,7 @@
       </div>
     </form>
     {% if can_manage_room %}
-      {# Cards live OUTSIDE form-housing so the per-assignment document <form>s
-         aren't nested in it; their fields carry form="form-housing" to save. #}
+      {# Cards live OUTSIDE form-housing; fields carry form="form-housing" to save. #}
       <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
       <p style="font-weight:500;margin:.25rem 0 .4rem;">Aktuelle Zimmer</p>
       {% for assignment, aform in active_assignment_forms %}

@@ -1,7 +1,9 @@
-{# Documents for one room assignment.
-   Needs: assignment, mode ("status" | "edit"), can_manage_documents, all_tenants.
-   - mode="status": always-visible, read-only (download link + signature info).
-   - mode="edit":   MV-only upload/revoke controls, shown in the card's edit area. #}
+{% comment %}
+Documents for one room assignment. Needs: assignment, mode ("status" | "edit"),
+can_manage_documents, all_tenants.
+  - mode="status": always-visible, read-only (download link + signature info).
+  - mode="edit":   MV-only upload/revoke controls, shown in the card's edit area.
+{% endcomment %}
 {% if mode == "edit" %}
 {% if can_manage_documents %}
 <div class="ca-assignment-docs ca-assignment-docs--edit">
