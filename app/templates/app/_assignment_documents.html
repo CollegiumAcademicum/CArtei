@@ -15,7 +15,7 @@ can_manage_documents, all_tenants.
       <form method="post" action="{% url 'assignment_document_revoke' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="display:inline-flex;gap:.3rem;align-items:center;">
         {% csrf_token %}
         <input name="revoked_note" placeholder="Grund des Widerrufs" required style="font-size:.8rem;">
-        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;">Widerrufen</button>
+        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Widerrufen</button>
       </form>
     {% else %}
       <form method="post" action="{% url 'assignment_document_upload' assignment_pk=assignment.pk %}" enctype="multipart/form-data" class="ca-doc-upload" style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
@@ -36,7 +36,7 @@ can_manage_documents, all_tenants.
           </label>
         {% endif %}
         <input name="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:140px;">
-        <button type="submit" class="ca-button">Hochladen</button>
+        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Hochladen</button>
       </form>
     {% endif %}
   </div>
