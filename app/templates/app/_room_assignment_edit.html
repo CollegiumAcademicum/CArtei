@@ -1,6 +1,7 @@
 {# One editable room assignment. Read-only until "Bearbeiten"; needs: assignment, aform. #}
 <div class="ca-room-assignment{% if assignment.is_sublet %} ca-room-assignment--sublet{% endif %}">
-  <input type="hidden" name="assignment_ids" value="{{ assignment.pk }}">
+  {# Card lives outside <form id="form-housing">; associate the hidden id with it. #}
+  <input type="hidden" name="assignment_ids" value="{{ assignment.pk }}" form="form-housing">
   <div class="ca-room-display"{% if aform.errors %} style="display:none;"{% endif %}>
     <div class="ca-room-main">
       <span class="ca-room-name">{{ assignment.room.wg.building.name }} · {{ assignment.room.wg.name }} · {{ assignment.room.name }}</span>
@@ -13,6 +14,7 @@
         {% if assignment.key_received %}<span class="ca-room-badge">Schlüssel erhalten {{ assignment.key_received }}</span>{% endif %}
         {% if assignment.key_returned %}<span class="ca-room-badge">Schlüssel abgegeben {{ assignment.key_returned }}</span>{% endif %}
       </span>
+      {% include "app/_assignment_documents.html" with mode="status" %}
     </div>
     <button type="button" class="ca-room-edit-btn">✎ Bearbeiten</button>
   </div>
@@ -68,5 +70,6 @@
         {% if aform.deposit_iban.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.deposit_iban.errors }}</div>{% endif %}
       </div>
     </div>
+    {% include "app/_assignment_documents.html" with mode="edit" %}
   </div>
 </div>
