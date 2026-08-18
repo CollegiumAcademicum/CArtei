@@ -162,6 +162,16 @@ body {
 .ca-room-assignment:focus-within .ca-room-edit-btn { opacity: 1; }
 @media (hover: none) { .ca-room-edit-btn { opacity: 1; } }  /* touch: no hover to reveal */
 
+/* Save/Revert sit top-right of the edit area, revealed only once the card is dirty. */
+.ca-room-actions {
+  display: none; justify-content: flex-end; gap: 0.4rem; margin-bottom: 0.5rem;
+}
+.ca-room-assignment.is-dirty .ca-room-actions { display: flex; }
+.ca-room-assignment.is-dirty {
+  border-color: #f5c518;
+  box-shadow: inset 0 0 0 1px #f5c518, 0 0 0 3px rgba(245,197,24,0.35);
+}
+
 /* ── Untermiete: visually distinct from normal renters ── */
 .ca-room-assignment--sublet {
   border-left: 4px solid #d98324; background: #fdf6ec;

@@ -567,6 +567,24 @@ document.querySelectorAll('.ca-room-assignment').forEach(function(card) {
     orig[f.name + '|' + f.id] = f.type === 'checkbox' ? f.checked : f.value;
   });
 
+  // Dirty = any field differs from its loaded value. Drives the outline and the
+  // Speichern/Zurücksetzen buttons (both hidden until there's something to save).
+  function checkDirty() {
+    var dirty = false;
+    inputs.forEach(function(f) {
+      var cur = f.type === 'checkbox' ? f.checked : f.value;
+      if (orig[f.name + '|' + f.id] !== cur) dirty = true;
+    });
+    card.classList.toggle('is-dirty', dirty);
+  }
+  inputs.forEach(function(f) {
+    f.addEventListener('input', checkDirty);
+    f.addEventListener('change', checkDirty);
+  });
+  // A card re-rendered with validation errors opens with its fields visible;
+  // keep Save/Revert reachable so the user can fix and resubmit.
+  if (fieldsBox.style.display !== 'none') card.classList.add('is-dirty');
+
   card.querySelector('.ca-room-edit-btn').addEventListener('click', function() {
     display.style.display = 'none';
     fieldsBox.style.display = 'block';
@@ -579,6 +597,7 @@ document.querySelectorAll('.ca-room-assignment').forEach(function(card) {
       if (f.type === 'checkbox') f.checked = v; else f.value = v;
       f.dispatchEvent(new Event('change'));  // re-sync sublet visibility
     });
+    checkDirty();
     fieldsBox.style.display = 'none';
     display.style.display = '';
   });
