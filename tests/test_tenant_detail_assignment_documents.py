@@ -41,20 +41,21 @@ def test_mv_sees_upload_form_for_each_type(client, scene):
     assert reverse("assignment_document_upload", args=[scene["assignment"].pk]) in body
 
 
-def test_assignment_field_associates_with_housing_form(client, scene):
-    # The assignment cards now live OUTSIDE <form id="form-housing">, so their
-    # edit fields must carry form="form-housing" to still batch-save. This is
-    # what lets the document <form>s sit inside the card without nesting.
+def test_assignment_field_associates_with_per_assignment_form(client, scene):
+    # Each card has its own hidden <form id="form-room-{pk}"> for per-assignment
+    # save/revert. The edit fields carry form="form-room-{pk}" so they submit with
+    # that form instead of wrapping (and thus nesting) the document <form>s.
     client.login(username="mv_tda", password="x")
     resp = client.get(reverse("tenant_detail", args=[scene["tenant"].pk]))
     body = resp.content.decode()
     pk = scene["assignment"].pk
+    assert f'id="form-room-{pk}"' in body
     # The room <select> for this assignment carries the form-association attr.
     assert re.search(
-        rf'name="room_{pk}-room"[^>]*form="form-housing"'
-        rf'|form="form-housing"[^>]*name="room_{pk}-room"',
+        rf'name="room_{pk}-room"[^>]*form="form-room-{pk}"'
+        rf'|form="form-room-{pk}"[^>]*name="room_{pk}-room"',
         body,
-    ), "assignment field is not associated with form-housing"
+    ), "assignment field is not associated with its per-assignment form"
     # And the document upload form for the same assignment is present in the page.
     assert reverse("assignment_document_upload", args=[pk]) in body
     # The partial's template comment must not leak into the rendered page

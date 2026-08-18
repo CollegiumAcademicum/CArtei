@@ -15,10 +15,13 @@
         {% if section.key == "housing" and can_write_mv %}
         <button type="button" class="ca-notes-toggle" data-notes="mv-notes">🗒 Notizen {{ mv_notes|length }}</button>
         {% endif %}
+        {% if section.key != "housing" %}
+        {# Housing has no editable tenant fields — room assignments save per-card. #}
         <span class="section-actions" style="display:none;gap:.4rem;align-items:center;">
           <button type="submit" form="form-{{ section.key }}" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
           <button type="button" class="revert-btn ca-button-outline" style="padding:.2rem .75rem;font-size:.82rem;">Zurücksetzen</button>
         </span>
+        {% endif %}
       </span>
     </summary>
 
@@ -57,25 +60,17 @@
     {% endif %}
 
     {% if section.key == "housing" %}
-    <form id="form-housing" method="post" novalidate>
-      {% csrf_token %}
-      <input type="hidden" name="section" value="housing">
-      <div class="ca-field-grid">
-        {% for row in section.rows %}
-        <div class="ca-field" data-field="{{ row.name }}">
-          <span class="ca-field-label">{{ row.label }}</span>
-          {% if row.field %}
-            {{ row.field }}
-            {% if row.field.errors %}<div style="color:#b00;font-size:.85rem;">{{ row.field.errors }}</div>{% endif %}
-          {% else %}
-            <span class="ca-field-value">{{ row.value|default:"—" }}</span>
-          {% endif %}
-        </div>
-        {% endfor %}
+    {# Ersteinzug/Auszug are computed, view-only — plain display, no form. #}
+    <div class="ca-field-grid">
+      {% for row in section.rows %}
+      <div class="ca-field" data-field="{{ row.name }}">
+        <span class="ca-field-label">{{ row.label }}</span>
+        <span class="ca-field-value">{{ row.value|default:"—" }}</span>
       </div>
-    </form>
+      {% endfor %}
+    </div>
     {% if can_manage_room %}
-      {# Cards live OUTSIDE form-housing; fields carry form="form-housing" to save. #}
+      {# Each card carries its own <form id="form-room-{pk}"> for per-card save/revert. #}
       <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
       <p style="font-weight:500;margin:.25rem 0 .4rem;">Aktuelle Zimmer</p>
       {% for assignment, aform in active_assignment_forms %}
@@ -101,6 +96,11 @@
           <span style="font-size:.9rem;color:#555;">Zimmer zuordnen</span>
         </summary>
         {% if new_room_form.errors %}<div style="color:#b00;font-size:.85rem;margin-top:.5rem;">{{ new_room_form.errors }}</div>{% endif %}
+        {# novalidate: server-side validation surfaces errors (see test); HTML5
+           required would otherwise block the empty-field POST. #}
+        <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="section" value="housing">
         <div class="ca-field-grid ca-room-assignment" style="margin-top:.5rem;">
           <div class="ca-field{% if new_room_form.room.errors %} ca-field-error{% endif %}">
             <span class="ca-field-label">Zimmer</span>
@@ -145,6 +145,10 @@
             {{ new_room_form.deposit_iban }}
           </div>
         </div>
+        <div style="margin-top:.75rem;">
+          <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
+        </div>
+        </form>
       </details>
     {% endif %}
     {% else %}
@@ -502,7 +506,7 @@ document.addEventListener('submit', function(e) {
 }, true);
 
 document.querySelectorAll('details.ca-section').forEach(function(section) {
-  var fields = Array.from(section.querySelectorAll('input, select, textarea')).filter(function(f) { return !f.closest('.ca-note-form'); });
+  var fields = Array.from(section.querySelectorAll('input, select, textarea')).filter(function(f) { return !f.closest('.ca-note-form') && !f.closest('.ca-room-assignment'); });
   var origValues = {};
   fields.forEach(function(f) {
     var key = f.name + '|' + f.id;
@@ -551,12 +555,33 @@ document.querySelectorAll('details.ca-section').forEach(function(section) {
   });
 });
 
-// Room assignments are read-only until "Bearbeiten" reveals the edit fields.
-document.querySelectorAll('.ca-room-edit-btn').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    var wrap = btn.closest('.ca-room-assignment');
-    wrap.querySelector('.ca-room-display').style.display = 'none';
-    wrap.querySelector('.ca-room-fields').style.display = 'block';
+// Room assignments are read-only until "Bearbeiten"; each card saves/reverts on
+// its own. Revert restores the card's fields and collapses back to the display.
+document.querySelectorAll('.ca-room-assignment').forEach(function(card) {
+  var display = card.querySelector('.ca-room-display');
+  var fieldsBox = card.querySelector('.ca-room-fields');
+  if (!display || !fieldsBox) return;  // new-room card: no display/fields toggle
+
+  var inputs = fieldsBox.querySelectorAll('input, select, textarea');
+  var orig = {};
+  inputs.forEach(function(f) {
+    orig[f.name + '|' + f.id] = f.type === 'checkbox' ? f.checked : f.value;
+  });
+
+  card.querySelector('.ca-room-edit-btn').addEventListener('click', function() {
+    display.style.display = 'none';
+    fieldsBox.style.display = 'block';
+  });
+
+  var revert = card.querySelector('.ca-room-revert-btn');
+  if (revert) revert.addEventListener('click', function() {
+    inputs.forEach(function(f) {
+      var v = orig[f.name + '|' + f.id];
+      if (f.type === 'checkbox') f.checked = v; else f.value = v;
+      f.dispatchEvent(new Event('change'));  // re-sync sublet visibility
+    });
+    fieldsBox.style.display = 'none';
+    display.style.display = '';
   });
 });
 

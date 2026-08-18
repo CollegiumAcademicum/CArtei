@@ -1,7 +1,13 @@
 {# One editable room assignment. Read-only until "Bearbeiten"; needs: assignment, aform. #}
 <div class="ca-room-assignment{% if assignment.is_sublet %} ca-room-assignment--sublet{% endif %}">
-  {# Card lives outside <form id="form-housing">; associate the hidden id with it. #}
-  <input type="hidden" name="assignment_ids" value="{{ assignment.pk }}" form="form-housing">
+  {# Per-assignment save form. Empty by design: the field widgets and the Speichern
+     button attach via form="form-room-{pk}" so this form never wraps (and thus never
+     nests) the document upload/revoke <form>s living inside .ca-room-fields. #}
+  <form id="form-room-{{ assignment.pk }}" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="section" value="housing">
+    <input type="hidden" name="assignment_ids" value="{{ assignment.pk }}">
+  </form>
   <div class="ca-room-display"{% if aform.errors %} style="display:none;"{% endif %}>
     <div class="ca-room-main">
       <span class="ca-room-name">{{ assignment.room.wg.building.name }} · {{ assignment.room.wg.name }} · {{ assignment.room.name }}</span>
@@ -71,5 +77,9 @@
       </div>
     </div>
     {% include "app/_assignment_documents.html" with mode="edit" %}
+    <div class="ca-room-actions" style="display:flex;gap:.4rem;margin-top:.75rem;">
+      <button type="submit" form="form-room-{{ assignment.pk }}" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
+      <button type="button" class="ca-room-revert-btn ca-button-outline" style="padding:.2rem .75rem;font-size:.82rem;">Zurücksetzen</button>
+    </div>
   </div>
 </div>

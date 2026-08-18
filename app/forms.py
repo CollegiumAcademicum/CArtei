@@ -56,12 +56,14 @@ class TenantRoomAssignmentForm(forms.ModelForm):
                 field.input_formats = ["%Y-%m-%d"]
             elif hasattr(field, "widget") and not isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.setdefault("class", "ca-input")
-        # Cards render OUTSIDE <form id="form-housing"> (so the per-assignment
-        # document <form>s aren't nested inside it), so associate every field
-        # with the housing form via the HTML5 form attribute — the same trick
-        # the Speichern button uses. Submission is byte-for-byte like nesting.
-        for field in self.fields.values():
-            field.widget.attrs["form"] = "form-housing"
+        # Each existing assignment has its own hidden <form id="form-room-{pk}">
+        # (per-assignment save/revert). The card's document upload/revoke <form>s
+        # sit physically inside the card, so the assignment fields can't be nested
+        # in the same form — associate them via the HTML5 form attribute instead.
+        # The new-room form (no pk) is a normal wrapping <form>, so it needs no attr.
+        if self.instance.pk:
+            for field in self.fields.values():
+                field.widget.attrs["form"] = f"form-room-{self.instance.pk}"
 
     def clean(self):
         cleaned = super().clean()
