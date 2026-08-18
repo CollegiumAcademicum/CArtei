@@ -1,4 +1,5 @@
 import datetime
+import re
 
 import pytest
 from django.contrib.auth.models import Group, User
@@ -38,6 +39,24 @@ def test_mv_sees_upload_form_for_each_type(client, scene):
     assert 'value="mietbedingungen"' in body
     assert 'value="wohnungsgeberbescheinigung"' in body
     assert reverse("assignment_document_upload", args=[scene["assignment"].pk]) in body
+
+
+def test_assignment_field_associates_with_housing_form(client, scene):
+    # The assignment cards now live OUTSIDE <form id="form-housing">, so their
+    # edit fields must carry form="form-housing" to still batch-save. This is
+    # what lets the document <form>s sit inside the card without nesting.
+    client.login(username="mv_tda", password="x")
+    resp = client.get(reverse("tenant_detail", args=[scene["tenant"].pk]))
+    body = resp.content.decode()
+    pk = scene["assignment"].pk
+    # The room <select> for this assignment carries the form-association attr.
+    assert re.search(
+        rf'name="room_{pk}-room"[^>]*form="form-housing"'
+        rf'|form="form-housing"[^>]*name="room_{pk}-room"',
+        body,
+    ), "assignment field is not associated with form-housing"
+    # And the document upload form for the same assignment is present in the page.
+    assert reverse("assignment_document_upload", args=[pk]) in body
 
 
 def test_existing_document_shows_download_link(client, scene):

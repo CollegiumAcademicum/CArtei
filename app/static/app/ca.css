@@ -172,6 +172,24 @@ body {
 }
 .ca-sublet-line { border-left: 3px solid #d98324; padding-left: 0.5rem; }
 
+/* ── Per-assignment documents ── */
+/* Read-only status shown on the card summary: compact wrapping chips. */
+.ca-assignment-docs--status {
+  display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem;
+  margin-top: 0.35rem; font-size: 0.85rem;
+}
+.ca-doc-chip { display: inline-flex; align-items: baseline; gap: 0.3rem; }
+.ca-doc-type { color: #555; font-weight: 500; }
+.ca-doc-missing { color: #b06a00; }
+/* Edit controls revealed with the room fields on "Bearbeiten". */
+.ca-assignment-docs--edit {
+  margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid #eee;
+  display: flex; flex-direction: column; gap: 0.4rem;
+}
+.ca-assignment-docs--edit .ca-doc-group {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+}
+
 /* ── Dirty-section highlight ── */
 details.is-dirty {
   border: 2px solid #f5c518 !important;
