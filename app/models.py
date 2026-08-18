@@ -279,3 +279,74 @@ class DocumentSigner(models.Model):
     class Meta:
         managed = False
         db_table = "document_signer"
+
+
+class AssignmentDocumentType(models.TextChoices):
+    MIETVERTRAG = "mietvertrag", "Mietvertrag"
+    MIETBEDINGUNGEN = "mietbedingungen", "Allgemeine Mietbedingungen"
+    WOHNUNGSGEBERBESCHEINIGUNG = "wohnungsgeberbescheinigung", "Wohnungsgeberbescheinigung"
+
+
+class RoomAssignmentDocumentBase(models.Model):
+    """Shared columns for every per-type room-assignment document mirror.
+    Abstract — each concrete subclass maps its own managed=False table."""
+    assignment = models.ForeignKey(
+        TenantRoomAssignment, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="%(class)ss", db_column="tenant_room_assignment_id",
+    )
+    file_name = models.CharField(max_length=255)
+    file_data = models.BinaryField()
+    uploaded_at = models.DateTimeField()
+    uploaded_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="%(class)s_uploaded", db_column="uploaded_by_id",
+    )
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True,
+        related_name="%(class)s_revoked", db_column="revoked_by_id",
+    )
+    revoked_note = models.TextField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class MietvertragDocument(RoomAssignmentDocumentBase):
+    renter_signed_at = models.DateField()
+    company_signed_at = models.DateField()
+    company_signed_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="+", db_column="company_signed_by_id",
+    )
+
+    class Meta:
+        managed = False
+        db_table = "mietvertrag_document"
+
+
+class MietbedingungenDocument(RoomAssignmentDocumentBase):
+    signed_at = models.DateField()
+
+    class Meta:
+        managed = False
+        db_table = "mietbedingungen_document"
+
+
+class WohnungsgeberbescheinigungDocument(RoomAssignmentDocumentBase):
+    signed_at = models.DateField()
+    company_signed_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="+", db_column="company_signed_by_id",
+    )
+
+    class Meta:
+        managed = False
+        db_table = "wohnungsgeberbescheinigung_document"
+
+
+ASSIGNMENT_DOCUMENT_MODELS = {
+    AssignmentDocumentType.MIETVERTRAG.value: MietvertragDocument,
+    AssignmentDocumentType.MIETBEDINGUNGEN.value: MietbedingungenDocument,
+    AssignmentDocumentType.WOHNUNGSGEBERBESCHEINIGUNG.value: WohnungsgeberbescheinigungDocument,
+}

@@ -146,6 +146,16 @@
       </details>
       {% endif %}
     </form>
+    {% if can_manage_room %}
+    {% for assignment, aform in active_assignment_forms %}
+    {% include "app/_assignment_documents.html" %}
+    {% endfor %}
+    {% if past_assignment_forms %}
+    {% for assignment, aform in past_assignment_forms %}
+    {% include "app/_assignment_documents.html" %}
+    {% endfor %}
+    {% endif %}
+    {% endif %}
     {% else %}
     <form id="form-{{ section.key }}" method="post">
       {% csrf_token %}
@@ -177,7 +187,8 @@
           {% if a.mailbox_key_received %}· Briefkastenschlüssel erhalten {{ a.mailbox_key_received }}{% endif %}
           {% if a.mailbox_key_returned %}· Briefkastenschlüssel abgegeben {{ a.mailbox_key_returned }}{% endif %}
           {% if a.key_received %}· Schlüssel erhalten {{ a.key_received }}{% endif %}
-          {% if a.key_returned %}· abgegeben {{ a.key_returned }}{% endif %}</li>
+          {% if a.key_returned %}· abgegeben {{ a.key_returned }}{% endif %}
+          {% with assignment=a %}{% include "app/_assignment_documents.html" %}{% endwith %}</li>
       {% endfor %}
     </ul>
     {% endif %}
@@ -193,7 +204,8 @@
           {% if a.mailbox_key_received %}· Briefkastenschlüssel erhalten {{ a.mailbox_key_received }}{% endif %}
           {% if a.mailbox_key_returned %}· Briefkastenschlüssel abgegeben {{ a.mailbox_key_returned }}{% endif %}
           {% if a.key_received %}· Schlüssel erhalten {{ a.key_received }}{% endif %}
-          {% if a.key_returned %}· abgegeben {{ a.key_returned }}{% endif %}</li>
+          {% if a.key_returned %}· abgegeben {{ a.key_returned }}{% endif %}
+          {% with assignment=a %}{% include "app/_assignment_documents.html" %}{% endwith %}</li>
       {% endfor %}
     </ul>
     {% endif %}

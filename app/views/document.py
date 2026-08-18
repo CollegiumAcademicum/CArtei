@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
-from app.models import DOCUMENT_MODELS, DocumentType, Tenant
+from app.models import ASSIGNMENT_DOCUMENT_MODELS, DOCUMENT_MODELS, DocumentType, Tenant, TenantRoomAssignment
 
 MAX_DOCUMENT_SIZE = 10 * 1024 * 1024  # 10 MB
 
@@ -96,6 +96,105 @@ def download_document(request, pk, document_type, doc_pk):
     if model is None:
         return HttpResponseBadRequest()
     doc = get_object_or_404(model, pk=doc_pk, tenant_id=pk)
+    content_type, _ = mimetypes.guess_type(doc.file_name)
+    response = HttpResponse(bytes(doc.file_data), content_type=content_type or "application/octet-stream")
+    response["Content-Disposition"] = f'inline; filename="{doc.file_name}"'
+    return response
+
+
+def _parse_date(value):
+    """ISO date or None on any bad/empty input."""
+    try:
+        return datetime.date.fromisoformat(value or "")
+    except ValueError:
+        return None
+
+
+# Per-type extra POST fields for a room-assignment document.
+#   date fields -> model date columns; "company_signed_by" -> FK tenant id.
+_ASSIGNMENT_DOC_FIELDS = {
+    "mietvertrag": {"dates": ("renter_signed_at", "company_signed_at"), "company_signer": True},
+    "mietbedingungen": {"dates": ("signed_at",), "company_signer": False},
+    "wohnungsgeberbescheinigung": {"dates": ("signed_at",), "company_signer": True},
+}
+
+
+@login_required
+@require_POST
+def upload_assignment_document(request, assignment_pk):
+    assignment = get_object_or_404(TenantRoomAssignment, pk=assignment_pk)
+    caller = _caller(request.user)
+    if caller is None or not _is_mv(request.user):
+        raise PermissionDenied
+
+    document_type = request.POST.get("document_type", "")
+    model = ASSIGNMENT_DOCUMENT_MODELS.get(document_type)
+    spec = _ASSIGNMENT_DOC_FIELDS.get(document_type)
+    if model is None or spec is None:
+        return HttpResponseBadRequest()
+
+    f = request.FILES.get("document_file")
+    if not f:
+        return HttpResponseBadRequest()
+    if f.size > MAX_DOCUMENT_SIZE:
+        messages.error(request, "Die Datei ist zu groß (max. 10 MB).")
+        return redirect("tenant_detail", pk=assignment.tenant_id)
+
+    values = {}
+    for field in spec["dates"]:
+        parsed = _parse_date(request.POST.get(field, ""))
+        if parsed is None:
+            return HttpResponseBadRequest()
+        values[field] = parsed
+    if spec["company_signer"]:
+        signer = Tenant.objects.filter(pk=request.POST.get("company_signed_by") or 0).first()
+        if signer is None:
+            return HttpResponseBadRequest()
+        values["company_signed_by"] = signer
+
+    model.objects.create(
+        assignment=assignment,
+        file_name=f.name,
+        file_data=f.read(),
+        uploaded_at=now(),
+        uploaded_by=caller,
+        **values,
+    )
+    return redirect("tenant_detail", pk=assignment.tenant_id)
+
+
+@login_required
+@require_POST
+def revoke_assignment_document(request, assignment_pk, document_type, doc_pk):
+    assignment = get_object_or_404(TenantRoomAssignment, pk=assignment_pk)
+    caller = _caller(request.user)
+    if caller is None or not _is_mv(request.user):
+        raise PermissionDenied
+    model = ASSIGNMENT_DOCUMENT_MODELS.get(document_type)
+    if model is None:
+        return HttpResponseBadRequest()
+    doc = get_object_or_404(model, pk=doc_pk, assignment_id=assignment_pk)
+    note = (request.POST.get("revoked_note") or "").strip()
+    if not note:
+        return HttpResponseBadRequest()
+    if doc.revoked_at is not None:
+        return redirect("tenant_detail", pk=assignment.tenant_id)
+    model.objects.filter(pk=doc.pk).update(
+        revoked_at=now(), revoked_by_id=caller.pk, revoked_note=note,
+    )
+    return redirect("tenant_detail", pk=assignment.tenant_id)
+
+
+@login_required
+def download_assignment_document(request, assignment_pk, document_type, doc_pk):
+    assignment = get_object_or_404(TenantRoomAssignment, pk=assignment_pk)
+    caller = _caller(request.user)
+    if caller is None or (caller.pk != assignment.tenant_id and not _is_mv(request.user)):
+        raise PermissionDenied
+    model = ASSIGNMENT_DOCUMENT_MODELS.get(document_type)
+    if model is None:
+        return HttpResponseBadRequest()
+    doc = get_object_or_404(model, pk=doc_pk, assignment_id=assignment_pk)
     content_type, _ = mimetypes.guess_type(doc.file_name)
     response = HttpResponse(bytes(doc.file_data), content_type=content_type or "application/octet-stream")
     response["Content-Disposition"] = f'inline; filename="{doc.file_name}"'

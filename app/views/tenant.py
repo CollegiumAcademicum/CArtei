@@ -9,7 +9,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
-    AGAbfrage, AGAbfrageResult, AGStatus, DOCUMENT_MODELS, DocumentType,
+    AGAbfrage, AGAbfrageResult, AGStatus, ASSIGNMENT_DOCUMENT_MODELS, AssignmentDocumentType,
+    DOCUMENT_MODELS, DocumentType,
     EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
 )
 from app.residency import has_active_assignment, set_move_dates
@@ -24,6 +25,21 @@ ProofStatus = namedtuple("ProofStatus", "state count")
 
 
 _DOC_SHORT = {"datenschutz": "DS", "photoerlaubnis": "FoE", "vertraulichkeitserklaerung": "VE"}
+
+
+def _assignment_doc_groups(assignment):
+    groups = []
+    for dtype, model in ASSIGNMENT_DOCUMENT_MODELS.items():
+        docs = list(model.objects.filter(assignment=assignment).order_by("-uploaded_at"))
+        for d in docs:
+            d.doc_type = dtype
+        groups.append({
+            "type": dtype,
+            "label": AssignmentDocumentType(dtype).label,
+            "active_doc": next((d for d in docs if d.revoked_at is None), None),
+            "docs": docs,
+        })
+    return groups
 
 
 def _proof_status(proofs, today):
@@ -341,6 +357,9 @@ def tenant_detail(request: HttpRequest, pk: int):
     ctx["past_assignments"] = past_assignments
     ctx["sublet_out"] = sublet_out
 
+    for a in active_assignments + past_assignments:
+        a.doc_groups = _assignment_doc_groups(a)
+
     if can_manage_room:
         # On a failed POST, reuse the bound forms (which hold the errors); otherwise
         # build a fresh edit form per assignment. Both current and past are editable.
@@ -405,6 +424,11 @@ def tenant_detail(request: HttpRequest, pk: int):
             })
         ctx["document_groups"] = groups
         ctx["can_manage_documents"] = bool({"mietverwaltung", "admin"} & roles)
+
+    ctx["all_tenants"] = (
+        list(Tenant.objects.order_by("last_name", "first_name"))
+        if ctx.get("can_manage_documents") else []
+    )
 
     return render(request, "app/tenant_detail.html", ctx)
 
