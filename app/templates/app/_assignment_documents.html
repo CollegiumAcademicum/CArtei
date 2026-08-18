@@ -1,0 +1,51 @@
+{# Documents for one room assignment. Needs: assignment, can_manage_documents, all_tenants. #}
+<div class="ca-assignment-docs" style="margin-top:.5rem;">
+  {% for g in assignment.doc_groups %}
+  <div class="ca-doc-group" style="margin-top:.35rem;">
+    <span class="ca-field-label">{{ g.label }}</span>
+    {% if g.active_doc %}
+      <a href="{% url 'assignment_document_download' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="color:var(--ca-teal);">{{ g.active_doc.file_name }}</a>
+      <span class="ca-room-meta">
+        {% if g.type == "mietvertrag" %}
+          <span>Mieter*in {{ g.active_doc.renter_signed_at }}</span>
+          <span>GmbH {{ g.active_doc.company_signed_at }} ({{ g.active_doc.company_signed_by.first_name }} {{ g.active_doc.company_signed_by.last_name }})</span>
+        {% elif g.type == "wohnungsgeberbescheinigung" %}
+          <span>Unterschrieben {{ g.active_doc.signed_at }} ({{ g.active_doc.company_signed_by.first_name }} {{ g.active_doc.company_signed_by.last_name }})</span>
+        {% else %}
+          <span>Unterschrieben {{ g.active_doc.signed_at }}</span>
+        {% endif %}
+      </span>
+      {% if can_manage_documents %}
+      <form method="post" action="{% url 'assignment_document_revoke' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="display:inline-flex;gap:.3rem;align-items:center;">
+        {% csrf_token %}
+        <input name="revoked_note" placeholder="Grund des Widerrufs" required style="font-size:.8rem;">
+        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;">Widerrufen</button>
+      </form>
+      {% endif %}
+    {% elif can_manage_documents %}
+      <form method="post" action="{% url 'assignment_document_upload' assignment_pk=assignment.pk %}" enctype="multipart/form-data" class="ca-doc-upload" style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
+        {% csrf_token %}
+        <input type="hidden" name="document_type" value="{{ g.type }}">
+        {% if g.type == "mietvertrag" %}
+          <label>Mieter*in unterschrieben <input type="date" name="renter_signed_at" required></label>
+          <label>GmbH unterschrieben <input type="date" name="company_signed_at" required></label>
+        {% else %}
+          <label>Unterschrieben <input type="date" name="signed_at" required></label>
+        {% endif %}
+        {% if g.type == "mietvertrag" or g.type == "wohnungsgeberbescheinigung" %}
+          <label>Für die GmbH
+            <select name="company_signed_by" required>
+              <option value="">—</option>
+              {% for t in all_tenants %}<option value="{{ t.pk }}">{{ t.last_name }}, {{ t.first_name }}</option>{% endfor %}
+            </select>
+          </label>
+        {% endif %}
+        <input name="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:140px;">
+        <button type="submit" class="ca-button">Hochladen</button>
+      </form>
+    {% else %}
+      <span class="ca-room-meta">—</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
