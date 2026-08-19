@@ -1,69 +1,71 @@
 {% comment %}
-Documents for one room assignment. Needs: assignment, mode ("status" | "edit"),
-can_manage_documents, all_tenants.
-  - mode="status": always-visible, read-only (download link + signature info).
-  - mode="edit":   MV-only upload/revoke controls, shown in the card's edit area.
+Documents for one room assignment, rendered as cards matching the Rechtsdokumente
+section. Needs: assignment, mode ("status" | "edit"), can_manage_documents, all_tenants.
+  - mode="status": read-only cards (download link + signature info + revoked history).
+  - mode="edit":   same cards plus MV-only upload/revoke controls.
 {% endcomment %}
-{% if mode == "edit" %}
-{% if can_manage_documents %}
-<div class="ca-assignment-docs ca-assignment-docs--edit">
-  <span class="ca-field-label">Dokumente</span>
+<div class="ca-assignment-docs">
   {% for g in assignment.doc_groups %}
-  <div class="ca-doc-group">
-    <span class="ca-doc-type">{{ g.label }}</span>
+  <div class="ca-doc-card">
+    <div class="ca-doc-card-head">
+      <strong>{{ g.label }}</strong>
+      {% if g.active_doc %}
+      <span class="ca-doc-status ca-doc-status--active">● Aktiv</span>
+      {% else %}
+      <span class="ca-doc-status ca-doc-status--missing">○ Noch nicht unterschrieben</span>
+      {% endif %}
+    </div>
+
     {% if g.active_doc %}
-      <form method="post" action="{% url 'assignment_document_revoke' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="display:inline-flex;gap:.3rem;align-items:center;">
+    <div class="ca-doc-row">
+      <a href="{% url 'assignment_document_download' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="color:var(--ca-teal);">{{ g.active_doc.file_name }}</a>
+      {% if g.type == "mietvertrag" %}
+      <span>· Mieter*in {{ g.active_doc.renter_signed_at|date:"d.m.Y" }}</span>
+      <span>· GmbH {{ g.active_doc.company_signed_at|date:"d.m.Y" }} ({{ g.active_doc.company_signed_by.first_name }} {{ g.active_doc.company_signed_by.last_name }})</span>
+      {% elif g.type == "wohnungsgeberbescheinigung" %}
+      <span>· {{ g.active_doc.signed_at|date:"d.m.Y" }} ({{ g.active_doc.company_signed_by.first_name }} {{ g.active_doc.company_signed_by.last_name }})</span>
+      {% else %}
+      <span>· {{ g.active_doc.signed_at|date:"d.m.Y" }}</span>
+      {% endif %}
+      {% if mode == "edit" and can_manage_documents %}
+      <form method="post" action="{% url 'assignment_document_revoke' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;">
         {% csrf_token %}
-        <input name="revoked_note" placeholder="Grund des Widerrufs" required style="font-size:.8rem;">
-        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Widerrufen</button>
+        <input name="revoked_note" type="text" required placeholder="Grund des Widerrufs" style="padding:.2rem;">
+        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;" onclick="return confirm('Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.');">Widerrufen</button>
       </form>
-    {% else %}
-      <form method="post" action="{% url 'assignment_document_upload' assignment_pk=assignment.pk %}" enctype="multipart/form-data" class="ca-doc-upload" style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
-        {% csrf_token %}
-        <input type="hidden" name="document_type" value="{{ g.type }}">
-        {% if g.type == "mietvertrag" %}
-          <label>Mieter*in unterschrieben <input type="date" name="renter_signed_at" required></label>
-          <label>GmbH unterschrieben <input type="date" name="company_signed_at" required></label>
-        {% else %}
-          <label>Unterschrieben <input type="date" name="signed_at" required></label>
-        {% endif %}
-        {% if g.type == "mietvertrag" or g.type == "wohnungsgeberbescheinigung" %}
-          <label>Für die GmbH
-            <select name="company_signed_by" required>
-              <option value="">—</option>
-              {% for t in all_tenants %}<option value="{{ t.pk }}">{{ t.last_name }}, {{ t.first_name }}</option>{% endfor %}
-            </select>
-          </label>
-        {% endif %}
-        <input name="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:140px;">
-        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Hochladen</button>
-      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% for d in g.docs %}{% if d.revoked_at %}
+    <div class="ca-doc-row ca-doc-row--revoked">
+      <a href="{% url 'assignment_document_download' assignment_pk=assignment.pk document_type=g.type doc_pk=d.pk %}" style="color:#888;">{{ d.file_name }}</a>
+      <span>· Widerrufen ({{ d.revoked_at|date:"d.m.Y" }}{% if d.revoked_note %}: {{ d.revoked_note }}{% endif %})</span>
+    </div>
+    {% endif %}{% endfor %}
+
+    {% if mode == "edit" and can_manage_documents and not g.active_doc %}
+    <form method="post" action="{% url 'assignment_document_upload' assignment_pk=assignment.pk %}" enctype="multipart/form-data" class="ca-doc-upload">
+      {% csrf_token %}
+      <input type="hidden" name="document_type" value="{{ g.type }}">
+      {% if g.type == "mietvertrag" %}
+      <label style="font-size:.85rem;">Mieter*in unterschrieben <input type="date" name="renter_signed_at" required style="padding:.3rem;"></label>
+      <label style="font-size:.85rem;">GmbH unterschrieben <input type="date" name="company_signed_at" required style="padding:.3rem;"></label>
+      {% else %}
+      <label style="font-size:.85rem;">Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
+      {% endif %}
+      {% if g.type == "mietvertrag" or g.type == "wohnungsgeberbescheinigung" %}
+      <label style="font-size:.85rem;">Für die GmbH
+        <select name="company_signed_by" required style="padding:.3rem;">
+          <option value="">—</option>
+          {% for t in all_tenants %}<option value="{{ t.pk }}">{{ t.last_name }}, {{ t.first_name }}</option>{% endfor %}
+        </select>
+      </label>
+      {% endif %}
+      <input name="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:160px;">
+      <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Hochladen</button>
+    </form>
     {% endif %}
   </div>
   {% endfor %}
 </div>
-{% endif %}
-{% else %}
-<div class="ca-assignment-docs ca-assignment-docs--status">
-  {% for g in assignment.doc_groups %}
-  <span class="ca-doc-chip">
-    <span class="ca-doc-type">{{ g.label }}:</span>
-    {% if g.active_doc %}
-      <a href="{% url 'assignment_document_download' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="color:var(--ca-teal);">{{ g.active_doc.file_name }}</a>
-      {% if g.type == "mietvertrag" %}
-        <span class="ca-room-meta"><span>Mieter*in {{ g.active_doc.renter_signed_at }}</span><span>GmbH {{ g.active_doc.company_signed_at }} ({{ g.active_doc.company_signed_by.first_name }} {{ g.active_doc.company_signed_by.last_name }})</span></span>
-      {% elif g.type == "wohnungsgeberbescheinigung" %}
-        <span class="ca-room-meta"><span>Unterschrieben {{ g.active_doc.signed_at }} ({{ g.active_doc.company_signed_by.first_name }} {{ g.active_doc.company_signed_by.last_name }})</span></span>
-      {% else %}
-        <span class="ca-room-meta"><span>Unterschrieben {{ g.active_doc.signed_at }}</span></span>
-      {% endif %}
-    {% else %}
-      <span class="ca-doc-missing">fehlt</span>
-    {% endif %}
-    {% for d in g.docs %}{% if d.revoked_at %}
-      <span class="ca-doc-past">↩ <a href="{% url 'assignment_document_download' assignment_pk=assignment.pk document_type=g.type doc_pk=d.pk %}" style="color:#888;">{{ d.file_name }}</a> (widerrufen {{ d.revoked_at|date:"Y-m-d" }}{% if d.revoked_note %} · {{ d.revoked_note }}{% endif %})</span>
-    {% endif %}{% endfor %}
-  </span>
-  {% endfor %}
-</div>
-{% endif %}

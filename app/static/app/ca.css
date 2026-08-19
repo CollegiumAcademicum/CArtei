@@ -183,22 +183,21 @@ body {
 .ca-sublet-line { border-left: 3px solid #d98324; padding-left: 0.5rem; }
 
 /* ── Per-assignment documents ── */
-/* Read-only status shown on the card summary: compact wrapping chips. */
-.ca-assignment-docs--status {
-  display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem;
-  margin-top: 0.35rem; font-size: 0.85rem;
+/* Cards matching the Rechtsdokumente section (see tenant_detail.html). */
+.ca-doc-card {
+  margin-top: 0.75rem; border: 1px solid #e2e2e2; border-radius: 6px;
+  padding: 0.5rem 0.75rem;
 }
-.ca-doc-chip { display: inline-flex; align-items: baseline; gap: 0.3rem; }
-.ca-doc-type { color: #555; font-weight: 500; }
-.ca-doc-missing { color: #b06a00; }
-/* Edit controls revealed with the room fields on "Bearbeiten". */
-.ca-assignment-docs--edit {
-  margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid #eee;
-  display: flex; flex-direction: column; gap: 0.4rem;
-}
-.ca-assignment-docs--edit .ca-doc-group {
+.ca-doc-card-head { display: flex; align-items: center; gap: 0.5rem; }
+.ca-doc-status { font-size: 0.8rem; }
+.ca-doc-status--active { color: #0a0; }
+.ca-doc-status--missing { color: #b26a00; }
+.ca-doc-row {
   display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+  margin-top: 0.4rem; font-size: 0.9rem;
 }
+.ca-doc-row--revoked { opacity: 0.6; }
+.ca-doc-upload { margin-top: 0.6rem; }
 
 /* ── Dirty-section highlight ── */
 details.is-dirty {
