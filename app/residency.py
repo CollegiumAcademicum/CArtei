@@ -10,6 +10,13 @@ def active_assignment_q(today):
     return Q(moved_out__isnull=True) | Q(moved_out__gt=today)
 
 
+def assignment_active_on(d):
+    """An assignment is active on date d: moved in on/before d and not yet moved
+    out on d. The move-in bound is what makes point-in-time (past/future) travel
+    correct — active_assignment_q(d) alone only checks the move-out side."""
+    return Q(moved_in__lte=d) & active_assignment_q(d)
+
+
 def has_active_assignment(today):
     """Exists() subquery: the tenant currently holds a room."""
     return Exists(
