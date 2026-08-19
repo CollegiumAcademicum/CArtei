@@ -17,23 +17,10 @@ from app.residency import has_active_assignment, set_move_dates
 from app.tenant_access import (
     SECTIONS, editable_fields, global_roles, viewer_roles, visible_fields,
 )
-
-# Statuses that clear the engagement flag: being reported active in an AG.
-_ACTIVE_STATES = {"AKTIV", "ZU_AKTIV"}
-
-# Belegium may edit an assignment's room data only for future move-ins and the
-# first two weeks after move-in (moved_in >= today - 14d); read-only afterwards.
-BELEGIUM_EDIT_WINDOW = timedelta(days=14)
-
-
-def _assignment_editable_by(a, roles, today):
-    """Who may edit an assignment's room data. MV/admin: always. Belegium: only
-    inside the move-in window. Everyone else (owner): never."""
-    if {"mietverwaltung", "admin"} & roles:
-        return True
-    if "belegium" in roles:
-        return a.moved_in >= today - BELEGIUM_EDIT_WINDOW
-    return False
+from app.views._shared import (
+    ACTIVE_STATES, BELEGIUM_EDIT_WINDOW, assignment_editable_by,
+    display, engagement_verdict, submitted_assignment_forms,
+)
 
 ProofStatus = namedtuple("ProofStatus", "state count")
 
@@ -69,15 +56,6 @@ def _proof_status(proofs, today):
         return ProofStatus("gueltig", 0)
     return ProofStatus("fehlt", 0)
 
-
-def _engagement_verdict(results):
-    """True = flagged for the Clustersprechende. One 'aktiv'/'zu aktiv' AG clears it;
-    only insufficient/in-conversation/inactive statuses (or no report) flag it."""
-    return not any(r.status in _ACTIVE_STATES for r in results)
-
-
-def _display(t):
-    return t.preferred_name or f"{t.first_name} {t.last_name}".strip()
 
 
 def _engagement_summary(rows, selected_abfragen):
@@ -150,7 +128,7 @@ def tenant_list(request: HttpRequest):
         ):
             assigns_by_tenant.setdefault(a.tenant_id, []).append(a)
             if a.is_sublet and a.sublet_of_tenant_id:
-                reverse_by_tenant.setdefault(a.sublet_of_tenant_id, []).append(_display(a.tenant))
+                reverse_by_tenant.setdefault(a.sublet_of_tenant_id, []).append(display(a.tenant))
 
     # Proof status per tenant (one bulk query, gated with the personal columns).
     proof_by_tenant = {}
@@ -189,7 +167,7 @@ def tenant_list(request: HttpRequest):
         row = {
             "tenant": t, "cluster": cluster, "cluster_key": cluster or "",
             "rooms": [
-                (a, _display(a.sublet_of_tenant) if a.is_sublet and a.sublet_of_tenant_id else None)
+                (a, display(a.sublet_of_tenant) if a.is_sublet and a.sublet_of_tenant_id else None)
                 for a in assigns
             ],
             "sublet_to": reverse_by_tenant.get(t.pk, []),
@@ -205,7 +183,7 @@ def tenant_list(request: HttpRequest):
         if show_surveys:
             tr = results_by_tenant.get(t.pk, {})
             row["survey_results"] = [
-                (ab, tr.get(ab.pk, []), _engagement_verdict(tr.get(ab.pk, [])))
+                (ab, tr.get(ab.pk, []), engagement_verdict(tr.get(ab.pk, [])))
                 for ab in selected_abfragen
             ]
         rows.append(row)
@@ -308,11 +286,10 @@ def tenant_detail(request: HttpRequest, pk: int):
         a_forms = []
         new_rf = None
         if section_key == "housing" and can_edit_rooms:
-            for pk_str in request.POST.getlist("assignment_ids"):
-                a = TenantRoomAssignment.objects.filter(pk=pk_str, tenant=tenant).first()
-                if a and _assignment_editable_by(a, roles, today):
-                    rf = TenantRoomAssignmentForm(request.POST, instance=a, prefix=f"room_{a.pk}")
-                    a_forms.append((a, rf))
+            a_forms = submitted_assignment_forms(
+                request, roles, today,
+                TenantRoomAssignment.objects.filter(tenant=tenant),
+            )
             new_rf = TenantRoomAssignmentForm(request.POST, prefix="new_room")
 
         new_room_selected = bool(new_rf and request.POST.get("new_room-room"))
@@ -343,7 +320,7 @@ def tenant_detail(request: HttpRequest, pk: int):
     else:
         form = TenantForm(instance=tenant, allowed_fields=editable)
 
-    display_name = tenant.preferred_name or f"{tenant.first_name} {tenant.last_name}".strip()
+    display_name = display(tenant)
 
     ctx = {
         "tenant": tenant,
@@ -403,7 +380,7 @@ def tenant_detail(request: HttpRequest, pk: int):
     failed_by_pk = dict((a.pk, rf) for a, rf in (failed_assignment_forms or []))
 
     def _card_for(a):
-        if not _assignment_editable_by(a, roles, today):
+        if not assignment_editable_by(a, roles, today):
             return (a, None)
         return (a, failed_by_pk.get(a.pk) or TenantRoomAssignmentForm(
             instance=a, prefix=f"room_{a.pk}"))

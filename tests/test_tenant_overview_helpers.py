@@ -6,7 +6,8 @@ No DB — the helpers only read attributes, so lightweight stand-ins suffice.
 from datetime import date, timedelta
 from types import SimpleNamespace
 
-from app.views.tenant import _engagement_verdict, _proof_status
+from app.views._shared import engagement_verdict as _engagement_verdict
+from app.views.tenant import _proof_status
 
 TODAY = date(2026, 8, 17)
 
