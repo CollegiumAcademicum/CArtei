@@ -81,7 +81,7 @@
       <p style="color:#888;font-size:.9rem;margin:.25rem 0;">Kein aktuelles Zimmer.</p>
       {% endfor %}
       {% if past_assignment_cards %}
-      <details style="margin-top:.75rem;">
+      <details class="ca-collapse" style="margin-top:.75rem;">
         <summary style="cursor:pointer;list-style:none;font-weight:500;">
           Frühere Zimmer ({{ past_assignment_cards|length }}) ▾
         </summary>
@@ -93,7 +93,7 @@
       </details>
       {% endif %}
       {% if can_create_room %}
-      <details style="margin-top:.75rem;" {% if new_room_form.errors %}open{% endif %}>
+      <details class="ca-collapse" style="margin-top:.75rem;" {% if new_room_form.errors %}open{% endif %}>
         <summary style="cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:.5rem;">
           <span class="ca-button-outline" style="padding:.1rem .55rem;font-size:1.1rem;border-radius:4px;line-height:1.4;">+</span>
           <span style="font-size:.9rem;color:#555;">Zimmer zuordnen</span>

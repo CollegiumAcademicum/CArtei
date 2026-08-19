@@ -91,7 +91,7 @@
     <h2 class="lp-h2">Unter der Haube</h2>
     <p class="lp-sub">Für die Technikbegeisterten: aufklappen und mitlesen.</p>
 
-    <details class="lp-toggle">
+    <details class="lp-toggle ca-collapse">
       <summary>Architektur: drei Repositories <span class="lp-chip">Aufbau</span></summary>
       <div class="lp-toggle-body">
         <p>CArtei ist bewusst in drei eigenständige Repositories geteilt, die
@@ -107,7 +107,7 @@
       </div>
     </details>
 
-    <details class="lp-toggle">
+    <details class="lp-toggle ca-collapse">
       <summary>Technologie-Stack <span class="lp-chip">Stack</span></summary>
       <div class="lp-toggle-body">
         <ul>
@@ -121,7 +121,7 @@
       </div>
     </details>
 
-    <details class="lp-toggle">
+    <details class="lp-toggle ca-collapse">
       <summary>Ein Schema, überall gespiegelt <span class="lp-chip">Datenmodell</span></summary>
       <div class="lp-toggle-body">
         <p>Das Datenmodell existiert nur an <em>einer</em> Stelle: in <code>cartei_db</code>.
@@ -133,7 +133,7 @@
       </div>
     </details>
 
-    <details class="lp-toggle">
+    <details class="lp-toggle ca-collapse">
       <summary>Rollenbasierter Zugriff bis auf Feldebene <span class="lp-chip">Zugriff</span></summary>
       <div class="lp-toggle-body">
         <p>Sichtbarkeit und Editierbarkeit werden pro Feld aufgelöst (~19 Felder) – anhand der
@@ -145,7 +145,7 @@
       </div>
     </details>
 
-    <details class="lp-toggle">
+    <details class="lp-toggle ca-collapse">
       <summary>Audit-Trail auf Datenbankebene <span class="lp-chip">Audit</span></summary>
       <div class="lp-toggle-body">
         <p>Jede Änderung wird per PostgreSQL-Trigger nach <code>audit_history</code> geschrieben –
@@ -157,7 +157,7 @@
       </div>
     </details>
 
-    <details class="lp-toggle">
+    <details class="lp-toggle ca-collapse">
       <summary>Betrieb &amp; Deployment <span class="lp-chip">Ops</span></summary>
       <div class="lp-toggle-body">
         <p>Zwei getrennte VMs (Datenbank + App), betrieben mit Podman Compose. systemd-Oneshot-Services
