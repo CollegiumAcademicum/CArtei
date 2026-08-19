@@ -94,23 +94,26 @@ def wg_detail(request: HttpRequest, pk: int):
             .order_by("-moved_in")
         )
         cards = []
+        active_count = 0
         for a in assignments:
             a.active_on_asof = a.id in active_pks
             if a.active_on_asof:
                 active_tenant_ids.add(a.tenant_id)
+                active_count += 1
             if can_edit_rooms and assignment_editable_by(a, roles, today):
                 aform = failed.get(a.pk) or TenantRoomAssignmentForm(instance=a, prefix=f"room_{a.pk}")
             else:
                 aform = None
-            cards.append({"assignment": a, "aform": aform})
-        rooms.append({"room": room, "cards": cards})
+            occupant = display(a.tenant) if may_see_names else None
+            cards.append({"assignment": a, "aform": aform, "occupant": occupant})
+        rooms.append({"room": room, "cards": cards, "active_count": active_count})
 
     rollup = _engagement_rollup(list(active_tenant_ids), as_of) if show_engagement else None
 
     return render(request, "app/wg_detail.html", {
         "wg": wg, "as_of": as_of, "rooms": rooms,
         "show_engagement": show_engagement, "rollup": rollup,
-        "may_see_names": may_see_names,
+        "may_see_names": may_see_names, "can_edit_rooms": can_edit_rooms,
     })
 
 

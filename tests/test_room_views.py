@@ -132,7 +132,7 @@ def test_detail_mv_can_edit_assignment(client):
 
 
 def test_detail_owner_cannot_edit(client):
-    _login(client, "gr.cluster")  # neither MV/admin nor belegium
+    _login(client, "gr.cluster")  # cluster role: neither MV/admin nor belegium — read-only
     b, wg, room, t = _housing()
     a = TenantRoomAssignment.objects.create(
         tenant=t, room=room, moved_in=datetime.date(2026, 1, 1), moved_out=None,
@@ -143,3 +143,32 @@ def test_detail_owner_cannot_edit(client):
     })
     a.refresh_from_db()
     assert a.moved_in == datetime.date(2026, 1, 1)  # unchanged — read-only for this role
+
+
+# ---- Finding 1: PII gate on detail view -----------------------------------------
+
+def test_detail_history_hidden_for_non_room_staff(client):
+    """gr.cluster viewer (not room-staff) sees belegt/frei summary, not cards/names/dates/forms."""
+    _login(client, "gr.cluster")
+    b, wg, room, t = _housing()
+    TenantRoomAssignment.objects.create(
+        tenant=t, room=room, moved_in=datetime.date(2026, 1, 1), moved_out=None,
+    )
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert resp.status_code == 200
+    assert b"Mira" not in resp.content
+    assert b"2026-01-01" not in resp.content  # no move-in date string
+    assert b"form-room-" not in resp.content  # no edit form
+    assert b"belegt" in resp.content
+
+
+def test_detail_shows_occupant_name_for_mv(client):
+    """ag.mietverwaltung viewer (room-staff + may_see_names) sees occupant display name."""
+    _login(client, "ag.mietverwaltung")
+    b, wg, room, t = _housing()
+    TenantRoomAssignment.objects.create(
+        tenant=t, room=room, moved_in=datetime.date(2026, 1, 1), moved_out=None,
+    )
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert resp.status_code == 200
+    assert b"Mira" in resp.content
