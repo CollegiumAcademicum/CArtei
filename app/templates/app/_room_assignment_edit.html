@@ -1,5 +1,8 @@
-{# One editable room assignment. Read-only until "Bearbeiten"; needs: assignment, aform. #}
+{% comment %}One room assignment. Editable when `aform` is set (MV/admin, or Belegium
+in-window), read-only otherwise. Needs: assignment; optional aform,
+can_see_assignment_docs, show_assignment_notes.{% endcomment %}
 <div class="ca-room-assignment{% if assignment.is_sublet %} ca-room-assignment--sublet{% endif %}">
+  {% if aform %}
   {% comment %}Per-assignment save form. Empty by design: the field widgets and the
   Speichern button attach via form="form-room-{pk}" so this form never wraps (and thus
   never nests) the document upload/revoke <form>s living inside .ca-room-fields.{% endcomment %}
@@ -8,6 +11,7 @@
     <input type="hidden" name="section" value="housing">
     <input type="hidden" name="assignment_ids" value="{{ assignment.pk }}">
   </form>
+  {% endif %}
   <div class="ca-room-display"{% if aform.errors %} style="display:none;"{% endif %}>
     <div class="ca-room-main">
       <span class="ca-room-name">{{ assignment.room.wg.building.name }} · {{ assignment.room.wg.name }} · {{ assignment.room.name }}</span>
@@ -20,10 +24,11 @@
         {% if assignment.key_received %}<span class="ca-room-badge">Schlüssel erhalten {{ assignment.key_received }}</span>{% endif %}
         {% if assignment.key_returned %}<span class="ca-room-badge">Schlüssel abgegeben {{ assignment.key_returned }}</span>{% endif %}
       </span>
-      {% include "app/_assignment_documents.html" with mode="status" %}
+      {% if can_see_assignment_docs %}{% include "app/_assignment_documents.html" with mode="status" %}{% endif %}
     </div>
-    <button type="button" class="ca-room-edit-btn">✎ Bearbeiten</button>
+    {% if aform %}<button type="button" class="ca-room-edit-btn">✎ Bearbeiten</button>{% endif %}
   </div>
+  {% if aform %}
   <div class="ca-room-fields"{% if not aform.errors %} style="display:none;"{% endif %}>
     <div class="ca-room-actions">
       <button type="submit" form="form-room-{{ assignment.pk }}" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
@@ -80,6 +85,8 @@
         {% if aform.deposit_iban.errors %}<div style="color:#b00;font-size:.85rem;">{{ aform.deposit_iban.errors }}</div>{% endif %}
       </div>
     </div>
-    {% include "app/_assignment_documents.html" with mode="edit" %}
+    {% if can_see_assignment_docs %}{% include "app/_assignment_documents.html" with mode="edit" %}{% endif %}
   </div>
+  {% endif %}
+  {% if show_assignment_notes %}{% include "app/_assignment_notes.html" %}{% endif %}
 </div>

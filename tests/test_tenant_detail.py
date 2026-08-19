@@ -165,6 +165,102 @@ def test_past_assignment_is_editable_for_manager(settings):
 
 
 @pytest.mark.django_db
+def test_belegium_edits_in_window_assignment_and_sees_notes(settings):
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"belegium": ["gr.belegium"], "mietverwaltung": ["ag.mietverwaltung"]}
+    t = _tenant("belsubj")
+    b = Building.objects.create(name="BB"); wg = WG.objects.create(building=b, name="BWG")
+    room = Room.objects.create(wg=wg, name="B1", size_sqm=12)
+    TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=datetime.date.today())
+    c = Client()
+    _login(c, "belu", groups=["gr.belegium"])
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert 'name="assignment_ids"' in body           # editable card (in window)
+    assert "Interne Notizen (Belegung)" in body       # shared notes panel
+    assert 'value="belegung"' in body                 # note add form posts belegung
+
+
+@pytest.mark.django_db
+def test_belegium_readonly_outside_window_but_can_note(settings):
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"belegium": ["gr.belegium"]}
+    t = _tenant("belold")
+    b = Building.objects.create(name="BC"); wg = WG.objects.create(building=b, name="CWG")
+    room = Room.objects.create(wg=wg, name="C1", size_sqm=12)
+    old = datetime.date.today() - datetime.timedelta(days=30)
+    a = TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=old)
+    c = Client()
+    _login(c, "belo", groups=["gr.belegium"])
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert f'name="room_{a.pk}-room"' not in body    # read-only, no edit fields
+    assert "Interne Notizen (Belegung)" in body       # can still note
+
+
+@pytest.mark.django_db
+def test_belegium_cannot_edit_outside_window_via_post(settings):
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"belegium": ["gr.belegium"]}
+    t = _tenant("belpost")
+    b = Building.objects.create(name="BD"); wg = WG.objects.create(building=b, name="DWG")
+    room = Room.objects.create(wg=wg, name="D1", size_sqm=12)
+    room2 = Room.objects.create(wg=wg, name="D2", size_sqm=12)
+    old = datetime.date.today() - datetime.timedelta(days=30)
+    a = TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=old)
+    c = Client()
+    _login(c, "belp", groups=["gr.belegium"])
+    resp = c.post(f"/tenants/{t.pk}/", {
+        "section": "housing", "assignment_ids": str(a.pk),
+        f"room_{a.pk}-room": str(room2.pk), f"room_{a.pk}-moved_in": old.isoformat(),
+        "new_room-moved_in": "",
+    })
+    assert resp.status_code in (200, 302)
+    a.refresh_from_db()
+    assert a.room_id == room.pk, "Out-of-window edit must be ignored"
+
+
+@pytest.mark.django_db
+def test_belegium_can_create_in_window_assignment(settings):
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"belegium": ["gr.belegium"]}
+    t = _tenant("belnew")
+    b = Building.objects.create(name="BE"); wg = WG.objects.create(building=b, name="EWG")
+    room = Room.objects.create(wg=wg, name="E1", size_sqm=12)
+    c = Client()
+    _login(c, "beln", groups=["gr.belegium"])
+    resp = c.post(f"/tenants/{t.pk}/", {
+        "section": "housing",
+        "new_room-room": str(room.pk),
+        "new_room-moved_in": datetime.date.today().isoformat(),
+    })
+    assert resp.status_code == 302
+    assert TenantRoomAssignment.objects.filter(tenant=t, room=room).exists()
+
+
+@pytest.mark.django_db
+def test_belegium_cannot_create_out_of_window_assignment(settings):
+    import datetime
+    from app.models import Building, WG, Room, TenantRoomAssignment
+    settings.TENANT_ROLE_GROUPS = {"belegium": ["gr.belegium"]}
+    t = _tenant("belnew2")
+    b = Building.objects.create(name="BF"); wg = WG.objects.create(building=b, name="FWG")
+    room = Room.objects.create(wg=wg, name="F1", size_sqm=12)
+    old = datetime.date.today() - datetime.timedelta(days=30)
+    c = Client()
+    _login(c, "beln2", groups=["gr.belegium"])
+    resp = c.post(f"/tenants/{t.pk}/", {
+        "section": "housing",
+        "new_room-room": str(room.pk),
+        "new_room-moved_in": old.isoformat(),
+    })
+    assert resp.status_code == 200   # re-rendered with error
+    assert not TenantRoomAssignment.objects.filter(tenant=t).exists()
+
+
+@pytest.mark.django_db
 def test_housing_post_saves_without_new_room(settings):
     """Housing section should save existing assignment changes even when new-room form is blank."""
     import datetime

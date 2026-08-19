@@ -16,6 +16,7 @@ _ROLE_LABELS = {
     "owner": "Bewohner*in selbst",
     "mietverwaltung": "Mietverwaltung",
     "cluster": "Cluster",
+    "belegium": "Belegium",
     "finanzierung": "Finanzierung",
     "admin": "Admin",
 }

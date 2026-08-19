@@ -21,12 +21,15 @@ class AGHealth(models.TextChoices):
 class NoteSourceGroup(models.TextChoices):
     MIETVERWALTUNG = "mietverwaltung", "Mietverwaltung"
     CLUSTERSPRECHENDE = "clustersprechende", "Clustersprechende"
+    # Shared thread on room assignments — written by Mietverwaltung *and* Belegium.
+    BELEGUNG = "belegung", "Belegung"
 
 
 class NoteSubjectType(models.TextChoices):
     TENANT = "tenant", "Bewohner:in"
     CLUSTER = "cluster", "Cluster"
     WG = "wg", "WG"
+    ROOM_ASSIGNMENT = "room_assignment", "Zimmerbelegung"
 
 
 class Tenant(models.Model):

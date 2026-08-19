@@ -1,5 +1,5 @@
 from collections import namedtuple
-from datetime import date
+from datetime import date, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -20,6 +20,20 @@ from app.tenant_access import (
 
 # Statuses that clear the engagement flag: being reported active in an AG.
 _ACTIVE_STATES = {"AKTIV", "ZU_AKTIV"}
+
+# Belegium may edit an assignment's room data only for future move-ins and the
+# first two weeks after move-in (moved_in >= today - 14d); read-only afterwards.
+BELEGIUM_EDIT_WINDOW = timedelta(days=14)
+
+
+def _assignment_editable_by(a, roles, today):
+    """Who may edit an assignment's room data. MV/admin: always. Belegium: only
+    inside the move-in window. Everyone else (owner): never."""
+    if {"mietverwaltung", "admin"} & roles:
+        return True
+    if "belegium" in roles:
+        return a.moved_in >= today - BELEGIUM_EDIT_WINDOW
+    return False
 
 ProofStatus = namedtuple("ProofStatus", "state count")
 
@@ -267,7 +281,9 @@ def tenant_detail(request: HttpRequest, pk: int):
     roles = viewer_roles(request.user, tenant, _current_tenant(request))
     visible = visible_fields(roles)
     editable = editable_fields(roles)
-    can_manage_room = bool({"mietverwaltung", "admin"} & roles)
+    today = date.today()
+    # May touch the housing room forms at all (per-assignment authorization below).
+    can_edit_rooms = bool({"mietverwaltung", "admin", "belegium"} & roles)
 
     # Bound room forms from a failed POST — carried into context-building below.
     failed_assignment_forms = None
@@ -280,26 +296,33 @@ def tenant_detail(request: HttpRequest, pk: int):
 
         # Housing carries no editable tenant fields (Ersteinzug/Auszug are computed);
         # it's still submittable to manage room assignments.
-        housing_room_edit = section_key == "housing" and can_manage_room
+        housing_room_edit = section_key == "housing" and can_edit_rooms
         if not allowed and not housing_room_edit:
             messages.error(request, "Keine Berechtigung zum Bearbeiten.")
             return redirect("tenant_detail", pk=pk)
 
         form = TenantForm(request.POST, instance=tenant, allowed_fields=allowed)
 
-        # Build room forms when the housing section is submitted.
+        # Build room forms when the housing section is submitted. Each submitted
+        # assignment is authorized individually — Belegium may only edit in-window ones.
         a_forms = []
         new_rf = None
-        if section_key == "housing" and can_manage_room:
+        if section_key == "housing" and can_edit_rooms:
             for pk_str in request.POST.getlist("assignment_ids"):
                 a = TenantRoomAssignment.objects.filter(pk=pk_str, tenant=tenant).first()
-                if a:
+                if a and _assignment_editable_by(a, roles, today):
                     rf = TenantRoomAssignmentForm(request.POST, instance=a, prefix=f"room_{a.pk}")
                     a_forms.append((a, rf))
             new_rf = TenantRoomAssignmentForm(request.POST, prefix="new_room")
 
         new_room_selected = bool(new_rf and request.POST.get("new_room-room"))
         new_rf_ok = not new_room_selected or new_rf.is_valid()
+        # Belegium may only create assignments within their edit window.
+        if (new_room_selected and new_rf_ok and "belegium" in roles
+                and not {"mietverwaltung", "admin"} & roles
+                and new_rf.cleaned_data["moved_in"] < today - BELEGIUM_EDIT_WINDOW):
+            new_rf.add_error("moved_in", "Belegium darf Zimmer nur ab zwei Wochen vor Einzug zuordnen.")
+            new_rf_ok = False
 
         if form.is_valid() and all(rf.is_valid() for _, rf in a_forms) and new_rf_ok:
             form.save()
@@ -328,12 +351,10 @@ def tenant_detail(request: HttpRequest, pk: int):
         "sections": _build_sections(tenant, form, visible, editable),
         "can_edit": bool(editable),
         "roles": roles,
-        "can_manage_room": can_manage_room,
     }
 
-    # Room assignments — fetch for owners, mietverwaltung, admins.
-    today = date.today()
-    if {"owner", "mietverwaltung", "admin"} & roles:
+    # Room assignments — fetch for owners, mietverwaltung, admins and Belegium.
+    if {"owner", "mietverwaltung", "admin", "belegium"} & roles:
         assignments = list(
             TenantRoomAssignment.objects.filter(tenant=tenant)
             .select_related("room__wg__building")
@@ -353,29 +374,44 @@ def tenant_detail(request: HttpRequest, pk: int):
         active_assignments = []
         past_assignments = []
         sublet_out = []
-    ctx["active_assignments"] = active_assignments
-    ctx["past_assignments"] = past_assignments
     ctx["sublet_out"] = sublet_out
 
     for a in active_assignments + past_assignments:
         a.doc_groups = _assignment_doc_groups(a)
 
-    if can_manage_room:
-        # On a failed POST, reuse the bound forms (which hold the errors); otherwise
-        # build a fresh edit form per assignment. Both current and past are editable.
-        failed_by_pk = dict((a.pk, rf) for a, rf in (failed_assignment_forms or []))
+    # Internal notes on room assignments: a shared Belegung thread, read+write for
+    # Mietverwaltung and Belegium (independent of the room-data edit window).
+    # Documents stay owner/MV-only — Belegium sees notes, not Mietverträge.
+    show_assignment_notes = bool({"mietverwaltung", "belegium", "admin"} & roles)
+    ctx["show_assignment_notes"] = show_assignment_notes
+    ctx["can_see_assignment_docs"] = bool({"owner", "mietverwaltung", "admin"} & roles)
+    notes_by_aid = {}
+    if show_assignment_notes and (active_assignments or past_assignments):
+        aids = [a.pk for a in active_assignments + past_assignments]
+        for n in (
+            InternalNote.objects
+            .filter(subject_type="room_assignment", subject_id__in=aids,
+                    source_group="belegung", deleted_at__isnull=True)
+            .select_related("created_by").order_by("created_at")
+        ):
+            notes_by_aid.setdefault(n.subject_id, []).append(n)
+    for a in active_assignments + past_assignments:
+        a.notes = notes_by_aid.get(a.pk, [])
 
-        def _form_for(a):
-            return failed_by_pk.get(a.pk) or TenantRoomAssignmentForm(
-                instance=a, prefix=f"room_{a.pk}"
-            )
+    # Each assignment renders as an editable card (bound form) or read-only (None),
+    # decided per-assignment. Reuse the bound forms from a failed POST for errors.
+    failed_by_pk = dict((a.pk, rf) for a, rf in (failed_assignment_forms or []))
 
-        ctx["active_assignment_forms"] = [(a, _form_for(a)) for a in active_assignments]
-        ctx["past_assignment_forms"] = [(a, _form_for(a)) for a in past_assignments]
-        ctx["new_room_form"] = failed_new_room_form or TenantRoomAssignmentForm(prefix="new_room")
-    else:
-        ctx["active_assignment_forms"] = []
-        ctx["past_assignment_forms"] = []
+    def _card_for(a):
+        if not _assignment_editable_by(a, roles, today):
+            return (a, None)
+        return (a, failed_by_pk.get(a.pk) or TenantRoomAssignmentForm(
+            instance=a, prefix=f"room_{a.pk}"))
+
+    ctx["active_assignment_cards"] = [_card_for(a) for a in active_assignments]
+    ctx["past_assignment_cards"] = [_card_for(a) for a in past_assignments]
+    ctx["can_create_room"] = bool({"mietverwaltung", "admin", "belegium"} & roles)
+    ctx["new_room_form"] = failed_new_room_form or TenantRoomAssignmentForm(prefix="new_room")
 
     can_see_proofs = bool({"owner", "mietverwaltung", "admin"} & roles)
     ctx["can_see_proofs"] = can_see_proofs

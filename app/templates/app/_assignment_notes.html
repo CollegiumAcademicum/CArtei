@@ -1,0 +1,34 @@
+{% comment %}Shared Belegung notes on one room assignment. Read+write for MV and
+Belegium. Needs: assignment (with .notes attached). Rendered only when
+show_assignment_notes.{% endcomment %}
+<div class="ca-assignment-notes" style="margin-top:.5rem;padding-top:.4rem;border-top:1px dashed #e0e0e0;">
+  <p style="font-weight:500;margin:.25rem 0 .3rem;font-size:.9rem;">🗒 Interne Notizen (Belegung)</p>
+  {% if assignment.notes %}
+  <ul style="font-size:.9rem;margin:.2rem 0 .5rem;list-style:none;padding:0;">
+    {% for n in assignment.notes %}
+    <li style="margin-bottom:.25rem;display:flex;align-items:baseline;gap:.5rem;">
+      <span style="color:#7a7a7a;white-space:nowrap;">{{ n.created_at|date:"Y-m-d" }} · {{ n.created_by.first_name }} {{ n.created_by.last_name }}:</span>
+      <span>{{ n.body }}</span>
+      <form method="post" action="{% url 'note_delete' n.pk %}" style="margin-left:auto;">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.05rem .35rem;color:#b00;border-color:#b00;">✕</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p style="color:#888;font-size:.9rem;margin:.2rem 0 .4rem;">Keine Notizen.</p>
+  {% endif %}
+  <form class="ca-note-form" method="post" action="{% url 'note_add' %}">
+    {% csrf_token %}
+    <input type="hidden" name="source_group" value="belegung">
+    <input type="hidden" name="subject_type" value="room_assignment">
+    <input type="hidden" name="subject_id" value="{{ assignment.pk }}">
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <div style="display:flex;align-items:center;gap:.4rem;">
+      <textarea name="body" rows="1" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
+      <button type="submit" class="ca-button" style="padding:.4rem .6rem;font-size:1.05rem;line-height:1;flex-shrink:0;">→</button>
+    </div>
+  </form>
+</div>

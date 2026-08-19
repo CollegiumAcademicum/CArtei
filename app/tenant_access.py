@@ -13,6 +13,7 @@ _OWNER = frozenset({"owner"})
 _OWN_MV = frozenset({"owner", "mietverwaltung"})
 _MV = frozenset({"mietverwaltung"})
 _ADMIN = frozenset({"admin"})
+_OWN_MV_BELEGIUM = frozenset({"owner", "mietverwaltung", "belegium"})
 
 def _f(name, label, visible_to, editable_by):
     return Field(name, label, frozenset(visible_to), frozenset(editable_by))
@@ -33,9 +34,10 @@ SECTIONS = [
         _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _OWNER, _OWNER),
     ]),
     Section("housing", "Wohnen", [
-        # Computed from room assignments — view-only, no editors.
-        _f("ersteinzug", "Ersteinzug", _OWN_MV, frozenset()),
-        _f("auszug", "Auszug", _OWN_MV, frozenset()),
+        # Computed from room assignments — view-only, no editors. Belegium sees these
+        # (and the assignment cards live in this section) for room allocation.
+        _f("ersteinzug", "Ersteinzug", _OWN_MV_BELEGIUM, frozenset()),
+        _f("auszug", "Auszug", _OWN_MV_BELEGIUM, frozenset()),
     ]),
     Section("legal", "Rechtliches", [
         _f("comments", "Admin-Kommentare", _ADMIN, _ADMIN),
@@ -46,12 +48,16 @@ _OWN_MV_ADMIN = frozenset({"owner", "mietverwaltung", "admin"})
 _MV_ADMIN = frozenset({"mietverwaltung", "admin"})
 _OWN_CLUSTER_ADMIN = frozenset({"owner", "cluster", "admin"})
 _CLUSTER_ADMIN = frozenset({"cluster", "admin"})
+# Room-allocation staff. Belegium edits room data only inside the move-in window
+# (future move-ins + first two weeks) — the matrix can't show that nuance.
+_ROOM_STAFF = frozenset({"mietverwaltung", "admin", "belegium"})
 
 # Non-field access rules shown in the permission matrix (not form fields).
 RESOURCE_SECTIONS = [
     Section("rooms", "Zimmer & Mietverträge", [
-        _f("room_assignments_view", "Zimmer-Zuweisungen (aktuell + vergangen)", _OWN_MV_ADMIN, _MV_ADMIN),
-        _f("room_assignments_new", "Neues Zimmer zuweisen", frozenset(), _MV_ADMIN),
+        _f("room_assignments_view", "Zimmer-Zuweisungen (aktuell + vergangen)", _OWN_MV_ADMIN | {"belegium"}, _ROOM_STAFF),
+        _f("room_assignments_new", "Neues Zimmer zuweisen", frozenset(), _ROOM_STAFF),
+        _f("room_assignment_notes", "Zimmerbelegung-Notizen (Belegung)", _ROOM_STAFF, _ROOM_STAFF),
     ]),
     Section("engagement", "AG-Engagement & Cluster-Notizen", [
         _f("engagement_results", "AG-Abfrage-Ergebnisse", _OWN_CLUSTER_ADMIN, frozenset()),

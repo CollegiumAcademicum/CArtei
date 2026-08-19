@@ -7,10 +7,13 @@ from django.views.decorators.http import require_POST
 
 from app.models import InternalNote, NoteSubjectType, Tenant
 
-# Maps viewer role name → NoteSourceGroup value. Extend here to add more groups.
-_ROLE_TO_SOURCE_GROUP = {
-    "mietverwaltung": "mietverwaltung",
-    "cluster": "clustersprechende",
+# Maps viewer role name → NoteSourceGroup value(s) the role may write/delete.
+# "belegung" is a shared thread on room assignments, so both Mietverwaltung and
+# Belegium map to it. Extend here to add more groups.
+_ROLE_TO_SOURCE_GROUPS = {
+    "mietverwaltung": ["mietverwaltung", "belegung"],
+    "cluster": ["clustersprechende"],
+    "belegium": ["belegung"],
 }
 
 
@@ -18,12 +21,12 @@ def _user_source_groups(user):
     """Return list of source_group values the user may write/delete."""
     group_names = set(user.groups.values_list("name", flat=True))
     if "admins" in group_names:
-        return list(_ROLE_TO_SOURCE_GROUP.values())
-    result = []
+        return sorted({g for gs in _ROLE_TO_SOURCE_GROUPS.values() for g in gs})
+    result = set()
     for role, cns in settings.TENANT_ROLE_GROUPS.items():
-        if group_names.intersection(cns) and role in _ROLE_TO_SOURCE_GROUP:
-            result.append(_ROLE_TO_SOURCE_GROUP[role])
-    return result
+        if group_names.intersection(cns) and role in _ROLE_TO_SOURCE_GROUPS:
+            result.update(_ROLE_TO_SOURCE_GROUPS[role])
+    return list(result)
 
 
 def _author(user):

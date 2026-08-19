@@ -168,6 +168,78 @@ def test_delete_note_denied_wrong_group(settings):
 
 
 @pytest.mark.django_db
+def test_belegium_can_add_room_assignment_note(settings):
+    settings.TENANT_ROLE_GROUPS = {"belegium": ["gr.belegium"]}
+    user = _make_user_in_group("bel_user", "gr.belegium")
+    _make_tenant("bel_user")
+    client = Client()
+    client.force_login(user)
+    resp = client.post("/notes/add/", {
+        "source_group": "belegung",
+        "subject_type": "room_assignment",
+        "subject_id": "7",
+        "body": "Belegium note",
+    })
+    assert resp.status_code == 302
+    assert InternalNote.objects.filter(
+        body="Belegium note", source_group="belegung", subject_type="room_assignment"
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_mietverwaltung_can_add_belegung_note(settings):
+    settings.TENANT_ROLE_GROUPS = {"mietverwaltung": ["ag.mietverwaltung"]}
+    user = _make_user_in_group("mv_bel", "ag.mietverwaltung")
+    _make_tenant("mv_bel")
+    client = Client()
+    client.force_login(user)
+    resp = client.post("/notes/add/", {
+        "source_group": "belegung",
+        "subject_type": "room_assignment",
+        "subject_id": "7",
+        "body": "MV belegung note",
+    })
+    assert resp.status_code == 302
+    assert InternalNote.objects.filter(source_group="belegung").exists()
+
+
+@pytest.mark.django_db
+def test_cluster_cannot_add_belegung_note(settings):
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "belegium": ["gr.belegium"]}
+    user = _make_user_in_group("clus_bel", "gr.cluster")
+    _make_tenant("clus_bel")
+    client = Client()
+    client.force_login(user)
+    resp = client.post("/notes/add/", {
+        "source_group": "belegung",
+        "subject_type": "room_assignment",
+        "subject_id": "7",
+        "body": "nope",
+    })
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_belegium_can_delete_mv_authored_belegung_note(settings):
+    # Shared thread: Mietverwaltung writes, Belegium deletes the same note.
+    settings.TENANT_ROLE_GROUPS = {"mietverwaltung": ["ag.mietverwaltung"], "belegium": ["gr.belegium"]}
+    author = _make_tenant("mv_author")
+    bel_user = _make_user_in_group("bel_del", "gr.belegium")
+    _make_tenant("bel_del")
+    from django.utils.timezone import now
+    note = InternalNote.objects.create(
+        body="shared", source_group="belegung", subject_type="room_assignment",
+        subject_id=7, created_at=now(), created_by=author,
+    )
+    client = Client()
+    client.force_login(bel_user)
+    resp = client.post(f"/notes/{note.pk}/delete/", {"next": "/"})
+    assert resp.status_code == 302
+    note.refresh_from_db()
+    assert note.deleted_at is not None
+
+
+@pytest.mark.django_db
 def test_admin_can_delete_any_note(settings):
     settings.TENANT_ROLE_GROUPS = {"mietverwaltung": ["ag.mietverwaltung"]}
     author = _make_tenant("author_admin_delete")

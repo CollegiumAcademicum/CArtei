@@ -167,6 +167,7 @@ TENANT_ROLE_GROUPS = {
     # app/auth.CustomLDAPBackend); the "admin" role can view/edit all fields.
     "admin": _group_list("TENANT_GROUP_ADMIN", "admins"),
     "cluster": _group_list("TENANT_GROUP_CLUSTER", "gr.cluster"),
+    "belegium": _group_list("TENANT_GROUP_BELEGIUM", "gr.belegium"),
     "mietverwaltung": _group_list("TENANT_GROUP_MIETVERWALTUNG", "cartei_mietverwaltung"),
     "finanzierung": _group_list("TENANT_GROUP_FINANZIERUNG", "ag.finanzierung"),
 }
