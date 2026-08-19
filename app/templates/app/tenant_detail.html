@@ -71,8 +71,8 @@
       {% endfor %}
     </div>
     {% if active_assignment_cards or past_assignment_cards or can_create_room %}
-      {# Each editable card carries its own <form id="form-room-{pk}"> for per-card save/revert.
-         aform is None for read-only cards (owner, or Belegium outside the edit window). #}
+      {# Each editable card carries its own <form id="form-room-{pk}"> for per-card save/revert. #}
+      {# aform is None for read-only cards (owner, or Belegium outside the edit window). #}
       <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
       <p style="font-weight:500;margin:.25rem 0 .4rem;">Aktuelle Zimmer
         {% if can_create_room %}<span class="ca-hint" tabindex="0" role="button" aria-label="Wer kann Zimmerbelegungen bearbeiten?">i<span class="ca-hint-bubble">Die Mietverwaltung kann Zimmerbelegungen jederzeit bearbeiten. Die Belegium nur bei zukünftigen Einzügen und in den ersten zwei Wochen nach Einzug – danach nur Lesezugriff. Notizen bleiben für beide immer bearbeitbar.</span></span>{% endif %}</p>
