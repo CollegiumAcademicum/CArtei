@@ -48,7 +48,7 @@
               <td>{{ r.room.size_sqm }}</td>
               <td>
                 {% if r.occupants %}
-                  {% if may_see_names %}{{ r.occupants|join:", " }}{% else %}<span class="ca-pill ca-pill-green">belegt ({{ r.occupants|length }})</span>{% endif %}
+                  {% if may_see_names %}{% for o in r.occupants %}<a href="{% url 'tenant_detail' o.pk %}" class="ca-tl-name">{{ o.label }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="ca-pill ca-pill-green">belegt ({{ r.occupants|length }})</span>{% endif %}
                 {% else %}<span class="ca-tl-muted">frei</span>{% endif %}
               </td>
             </tr>

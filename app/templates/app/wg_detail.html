@@ -23,7 +23,7 @@
   {% if can_edit_rooms %}
     {% for c in r.cards %}
       <div class="{% if c.assignment.active_on_asof %}wg-current{% endif %}">
-        {% if c.occupant %}<div class="wg-occupant">{{ c.occupant }}</div>{% endif %}
+        {% if c.occupant %}<div class="wg-occupant"><a href="{% url 'tenant_detail' c.assignment.tenant.pk %}" class="ca-tl-name">{{ c.occupant }}</a></div>{% endif %}
         {% include "app/_room_assignment_edit.html" with assignment=c.assignment aform=c.aform %}
       </div>
     {% empty %}

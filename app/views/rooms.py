@@ -31,7 +31,8 @@ def _occupants_by_room(as_of, may_see_names):
         .select_related("tenant")
     )
     for a in qs:
-        out.setdefault(a.room_id, []).append(display(a.tenant) if may_see_names else "belegt")
+        label = display(a.tenant) if may_see_names else "belegt"
+        out.setdefault(a.room_id, []).append({"pk": a.tenant_id, "label": label})
     return out
 
 

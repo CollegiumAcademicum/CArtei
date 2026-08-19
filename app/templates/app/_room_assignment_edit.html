@@ -18,7 +18,7 @@ can_see_assignment_docs, show_assignment_notes.{% endcomment %}
       <span class="ca-room-meta">
         <span>Eingezogen {{ assignment.moved_in }}</span>
         <span>{% if assignment.moved_out %}Ausgezogen {{ assignment.moved_out }}{% else %}aktuell{% endif %}</span>
-        {% if assignment.is_sublet %}<span class="ca-room-badge ca-room-badge--sublet">Untermiete{% if assignment.sublet_of_tenant %} von {{ assignment.sublet_of_tenant.first_name }} {{ assignment.sublet_of_tenant.last_name }}{% endif %}</span>{% endif %}
+        {% if assignment.is_sublet %}<span class="ca-room-badge ca-room-badge--sublet">Untermiete{% if assignment.sublet_of_tenant %} von <a href="{% url 'tenant_detail' assignment.sublet_of_tenant.pk %}">{{ assignment.sublet_of_tenant.first_name }} {{ assignment.sublet_of_tenant.last_name }}</a>{% endif %}</span>{% endif %}
         {% if assignment.mailbox_key_received %}<span class="ca-room-badge">Briefkastenschlüssel erhalten {{ assignment.mailbox_key_received }}</span>{% endif %}
         {% if assignment.mailbox_key_returned %}<span class="ca-room-badge">Briefkastenschlüssel abgegeben {{ assignment.mailbox_key_returned }}</span>{% endif %}
         {% if assignment.key_received %}<span class="ca-room-badge">Schlüssel erhalten {{ assignment.key_received }}</span>{% endif %}
