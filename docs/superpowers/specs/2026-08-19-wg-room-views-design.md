@@ -111,10 +111,21 @@ Efficiency: prefetch assignments + tenants to avoid N+1 (`select_related` /
    same form action so it round-trips back to the WG detail. (Planning step must
    confirm where the assignment-edit POST currently lives and reuse it.)
 3. **Engagement rollup** — over residents active on `as_of`, count how many meet
-   engagement via `_engagement_verdict`, evaluated against the **most recent
-   Abfrage only** (latest by date) — engagement is *not* time-traveled. Display
-   "X von Y erfüllen ihr Engagement". Shown only to roles that already see
-   engagement (`cluster` / `admin`), matching `tenant_list`'s `show_surveys`.
+   engagement via `_engagement_verdict`. This **time-travels too**: the survey
+   used is the most recent Abfrage *as of the selected date* — the latest
+   `AGAbfrage` whose `date <= as_of` (not the globally latest). Display
+   "X von Y erfüllen ihr Engagement (Abfrage <label/date>)". Shown only to roles
+   that already see engagement (`cluster` / `admin`), matching `tenant_list`'s
+   `show_surveys`.
+
+   Ceiling: the verdict reads that survey's **current** result rows, not their
+   values as of `as_of`. `AGAbfrageResult` is `Historized`, so exact
+   point-in-time statuses live in `entity_history`, but reading that snapshot is
+   deferred (same call as room-attribute history). Selecting the correct survey
+   for the date is the meaningful travel; re-reading historical status values is
+   a later refinement.
+   <!-- ponytail: uses current result rows of the as-of survey, not entity_history snapshots; add history read if point-in-time status values are needed -->
+
 4. **Zustand & Schäden (stub)** — a placeholder card noting damage assessment is
    coming. No logic. This is the Spec #2 seam.
 
@@ -125,8 +136,8 @@ request (?as_of) ──▶ parse_as_of() ──▶ assignment_active_on(as_of)
                                           │
         WG/Room/Building query ───────────┤──▶ per-room occupant (as_of)
                                           │
-        latest Abfrage + results ─────────┴──▶ _engagement_verdict per resident
-                                                 └─▶ rollup count
+   Abfrage where date<=as_of (latest) ────┴──▶ _engagement_verdict per resident
+        + its result rows                        └─▶ rollup count
         visible_fields(roles) ──▶ gate occupant name in both templates
 ```
 
@@ -136,8 +147,8 @@ request (?as_of) ──▶ parse_as_of() ──▶ assignment_active_on(as_of)
 - WG not found → 404.
 - Room with zero or multiple active assignments on `as_of` → render gracefully
   (frei / show earliest), no exception.
-- No Abfrage exists yet → engagement rollup shows "keine Abfrage" rather than
-  dividing by zero.
+- No Abfrage with `date <= as_of` → engagement rollup shows "keine Abfrage"
+  rather than dividing by zero.
 
 ## Testing (`tests/test_room_views.py`, pytest-django)
 
@@ -151,8 +162,11 @@ managed for the SQLite test DB. Cases:
 3. **Name gating** — a viewer whose roles don't grant `first_name` sees
    belegt/frei but not the occupant's name; an MV viewer sees the name.
 4. **Engagement rollup** — with one resident cleared and one flagged against the
-   latest Abfrage, the WG detail reports "1 von 2".
-5. **Bad `as_of`** — garbage query value falls back to today, 200 not 500.
+   as-of survey, the WG detail reports "1 von 2".
+5. **Engagement time-travel** — two Abfragen (`date` before and after `as_of`);
+   the rollup uses the one whose `date <= as_of`, and switching `as_of` across
+   the later survey's date changes which survey is counted.
+6. **Bad `as_of`** — garbage query value falls back to today, 200 not 500.
 
 ## Files touched
 
