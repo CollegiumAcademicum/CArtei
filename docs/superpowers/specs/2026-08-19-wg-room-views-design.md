@@ -84,14 +84,14 @@ existing helper omits it because live callers assume today ≥ move-in).
 ## View 1 — WG list (`/wgs/`)
 
 **Query:** all `Building`s → their `WG`s → their `Room`s (ordered
-Building.name, WG.name, Room.name). For each room, the assignment active on
-`as_of` (at most one expected; if data has overlaps, show the earliest-moved-in
-and don't crash).
+Building.name, WG.name, Room.name). For each room, **all** assignments active on
+`as_of` — a room can legitimately have several concurrent occupants (sublets via
+`is_sublet` / `sublet_of_tenant`, shared rooms). Occupancy is always a list.
 
 **Renders:** grouped sections Building › WG (WG heading links to its detail,
 carrying the same `as_of`). Per room row: `name`, `size_sqm`, `freifinanziert`
-badge, and occupancy — occupant `_display` name if the viewer may see names,
-else just **belegt / frei**.
+badge, and occupancy — the list of occupant `_display` names if the viewer may
+see names, else a **belegt (N) / frei** badge with the count.
 
 Efficiency: prefetch assignments + tenants to avoid N+1 (`select_related` /
 `prefetch_related` or a single grouped query keyed by room_id).
@@ -104,13 +104,15 @@ Efficiency: prefetch assignments + tenants to avoid N+1 (`select_related` /
 2. **Rooms + assignment history** — for each room in the WG: its full
    assignment history (all assignments ever, newest first), rendered with the
    existing `_room_assignment_edit.html` partial and its perms
-   (`_assignment_editable_by`). The assignment active on `as_of` is visually
-   marked as the current-on-that-date occupant. Editing posts through the
+   (`_assignment_editable_by`). **Every** assignment active on `as_of` is
+   visually marked as current-on-that-date (a room may have several at once —
+   sublets, shared rooms). Editing posts through the
    **existing** assignment-edit endpoint/form — no new write path is introduced
    here; if the current edit POST is bound to the tenant detail page, expose the
    same form action so it round-trips back to the WG detail. (Planning step must
    confirm where the assignment-edit POST currently lives and reuse it.)
-3. **Engagement rollup** — over residents active on `as_of`, count how many meet
+3. **Engagement rollup** — over the distinct residents active on `as_of` across
+   all rooms of the WG (a room may hold several), count how many meet
    engagement via `_engagement_verdict`. This **time-travels too**: the survey
    used is the most recent Abfrage *as of the selected date* — the latest
    `AGAbfrage` whose `date <= as_of` (not the globally latest). Display
@@ -134,7 +136,7 @@ Efficiency: prefetch assignments + tenants to avoid N+1 (`select_related` /
 ```
 request (?as_of) ──▶ parse_as_of() ──▶ assignment_active_on(as_of)
                                           │
-        WG/Room/Building query ───────────┤──▶ per-room occupant (as_of)
+        WG/Room/Building query ───────────┤──▶ per-room occupant list (as_of)
                                           │
    Abfrage where date<=as_of (latest) ────┴──▶ _engagement_verdict per resident
         + its result rows                        └─▶ rollup count
@@ -145,8 +147,8 @@ request (?as_of) ──▶ parse_as_of() ──▶ assignment_active_on(as_of)
 
 - Bad/absent `as_of` → today (never 500).
 - WG not found → 404.
-- Room with zero or multiple active assignments on `as_of` → render gracefully
-  (frei / show earliest), no exception.
+- Room with zero active assignments on `as_of` → **frei**. Multiple active
+  assignments is normal (sublet/shared) → list all occupants, not an error.
 - No Abfrage with `date <= as_of` → engagement rollup shows "keine Abfrage"
   rather than dividing by zero.
 
@@ -159,6 +161,9 @@ managed for the SQLite test DB. Cases:
 2. **As-of occupancy** — a room with an assignment `[moved_in, moved_out]` shows
    the occupant when `as_of` is inside the window, **frei** outside it (past and
    future dates).
+2b. **Concurrent occupants** — a room with two overlapping active assignments
+   (e.g. a sublet) lists both occupants on that date; both are counted once each
+   in the engagement rollup.
 3. **Name gating** — a viewer whose roles don't grant `first_name` sees
    belegt/frei but not the occupant's name; an MV viewer sees the name.
 4. **Engagement rollup** — with one resident cleared and one flagged against the
