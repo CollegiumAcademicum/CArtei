@@ -20,6 +20,7 @@
 
 {% for r in rooms %}
   <h3 style="font-size:1rem;margin-top:1rem;">{{ r.room.name }}</h3>
+  <p style="color:#666;margin:.2rem 0;">Größe: {{ r.room.size_sqm }} m²</p>
   <p style="color:#666;margin:.2rem 0;">Ausstattung:
     {% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span style="color:#888;">keine</span>{% endif %}
   </p>

@@ -32,12 +32,16 @@ class TenantForm(forms.ModelForm):
 
 
 class RoomFurnitureForm(forms.ModelForm):
-    """Ausstattung editor for a single room (Mietverwaltung + AG Werkstatt)."""
+    """Room editor for size + Ausstattung (Mietverwaltung + AG Werkstatt)."""
 
     class Meta:
         model = Room
-        fields = ["has_mattress", "has_bed", "has_table", "has_closet"]
-        labels = {"has_mattress": "Matratze", "has_bed": "Bett", "has_table": "Tisch", "has_closet": "Schrank"}
+        fields = ["size_sqm", "has_mattress", "has_bed", "has_table", "has_closet"]
+        labels = {
+            "size_sqm": "Größe (m²)", "has_mattress": "Matratze",
+            "has_bed": "Bett", "has_table": "Tisch", "has_closet": "Schrank",
+        }
+        widgets = {"size_sqm": forms.NumberInput(attrs={"step": "0.01", "min": "0", "class": "ca-input"})}
 
 
 class TenantRoomAssignmentForm(forms.ModelForm):

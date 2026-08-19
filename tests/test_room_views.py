@@ -1,4 +1,6 @@
 import datetime
+from decimal import Decimal
+
 import pytest
 from django.contrib.auth.models import Group, User
 from django.urls import reverse
@@ -233,6 +235,7 @@ def test_detail_werkstatt_can_edit_furniture(client):
     assert b"furniture_room_id" in resp.content  # editor rendered
     resp = client.post(reverse("wg_detail", args=[wg.pk]), {
         "furniture_room_id": str(room.pk),
+        f"furn_{room.pk}-size_sqm": "18.5",
         f"furn_{room.pk}-has_bed": "on",
         f"furn_{room.pk}-has_closet": "on",
     })
@@ -240,6 +243,7 @@ def test_detail_werkstatt_can_edit_furniture(client):
     room.refresh_from_db()
     assert room.has_bed and room.has_closet
     assert not room.has_mattress and not room.has_table
+    assert room.size_sqm == Decimal("18.5")
 
 
 def test_detail_werkstatt_cannot_edit_assignments(client):
