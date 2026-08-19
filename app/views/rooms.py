@@ -13,12 +13,19 @@ from app.views._shared import (
     ACTIVE_STATES,
     assignment_editable_by,
     display,
-    engagement_verdict,
     submitted_assignment_forms,
 )
 
 # Room furniture ("Ausstattung"), rendered as a comma-joined list per room.
 AUSSTATTUNG = [("has_mattress", "Matratze"), ("has_bed", "Bett"), ("has_table", "Tisch"), ("has_closet", "Schrank")]
+
+# Engagement states ranked best→worst. A tenant with several AG results is
+# bucketed once, by their most favourable status. AKTIV/ZU_AKTIV clear the flag.
+ENGAGEMENT_ORDER = ["AKTIV", "ZU_AKTIV", "IM_GESPRAECH", "NICHT_AUSREICHEND", "INAKTIV"]
+ENGAGEMENT_LABELS = {
+    "AKTIV": "aktiv", "ZU_AKTIV": "zu aktiv", "IM_GESPRAECH": "im Gespräch",
+    "NICHT_AUSREICHEND": "nicht ausreichend", "INAKTIV": "inaktiv",
+}
 
 
 def parse_as_of(request: HttpRequest) -> date:
@@ -46,19 +53,33 @@ def _occupants_by_room(as_of, may_see_names):
 
 
 def _engagement_rollup(tenant_ids, as_of):
-    """met/total over tenant_ids against the most recent Abfrage as of as_of
-    (latest AGAbfrage.date <= as_of). None when no survey qualifies."""
+    """met/total plus a per-state breakdown over tenant_ids against the most
+    recent Abfrage as of as_of (latest AGAbfrage.date <= as_of). Each tenant is
+    counted once, in their best (most engaged) status; tenants with no result
+    fall into 'kein Eintrag'. None when no tenants or no survey qualifies."""
     if not tenant_ids:
         return None
     ab = AGAbfrage.objects.filter(date__lte=as_of).order_by("-date").first()
     if ab is None:
         return None
-    results = AGAbfrageResult.objects.filter(abfrage=ab, tenant_id__in=tenant_ids)
-    by_tenant: dict[int, list] = {tid: [] for tid in tenant_ids}
-    for r in results:
-        by_tenant[r.tenant_id].append(r)
-    met = sum(0 if engagement_verdict(rs) else 1 for rs in by_tenant.values())
-    return {"met": met, "total": len(tenant_ids), "abfrage": ab}
+    rank = {s: i for i, s in enumerate(ENGAGEMENT_ORDER)}
+    best: dict[int, str | None] = {tid: None for tid in tenant_ids}
+    for r in AGAbfrageResult.objects.filter(abfrage=ab, tenant_id__in=tenant_ids):
+        cur = best[r.tenant_id]
+        if r.status in rank and (cur is None or rank[r.status] < rank[cur]):
+            best[r.tenant_id] = r.status
+    counts = {s: 0 for s in ENGAGEMENT_ORDER}
+    no_entry = 0
+    for s in best.values():
+        if s is None:
+            no_entry += 1
+        else:
+            counts[s] += 1
+    met = counts["AKTIV"] + counts["ZU_AKTIV"]
+    rows = [{"status": s, "label": ENGAGEMENT_LABELS[s], "count": counts[s]}
+            for s in ENGAGEMENT_ORDER if counts[s]]
+    return {"met": met, "total": len(tenant_ids), "abfrage": ab,
+            "rows": rows, "no_entry": no_entry}
 
 
 def _engaged_tenant_ids(as_of):

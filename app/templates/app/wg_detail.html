@@ -1,61 +1,201 @@
 {% extends "app/base.html" %}
+{% block title %}{{ wg.name }} — CArtei{% endblock %}
 {% block content %}
-<h1 style="font-size:1.4rem;font-weight:700;">{{ wg.name }}</h1>
-<p style="color:#666;">{% if wg.cluster %}Cluster {{ wg.cluster }}{% endif %}</p>
-<form method="get" style="margin:.5rem 0 1rem;">
-  <label>Stichtag <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}"></label>
-  <button type="submit" class="ca-button">Anzeigen</button>
-</form>
+<div class="ca-card" style="max-width:1100px;margin:1.5rem auto;">
+  <h1 style="font-size:1.4rem;font-weight:700;">{{ wg.name }}</h1>
+  <p style="color:#666;margin:.2rem 0 1rem;">{% if wg.cluster %}Cluster {{ wg.cluster }}{% endif %}</p>
 
-{% if show_engagement %}
-<div class="ca-card" style="margin-bottom:1rem;">
-  {% if rollup %}
-    <strong>{{ rollup.met }} von {{ rollup.total }}</strong> erfüllen ihr Engagement
-    <span style="color:#888;">(Abfrage {{ rollup.abfrage.label|default:rollup.abfrage.date }})</span>
-  {% else %}
+  <form method="get" style="margin:0 0 1rem;">
+    <label>Stichtag <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}"></label>
+    <button type="submit" class="ca-button">Anzeigen</button>
+  </form>
+
+  {% if show_engagement %}
+  <div class="ca-card" style="margin-bottom:1.25rem;background:#fafafa;">
+    {% if rollup %}
+    <div><strong>{{ rollup.met }} von {{ rollup.total }}</strong> erfüllen ihr Engagement
+      <span style="color:#888;">(Abfrage {{ rollup.abfrage.label|default:rollup.abfrage.date }})</span></div>
+    <div style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.4rem;">
+      {% for row in rollup.rows %}
+      <span class="badge badge-{{ row.status }}">{{ row.label }}: {{ row.count }}</span>
+      {% endfor %}
+      {% if rollup.no_entry %}<span class="badge" style="background:#eee;color:#555;">kein Eintrag: {{ rollup.no_entry }}</span>{% endif %}
+    </div>
+    {% else %}
     <span style="color:#888;">Kein Engagement auswertbar (keine Abfrage / keine Bewohner*innen am Stichtag).</span>
+    {% endif %}
+  </div>
   {% endif %}
-</div>
-{% endif %}
 
-{% for r in rooms %}
-  <h3 style="font-size:1rem;margin-top:1rem;">{{ r.room.name }}</h3>
-  <p style="color:#666;margin:.2rem 0;">Größe: {{ r.room.size_sqm }} m²</p>
-  <p style="color:#666;margin:.2rem 0;">Ausstattung:
-    {% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span style="color:#888;">keine</span>{% endif %}
-  </p>
-  {% if r.fform %}
-    <form method="post" style="margin:.2rem 0 .6rem;">
+  {% for r in rooms %}
+  <details id="room-{{ r.room.pk }}" class="ca-collapse" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
+      <span>{{ r.room.name }}</span>
+      <span style="color:#888;font-weight:400;font-size:.9rem;">{{ r.room.size_sqm }} m²</span>
+      <span style="margin-left:auto;">
+        {% if r.active_count %}<span class="ca-pill ca-pill-green">belegt ({{ r.active_count }})</span>
+        {% else %}<span class="ca-pill ca-pill-no">frei</span>{% endif %}
+      </span>
+    </summary>
+
+    {# Ausstattung #}
+    <p style="font-weight:500;margin:.75rem 0 .4rem;">Ausstattung</p>
+    {% if r.fform %}
+    <form method="post" style="margin:.2rem 0 .4rem;">
       {% csrf_token %}
       <input type="hidden" name="furniture_room_id" value="{{ r.room.pk }}">
       {% for f in r.fform %}
-        <label style="margin-right:1rem;">{{ f }} {{ f.label }}</label>
+      <label style="margin-right:1rem;">{{ f }} {{ f.label }}</label>
       {% endfor %}
-      <button type="submit" class="ca-button">Ausstattung speichern</button>
+      <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Ausstattung speichern</button>
     </form>
-  {% endif %}
-  {% if can_edit_rooms %}
-    {% for c in r.cards %}
+    {% else %}
+    <p style="color:#666;margin:.2rem 0 .4rem;">{% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span style="color:#888;">keine</span>{% endif %}</p>
+    {% endif %}
+
+    {# Bewohner*innen #}
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    <p style="font-weight:500;margin:.25rem 0 .4rem;">Bewohner*innen</p>
+    {% if can_edit_rooms %}
+      {% for c in r.cards %}
       <div class="{% if c.assignment.active_on_asof %}wg-current{% endif %}">
         {% if c.occupant %}<div class="wg-occupant"><a href="{% url 'tenant_detail' c.assignment.tenant.pk %}" class="ca-tl-name">{{ c.occupant }}</a></div>{% endif %}
         {% include "app/_room_assignment_edit.html" with assignment=c.assignment aform=c.aform %}
       </div>
-    {% empty %}
+      {% empty %}
       <p style="color:#888;">Keine Belegung erfasst.</p>
-    {% endfor %}
-  {% else %}
-    {% if r.active_count %}
-      <p style="color:#888;">belegt ({{ r.active_count }})</p>
+      {% endfor %}
     {% else %}
-      <p style="color:#888;">frei</p>
+      {% if r.active_count %}<p style="color:#888;">belegt ({{ r.active_count }})</p>
+      {% else %}<p style="color:#888;">frei</p>{% endif %}
     {% endif %}
-  {% endif %}
-{% empty %}
-  <p style="color:#888;">Keine Zimmer erfasst.</p>
-{% endfor %}
 
-<details class="ca-collapse" style="margin-top:1.5rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-  <summary style="font-weight:700;">Zustand & Schäden</summary>
-  <p style="color:#888;">Schadenskatalog und Übergabeprotokolle folgen in einem späteren Schritt.</p>
-</details>
+    {# Schäden (Datenmodell folgt später) #}
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    <p style="font-weight:500;margin:.25rem 0 .4rem;">Schäden</p>
+    <p style="color:#888;">Schadenskatalog und Übergabeprotokolle folgen in einem späteren Schritt.</p>
+  </details>
+  {% empty %}
+  <p style="color:#888;">Keine Zimmer erfasst.</p>
+  {% endfor %}
+
+  {# WG-level shared spaces — structure only, data model follows later #}
+  <details id="section-gemeinschaft" class="ca-collapse" style="margin-top:1.5rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+    <summary style="font-weight:600;cursor:pointer;">Gemeinschaftsflächen</summary>
+    <p style="font-weight:500;margin:.75rem 0 .4rem;">Ausstattung</p>
+    <p style="color:#888;">Ausstattung der Gemeinschaftsflächen folgt in einem späteren Schritt.</p>
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    <p style="font-weight:500;margin:.25rem 0 .4rem;">Schäden</p>
+    <p style="color:#888;">Schadenskatalog und Übergabeprotokolle folgen in einem späteren Schritt.</p>
+  </details>
+</div>
+
+<script>
+// Restore the open section and scroll offset after a post-redirect reload so
+// saving a room stays put instead of jumping to the top.
+(function() {
+  var id = sessionStorage.getItem('restoreSection');
+  if (!id) return;
+  var y = sessionStorage.getItem('restoreScroll');
+  sessionStorage.removeItem('restoreSection');
+  sessionStorage.removeItem('restoreScroll');
+  var el = document.getElementById(id);
+  if (el) el.open = true;
+  if (y !== null) {
+    y = parseInt(y, 10);
+    window.scrollTo(0, y);
+    setTimeout(function() { window.scrollTo(0, y); }, 300);
+  }
+})();
+
+document.addEventListener('submit', function(e) {
+  var section = e.target.closest('details[id]');
+  if (section) {
+    sessionStorage.setItem('restoreSection', section.id);
+    sessionStorage.setItem('restoreScroll', window.scrollY);
+  }
+}, true);
+
+// Room assignments are read-only until "Bearbeiten"; each card saves/reverts on
+// its own. Revert restores the card's fields and collapses back to the display.
+document.querySelectorAll('.ca-room-assignment').forEach(function(card) {
+  var display = card.querySelector('.ca-room-display');
+  var fieldsBox = card.querySelector('.ca-room-fields');
+  if (!display || !fieldsBox) return;
+
+  var inputs = fieldsBox.querySelectorAll('input, select, textarea');
+  var orig = {};
+  inputs.forEach(function(f) {
+    orig[f.name + '|' + f.id] = f.type === 'checkbox' ? f.checked : f.value;
+  });
+
+  function checkDirty() {
+    var dirty = false;
+    inputs.forEach(function(f) {
+      var cur = f.type === 'checkbox' ? f.checked : f.value;
+      if (orig[f.name + '|' + f.id] !== cur) dirty = true;
+    });
+    card.classList.toggle('is-dirty', dirty);
+  }
+  inputs.forEach(function(f) {
+    f.addEventListener('input', checkDirty);
+    f.addEventListener('change', checkDirty);
+  });
+  if (fieldsBox.style.display !== 'none') card.classList.add('is-dirty');
+
+  card.querySelector('.ca-room-edit-btn').addEventListener('click', function() {
+    display.style.display = 'none';
+    fieldsBox.style.display = 'block';
+  });
+
+  var revert = card.querySelector('.ca-room-revert-btn');
+  if (revert) revert.addEventListener('click', function() {
+    inputs.forEach(function(f) {
+      var v = orig[f.name + '|' + f.id];
+      if (f.type === 'checkbox') f.checked = v; else f.value = v;
+      f.dispatchEvent(new Event('change'));
+    });
+    checkDirty();
+    fieldsBox.style.display = 'none';
+    display.style.display = '';
+  });
+});
+
+// Per-assignment sublet UI: "Untervermietet von" only shows when Untermiete is
+// checked, and only offers people who actually rent the selected room.
+(function() {
+  document.querySelectorAll('.ca-room-assignment').forEach(function(card) {
+    var cb = card.querySelector('.ca-sublet-toggle input[type="checkbox"]');
+    var dep = card.querySelector('.ca-sublet-dep');
+    if (cb && dep) {
+      function toggle() { dep.style.display = cb.checked ? '' : 'none'; }
+      toggle();
+      cb.addEventListener('change', toggle);
+    }
+    var roomSel = card.querySelector('select[name$="-room"]');
+    var subSel = card.querySelector('select[name$="-sublet_of_tenant"]');
+    if (!roomSel || !subSel) return;
+
+    function apply(allowed, reset) {
+      var keep = subSel.value;
+      Array.prototype.forEach.call(subSel.options, function(opt) {
+        if (opt.value === '') return;
+        var ok = allowed.indexOf(parseInt(opt.value, 10)) !== -1 || opt.value === keep;
+        opt.hidden = !ok;
+        opt.disabled = !ok;
+      });
+      if (reset && keep && allowed.indexOf(parseInt(keep, 10)) === -1) subSel.value = '';
+    }
+    function refresh(reset) {
+      if (!roomSel.value) { apply([], reset); return; }
+      var url = "{% url 'room_renters' 0 %}".replace('/0/', '/' + roomSel.value + '/');
+      fetch(url).then(function(r) { return r.json(); })
+        .then(function(ids) { apply(ids, reset); })
+        .catch(function() {});
+    }
+    refresh(false);
+    roomSel.addEventListener('change', function() { refresh(true); });
+  });
+})();
+</script>
 {% endblock %}
