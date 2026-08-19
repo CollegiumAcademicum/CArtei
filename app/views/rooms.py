@@ -9,7 +9,16 @@ from app.forms import TenantRoomAssignmentForm
 from app.models import AGAbfrage, AGAbfrageResult, Building, Room, TenantRoomAssignment, WG
 from app.residency import assignment_active_on
 from app.tenant_access import global_roles, visible_fields
-from app.views._shared import assignment_editable_by, display, engagement_verdict, submitted_assignment_forms
+from app.views._shared import (
+    ACTIVE_STATES,
+    assignment_editable_by,
+    display,
+    engagement_verdict,
+    submitted_assignment_forms,
+)
+
+# Room furniture ("Ausstattung"), rendered as a comma-joined list per room.
+AUSSTATTUNG = [("has_mattress", "Matratze"), ("has_bed", "Bett"), ("has_table", "Tisch"), ("has_closet", "Schrank")]
 
 
 def parse_as_of(request: HttpRequest) -> date:
@@ -50,6 +59,35 @@ def _engagement_rollup(tenant_ids, as_of):
         by_tenant[r.tenant_id].append(r)
     met = sum(0 if engagement_verdict(rs) else 1 for rs in by_tenant.values())
     return {"met": met, "total": len(tenant_ids), "abfrage": ab}
+
+
+def _engaged_tenant_ids(as_of):
+    """Tenant ids meeting engagement in the latest Abfrage as of as_of, or None
+    when no survey qualifies (engagement then reads as unknown → shown blank)."""
+    ab = AGAbfrage.objects.filter(date__lte=as_of).order_by("-date").first()
+    if ab is None:
+        return None
+    return set(
+        AGAbfrageResult.objects.filter(abfrage=ab, status__in=ACTIVE_STATES)
+        .values_list("tenant_id", flat=True)
+    )
+
+
+def _room_engagement(tenant_ids, engaged):
+    """A room is 'ok' when at least one active tenant meets engagement, 'flag'
+    when it has tenants but none do, None when empty or engagement unknown."""
+    if engaged is None or not tenant_ids:
+        return None
+    return "ok" if any(t in engaged for t in tenant_ids) else "flag"
+
+
+def _wg_engagement(room_statuses):
+    """WG is 'ok' only when every occupied room is 'ok'. Empty rooms (None) are
+    ignored; None overall when no room has a status."""
+    statuses = [s for s in room_statuses if s]
+    if not statuses:
+        return None
+    return "ok" if all(s == "ok" for s in statuses) else "flag"
 
 
 @login_required
@@ -122,8 +160,10 @@ def wg_detail(request: HttpRequest, pk: int):
 def wg_list(request: HttpRequest):
     roles = global_roles(request.user)
     may_see_names = "first_name" in visible_fields(roles)
+    show_engagement = bool({"cluster", "admin"} & roles)
     as_of = parse_as_of(request)
     occ = _occupants_by_room(as_of, may_see_names)
+    engaged = _engaged_tenant_ids(as_of) if show_engagement else None
 
     buildings = []
     total_rooms = 0
@@ -132,12 +172,21 @@ def wg_list(request: HttpRequest):
         for wg in b.wg_set.order_by("name"):
             rooms = []
             for room in Room.objects.filter(wg=wg).order_by("name"):
-                rooms.append({"room": room, "occupants": occ.get(room.id, [])})
+                occupants = occ.get(room.id, [])
+                rooms.append({
+                    "room": room,
+                    "occupants": occupants,
+                    "ausstattung": [label for attr, label in AUSSTATTUNG if getattr(room, attr)],
+                    "engagement": _room_engagement([o["pk"] for o in occupants], engaged),
+                })
                 total_rooms += 1
-            wgs.append({"wg": wg, "rooms": rooms})
+            wgs.append({
+                "wg": wg, "rooms": rooms,
+                "engagement": _wg_engagement([r["engagement"] for r in rooms]),
+            })
         buildings.append({"building": b, "wgs": wgs})
 
     return render(request, "app/wg_list.html", {
         "buildings": buildings, "as_of": as_of, "may_see_names": may_see_names,
-        "total_rooms": total_rooms,
+        "total_rooms": total_rooms, "show_engagement": show_engagement,
     })

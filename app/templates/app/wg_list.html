@@ -28,17 +28,21 @@
         <table class="table is-fullwidth is-hoverable" style="font-size:0.9rem;">
           <thead>
             <tr class="cluster-group-header">
-              <td colspan="3">
+              <td colspan="{% if show_engagement %}5{% else %}4{% endif %}">
                 <a href="{% url 'wg_detail' w.wg.pk %}?as_of={{ as_of|date:'Y-m-d' }}">{{ w.wg.name }}</a>
                 <span class="ca-grp-tally">
                   {% if w.wg.cluster %}· Cluster {{ w.wg.cluster }} {% endif %}· {{ w.rooms|length }} Zimmer
                 </span>
+                {% if show_engagement and w.engagement == "ok" %}<span class="ca-pill ca-pill-green">Engagement vollständig</span>
+                {% elif show_engagement and w.engagement == "flag" %}<span class="ca-pill ca-pill-amber">Engagement unvollständig</span>{% endif %}
               </td>
             </tr>
             <tr>
               <th style="text-align:left;">Zimmer</th>
               <th style="text-align:left;">m²</th>
+              <th style="text-align:left;">Ausstattung</th>
               <th style="text-align:left;">Belegung</th>
+              {% if show_engagement %}<th style="text-align:left;">Engagement</th>{% endif %}
             </tr>
           </thead>
           <tbody>
@@ -46,14 +50,20 @@
             <tr>
               <td>{{ r.room.name }}{% if r.room.freifinanziert %} <span class="ca-room-badge">freifinanziert</span>{% endif %}</td>
               <td>{{ r.room.size_sqm }}</td>
+              <td>{% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span class="ca-tl-muted">—</span>{% endif %}</td>
               <td>
                 {% if r.occupants %}
                   {% if may_see_names %}{% for o in r.occupants %}<a href="{% url 'tenant_detail' o.pk %}" class="ca-tl-name">{{ o.label }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="ca-pill ca-pill-green">belegt ({{ r.occupants|length }})</span>{% endif %}
                 {% else %}<span class="ca-tl-muted">frei</span>{% endif %}
               </td>
+              {% if show_engagement %}<td>
+                {% if r.engagement == "ok" %}<span class="ca-pill ca-pill-green">OK</span>
+                {% elif r.engagement == "flag" %}<span class="ca-pill ca-pill-amber">⚠</span>
+                {% else %}<span class="ca-tl-muted">—</span>{% endif %}
+              </td>{% endif %}
             </tr>
           {% empty %}
-            <tr><td colspan="3" class="ca-tl-muted">Keine Zimmer.</td></tr>
+            <tr><td colspan="{% if show_engagement %}5{% else %}4{% endif %}" class="ca-tl-muted">Keine Zimmer.</td></tr>
           {% endfor %}
           </tbody>
         </table>

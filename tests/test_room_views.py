@@ -67,6 +67,44 @@ def test_list_bad_as_of_falls_back(client):
     assert resp.status_code == 200
 
 
+def test_list_shows_room_ausstattung(client):
+    _login(client, "ag.mietverwaltung")
+    b, wg, room, t = _housing()
+    room.has_bed = True
+    room.has_table = True
+    room.save()
+    resp = client.get(reverse("wg_list"))
+    assert b"Bett, Tisch" in resp.content
+
+
+def test_list_engagement_room_and_wg_rollup(client):
+    _login(client, "admins")  # cluster/admin gate
+    b, wg, room, t = _housing()
+    room2 = Room.objects.create(wg=wg, name="Zimmer 2", size_sqm=12)
+    t2 = Tenant.objects.create(
+        first_name="Ada", last_name="Test", email="a@x.de",
+        intranet_username="ada", intranet_uuid="00000000-0000-0000-0000-000000000002",
+    )
+    for tt, rr in ((t, room), (t2, room2)):
+        TenantRoomAssignment.objects.create(tenant=tt, room=rr, moved_in=datetime.date(2026, 1, 1), moved_out=None)
+    ab = AGAbfrage.objects.create(date=datetime.date(2026, 1, 15), ends_at=datetime.date(2026, 2, 1), grace_ends_at=datetime.date(2026, 2, 8))
+    # Only Mira (room 1) is active → room 1 ok, room 2 flag → WG unvollständig.
+    AGAbfrageResult.objects.create(abfrage=ab, ag_name="Garten", tenant=t, status="AKTIV")
+    resp = client.get(reverse("wg_list"), {"as_of": "2026-02-01"})
+    assert b"Engagement unvoll" in resp.content  # WG-level: not all rooms ok
+    # Both engaged → WG vollständig.
+    AGAbfrageResult.objects.create(abfrage=ab, ag_name="Garten", tenant=t2, status="AKTIV")
+    resp2 = client.get(reverse("wg_list"), {"as_of": "2026-02-01"})
+    assert b"Engagement vollst" in resp2.content
+
+
+def test_list_engagement_hidden_for_non_cluster(client):
+    _login(client, "ag.mietverwaltung")  # not cluster/admin
+    b, wg, room, t = _housing()
+    resp = client.get(reverse("wg_list"))
+    assert b"Engagement" not in resp.content
+
+
 # ---- Task 4: WG detail tests ------------------------------------------------
 
 def test_detail_shows_history_and_asof_marker(client):
