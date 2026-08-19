@@ -1,6 +1,6 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, dashboard, document, enrollment_proof, landing, notes, tenant
+from app.views import abfragen, admin_views, dashboard, document, enrollment_proof, landing, notes, rooms, tenant
 
 urlpatterns = [
     path("info/", landing.landing, name="landing"),
@@ -11,6 +11,8 @@ urlpatterns = [
     path("abfragen/<int:pk>/ag/<str:ag_name>/", abfragen.ag_edit, name="ag_edit"),
     path("abfragen/<int:pk>/tenants/", abfragen.abfrage_tenants, name="abfrage_tenants"),
     path("abfragen/<int:pk>/delete/", abfragen.abfrage_delete, name="abfrage_delete"),
+    path("wgs/", rooms.wg_list, name="wg_list"),
+    path("wgs/<int:pk>/", rooms.wg_detail, name="wg_detail"),
     path("tenants/", tenant.tenant_list, name="tenant_list"),
     path("tenants/<int:pk>/", tenant.tenant_detail, name="tenant_detail"),
     path("rooms/<int:room_id>/renters/", tenant.room_renters, name="room_renters"),

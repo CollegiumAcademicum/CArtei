@@ -1,0 +1,47 @@
+{% extends "app/base.html" %}
+{% block content %}
+<h1 style="font-size:1.4rem;font-weight:700;">{{ wg.name }}</h1>
+<p style="color:#666;">{% if wg.cluster %}Cluster {{ wg.cluster }}{% endif %}</p>
+<form method="get" style="margin:.5rem 0 1rem;">
+  <label>Stichtag <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}"></label>
+  <button type="submit" class="ca-button">Anzeigen</button>
+</form>
+
+{% if show_engagement %}
+<div class="ca-card" style="margin-bottom:1rem;">
+  {% if rollup %}
+    <strong>{{ rollup.met }} von {{ rollup.total }}</strong> erfüllen ihr Engagement
+    <span style="color:#888;">(Abfrage {{ rollup.abfrage.label|default:rollup.abfrage.date }})</span>
+  {% else %}
+    <span style="color:#888;">Kein Engagement auswertbar (keine Abfrage / keine Bewohner*innen am Stichtag).</span>
+  {% endif %}
+</div>
+{% endif %}
+
+{% for r in rooms %}
+  <h3 style="font-size:1rem;margin-top:1rem;">{{ r.room.name }}</h3>
+  {% if can_edit_rooms %}
+    {% for c in r.cards %}
+      <div class="{% if c.assignment.active_on_asof %}wg-current{% endif %}">
+        {% if c.occupant %}<div class="wg-occupant">{{ c.occupant }}</div>{% endif %}
+        {% include "app/_room_assignment_edit.html" with assignment=c.assignment aform=c.aform %}
+      </div>
+    {% empty %}
+      <p style="color:#888;">Keine Belegung erfasst.</p>
+    {% endfor %}
+  {% else %}
+    {% if r.active_count %}
+      <p style="color:#888;">belegt ({{ r.active_count }})</p>
+    {% else %}
+      <p style="color:#888;">frei</p>
+    {% endif %}
+  {% endif %}
+{% empty %}
+  <p style="color:#888;">Keine Zimmer erfasst.</p>
+{% endfor %}
+
+<details class="ca-collapse" style="margin-top:1.5rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+  <summary style="font-weight:700;">Zustand & Schäden</summary>
+  <p style="color:#888;">Schadenskatalog und Übergabeprotokolle folgen in einem späteren Schritt.</p>
+</details>
+{% endblock %}

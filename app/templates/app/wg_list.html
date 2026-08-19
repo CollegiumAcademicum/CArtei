@@ -1,0 +1,30 @@
+{% extends "app/base.html" %}
+{% block content %}
+<h1 style="font-size:1.4rem;font-weight:700;">WGs & Zimmer</h1>
+<form method="get" style="margin:.5rem 0 1rem;">
+  <label>Stichtag <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}"></label>
+  <button type="submit" class="ca-button">Anzeigen</button>
+</form>
+{% for b in buildings %}
+  <h2 style="font-size:1.1rem;font-weight:700;margin-top:1rem;">{{ b.building.name }}</h2>
+  {% for w in b.wgs %}
+    <h3 style="font-size:1rem;"><a href="{% url 'wg_detail' w.wg.pk %}?as_of={{ as_of|date:'Y-m-d' }}">{{ w.wg.name }}</a>{% if w.wg.cluster %} · Cluster {{ w.wg.cluster }}{% endif %}</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr><th style="text-align:left;">Zimmer</th><th style="text-align:left;">m²</th><th style="text-align:left;">Belegung</th></tr></thead>
+      <tbody>
+      {% for r in w.rooms %}
+        <tr>
+          <td>{{ r.room.name }}{% if r.room.freifinanziert %} <span class="ca-room-badge">freifinanziert</span>{% endif %}</td>
+          <td>{{ r.room.size_sqm }}</td>
+          <td>
+            {% if r.occupants %}
+              {% if may_see_names %}{{ r.occupants|join:", " }}{% else %}belegt ({{ r.occupants|length }}){% endif %}
+            {% else %}frei{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% endfor %}
+{% endfor %}
+{% endblock %}
