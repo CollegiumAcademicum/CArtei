@@ -125,15 +125,18 @@ def wg_list(request: HttpRequest):
     occ = _occupants_by_room(as_of, may_see_names)
 
     buildings = []
+    total_rooms = 0
     for b in Building.objects.order_by("name"):
         wgs = []
         for wg in b.wg_set.order_by("name"):
             rooms = []
             for room in Room.objects.filter(wg=wg).order_by("name"):
                 rooms.append({"room": room, "occupants": occ.get(room.id, [])})
+                total_rooms += 1
             wgs.append({"wg": wg, "rooms": rooms})
         buildings.append({"building": b, "wgs": wgs})
 
     return render(request, "app/wg_list.html", {
         "buildings": buildings, "as_of": as_of, "may_see_names": may_see_names,
+        "total_rooms": total_rooms,
     })

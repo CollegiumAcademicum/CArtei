@@ -1,30 +1,70 @@
 {% extends "app/base.html" %}
+{% block title %}WGs & Zimmer — CArtei{% endblock %}
 {% block content %}
-<h1 style="font-size:1.4rem;font-weight:700;">WGs & Zimmer</h1>
-<form method="get" style="margin:.5rem 0 1rem;">
-  <label>Stichtag <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}"></label>
-  <button type="submit" class="ca-button">Anzeigen</button>
-</form>
-{% for b in buildings %}
-  <h2 style="font-size:1.1rem;font-weight:700;margin-top:1rem;">{{ b.building.name }}</h2>
-  {% for w in b.wgs %}
-    <h3 style="font-size:1rem;"><a href="{% url 'wg_detail' w.wg.pk %}?as_of={{ as_of|date:'Y-m-d' }}">{{ w.wg.name }}</a>{% if w.wg.cluster %} · Cluster {{ w.wg.cluster }}{% endif %}</h3>
-    <table style="width:100%;border-collapse:collapse;">
-      <thead><tr><th style="text-align:left;">Zimmer</th><th style="text-align:left;">m²</th><th style="text-align:left;">Belegung</th></tr></thead>
-      <tbody>
-      {% for r in w.rooms %}
-        <tr>
-          <td>{{ r.room.name }}{% if r.room.freifinanziert %} <span class="ca-room-badge">freifinanziert</span>{% endif %}</td>
-          <td>{{ r.room.size_sqm }}</td>
-          <td>
-            {% if r.occupants %}
-              {% if may_see_names %}{{ r.occupants|join:", " }}{% else %}belegt ({{ r.occupants|length }}){% endif %}
-            {% else %}frei{% endif %}
-          </td>
-        </tr>
+<div class="ca-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <h1 style="font-size:1.4rem;font-weight:700;">WGs & Zimmer</h1>
+    <span style="color:#7a7a7a;font-size:0.9rem;">{{ total_rooms }} Zimmer</span>
+  </div>
+
+  <div class="ca-tl-layout">
+    {# ---------------- LEFT RAIL: view controls (server round-trip) ---------------- #}
+    <aside class="ca-tl-rail">
+      <form method="get">
+        <div class="ca-facet">
+          <h5>Stichtag</h5>
+          <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}" class="input is-small" style="width:100%;">
+          <button type="submit" class="ca-button" style="margin-top:.5rem;font-size:.8rem;padding:.25rem .7rem;">Anzeigen</button>
+        </div>
+      </form>
+    </aside>
+
+    {# ---------------- MAIN: buildings › WGs › rooms ---------------- #}
+    <div class="ca-tl-main">
+      {% for b in buildings %}
+      <h2 style="font-size:1.1rem;font-weight:700;margin:1.25rem 0 .5rem;">{{ b.building.name }}</h2>
+      {% for w in b.wgs %}
+      <div style="overflow-x:auto;margin-bottom:1rem;">
+        <table class="table is-fullwidth is-hoverable" style="font-size:0.9rem;">
+          <thead>
+            <tr class="cluster-group-header">
+              <td colspan="3">
+                <a href="{% url 'wg_detail' w.wg.pk %}?as_of={{ as_of|date:'Y-m-d' }}">{{ w.wg.name }}</a>
+                <span class="ca-grp-tally">
+                  {% if w.wg.cluster %}· Cluster {{ w.wg.cluster }} {% endif %}· {{ w.rooms|length }} Zimmer
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <th style="text-align:left;">Zimmer</th>
+              <th style="text-align:left;">m²</th>
+              <th style="text-align:left;">Belegung</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for r in w.rooms %}
+            <tr>
+              <td>{{ r.room.name }}{% if r.room.freifinanziert %} <span class="ca-room-badge">freifinanziert</span>{% endif %}</td>
+              <td>{{ r.room.size_sqm }}</td>
+              <td>
+                {% if r.occupants %}
+                  {% if may_see_names %}{{ r.occupants|join:", " }}{% else %}<span class="ca-pill ca-pill-green">belegt ({{ r.occupants|length }})</span>{% endif %}
+                {% else %}<span class="ca-tl-muted">frei</span>{% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="3" class="ca-tl-muted">Keine Zimmer.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% empty %}
+      <p class="ca-tl-muted">Keine WGs.</p>
       {% endfor %}
-      </tbody>
-    </table>
-  {% endfor %}
-{% endfor %}
+      {% empty %}
+      <p class="ca-tl-muted">Keine Gebäude vorhanden.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
 {% endblock %}
