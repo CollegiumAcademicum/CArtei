@@ -2,7 +2,8 @@
 Belegium. Needs: assignment (with .notes attached). Rendered only when
 show_assignment_notes.{% endcomment %}
 <div class="ca-assignment-notes" style="margin-top:.5rem;padding-top:.4rem;border-top:1px dashed #e0e0e0;">
-  <p style="font-weight:500;margin:.25rem 0 .3rem;font-size:.9rem;">🗒 Interne Notizen (Belegung)</p>
+  <p style="font-weight:500;margin:.25rem 0 .3rem;font-size:.9rem;">🗒 Interne Notizen (Belegung)
+    <span class="ca-hint" tabindex="0" role="button" aria-label="Wer kann diese Notizen sehen?">i<span class="ca-hint-bubble">Für Mietverwaltung und Belegium (und Admins) sichtbar.</span></span></p>
   {% if assignment.notes %}
   <ul style="font-size:.9rem;margin:.2rem 0 .5rem;list-style:none;padding:0;">
     {% for n in assignment.notes %}

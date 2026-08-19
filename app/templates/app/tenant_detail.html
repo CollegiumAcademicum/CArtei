@@ -27,7 +27,8 @@
 
     {% if section.key == "housing" and can_write_mv %}
     <div class="ca-notes-panel" id="mv-notes"><div class="ca-notes-inner">
-    <p style="font-weight:500;margin:.5rem 0 .4rem;">Interne Notizen (Mietverwaltung)</p>
+    <p style="font-weight:500;margin:.5rem 0 .4rem;">Interne Notizen (Mietverwaltung)
+      <span class="ca-hint" tabindex="0" role="button" aria-label="Wer kann diese Notizen sehen?">i<span class="ca-hint-bubble">Nur für die Mietverwaltung (und Admins) sichtbar.</span></span></p>
     {% if mv_notes %}
     <ul style="font-size:.9rem;margin:.25rem 0 .75rem;">
       {% for n in mv_notes %}
@@ -382,7 +383,8 @@
 
     {% if can_write_cluster %}
     <div class="ca-notes-panel" id="cluster-notes"><div class="ca-notes-inner">
-    <p style="font-weight:500;margin:.5rem 0 .4rem;">Interne Notizen (Clustersprechende)</p>
+    <p style="font-weight:500;margin:.5rem 0 .4rem;">Interne Notizen (Clustersprechende)
+      <span class="ca-hint" tabindex="0" role="button" aria-label="Wer kann diese Notizen sehen?">i<span class="ca-hint-bubble">Nur für die Clustersprechenden (und Admins) sichtbar.</span></span></p>
     {% if cluster_notes %}
     <ul style="font-size:.9rem;margin:.25rem 0 .75rem;">
       {% for n in cluster_notes %}
