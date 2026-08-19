@@ -31,6 +31,15 @@ class TenantForm(forms.ModelForm):
                 del self.fields[name]
 
 
+class RoomFurnitureForm(forms.ModelForm):
+    """Ausstattung editor for a single room (Mietverwaltung + AG Werkstatt)."""
+
+    class Meta:
+        model = Room
+        fields = ["has_mattress", "has_bed", "has_table", "has_closet"]
+        labels = {"has_mattress": "Matratze", "has_bed": "Bett", "has_table": "Tisch", "has_closet": "Schrank"}
+
+
 class TenantRoomAssignmentForm(forms.ModelForm):
     class Meta:
         model = TenantRoomAssignment

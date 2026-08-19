@@ -169,6 +169,8 @@ TENANT_ROLE_GROUPS = {
     "cluster": _group_list("TENANT_GROUP_CLUSTER", "gr.cluster"),
     "belegium": _group_list("TENANT_GROUP_BELEGIUM", "gr.belegium"),
     "mietverwaltung": _group_list("TENANT_GROUP_MIETVERWALTUNG", "cartei_mietverwaltung"),
+    # AG Werkstatt: may edit room furniture (Ausstattung) only, nothing else.
+    "werkstatt": _group_list("TENANT_GROUP_WERKSTATT", "cartei_werkstatt"),
     "finanzierung": _group_list("TENANT_GROUP_FINANZIERUNG", "ag.finanzierung"),
 }
 

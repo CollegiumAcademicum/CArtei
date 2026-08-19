@@ -49,5 +49,6 @@ TENANT_ROLE_GROUPS = {
     "admin": ["admins"],
     "cluster": ["gr.cluster"],
     "mietverwaltung": ["ag.mietverwaltung"],
+    "werkstatt": ["cartei_werkstatt"],
     "finanzierung": ["ag.finanzierung"],
 }

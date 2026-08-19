@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
-from app.forms import TenantRoomAssignmentForm
+from app.forms import RoomFurnitureForm, TenantRoomAssignmentForm
 from app.models import AGAbfrage, AGAbfrageResult, Building, Room, TenantRoomAssignment, WG
 from app.residency import assignment_active_on
 from app.tenant_access import global_roles, visible_fields
@@ -100,6 +100,23 @@ def wg_detail(request: HttpRequest, pk: int):
     today = date.today()
 
     can_edit_rooms = bool({"mietverwaltung", "admin", "belegium"} & roles)
+    can_edit_furniture = bool({"mietverwaltung", "admin", "werkstatt"} & roles)
+    if request.method == "POST" and "furniture_room_id" in request.POST:
+        redirect_to = redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
+        if not can_edit_furniture:
+            messages.error(request, "Keine Berechtigung zum Bearbeiten.")
+            return redirect_to
+        room = Room.objects.filter(wg=wg, pk=request.POST["furniture_room_id"]).first()
+        if room is None:
+            messages.error(request, "Zimmer nicht gefunden.")
+            return redirect_to
+        fform = RoomFurnitureForm(request.POST, instance=room, prefix=f"furn_{room.pk}")
+        if fform.is_valid():
+            fform.save()
+            messages.success(request, "Ausstattung gespeichert.")
+        else:
+            messages.error(request, "Bitte Eingaben prüfen.")
+        return redirect_to
     if request.method == "POST":
         if not can_edit_rooms:
             messages.error(request, "Keine Berechtigung zum Bearbeiten.")
@@ -145,7 +162,11 @@ def wg_detail(request: HttpRequest, pk: int):
                 aform = None
             occupant = display(a.tenant) if may_see_names else None
             cards.append({"assignment": a, "aform": aform, "occupant": occupant})
-        rooms.append({"room": room, "cards": cards, "active_count": active_count})
+        rooms.append({
+            "room": room, "cards": cards, "active_count": active_count,
+            "ausstattung": [label for attr, label in AUSSTATTUNG if getattr(room, attr)],
+            "fform": RoomFurnitureForm(instance=room, prefix=f"furn_{room.pk}") if can_edit_furniture else None,
+        })
 
     rollup = _engagement_rollup(list(active_tenant_ids), as_of) if show_engagement else None
 
@@ -153,6 +174,7 @@ def wg_detail(request: HttpRequest, pk: int):
         "wg": wg, "as_of": as_of, "rooms": rooms,
         "show_engagement": show_engagement, "rollup": rollup,
         "may_see_names": may_see_names, "can_edit_rooms": can_edit_rooms,
+        "can_edit_furniture": can_edit_furniture,
     })
 
 

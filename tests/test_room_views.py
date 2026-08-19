@@ -210,3 +210,58 @@ def test_detail_shows_occupant_name_for_mv(client):
     resp = client.get(reverse("wg_detail", args=[wg.pk]))
     assert resp.status_code == 200
     assert b"Mira" in resp.content
+
+
+# ---- Furniture (Ausstattung) editor ----------------------------------------
+
+def test_detail_shows_ausstattung_to_everyone(client):
+    """Even a read-only viewer (no edit role) sees the room's furniture labels."""
+    _login(client, "gr.cluster")
+    b, wg, room, t = _housing()
+    room.has_bed = True
+    room.has_table = True
+    room.save()
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert b"Bett, Tisch" in resp.content
+    assert b"furniture_room_id" not in resp.content  # no editor for this role
+
+
+def test_detail_werkstatt_can_edit_furniture(client):
+    _login(client, "cartei_werkstatt")
+    b, wg, room, t = _housing()
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert b"furniture_room_id" in resp.content  # editor rendered
+    resp = client.post(reverse("wg_detail", args=[wg.pk]), {
+        "furniture_room_id": str(room.pk),
+        f"furn_{room.pk}-has_bed": "on",
+        f"furn_{room.pk}-has_closet": "on",
+    })
+    assert resp.status_code in (200, 302)
+    room.refresh_from_db()
+    assert room.has_bed and room.has_closet
+    assert not room.has_mattress and not room.has_table
+
+
+def test_detail_werkstatt_cannot_edit_assignments(client):
+    """Werkstatt edits furniture only — assignment POSTs must not take effect."""
+    _login(client, "cartei_werkstatt")
+    b, wg, room, t = _housing()
+    a = TenantRoomAssignment.objects.create(
+        tenant=t, room=room, moved_in=datetime.date(2026, 1, 1), moved_out=None,
+    )
+    client.post(reverse("wg_detail", args=[wg.pk]), {
+        "assignment_ids": str(a.pk),
+        f"room_{a.pk}-room": str(room.pk), f"room_{a.pk}-moved_in": "2026-02-02",
+    })
+    a.refresh_from_db()
+    assert a.moved_in == datetime.date(2026, 1, 1)  # unchanged
+
+
+def test_detail_non_editor_cannot_save_furniture(client):
+    _login(client, "gr.cluster")
+    b, wg, room, t = _housing()
+    client.post(reverse("wg_detail", args=[wg.pk]), {
+        "furniture_room_id": str(room.pk), f"furn_{room.pk}-has_bed": "on",
+    })
+    room.refresh_from_db()
+    assert not room.has_bed  # rejected — no permission
