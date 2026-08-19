@@ -1,13 +1,15 @@
 from datetime import date
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpRequest
-from django.shortcuts import render
+from django.http import HttpRequest
+from django.shortcuts import get_object_or_404, redirect, render
 
-from app.models import Building, Room, TenantRoomAssignment
+from app.forms import TenantRoomAssignmentForm
+from app.models import AGAbfrage, AGAbfrageResult, Building, Room, TenantRoomAssignment, WG
 from app.residency import assignment_active_on
 from app.tenant_access import global_roles, visible_fields
-from app.views._shared import display
+from app.views._shared import assignment_editable_by, display, engagement_verdict, submitted_assignment_forms
 
 
 def parse_as_of(request: HttpRequest) -> date:
@@ -33,10 +35,83 @@ def _occupants_by_room(as_of, may_see_names):
     return out
 
 
+def _engagement_rollup(tenant_ids, as_of):
+    """met/total over tenant_ids against the most recent Abfrage as of as_of
+    (latest AGAbfrage.date <= as_of). None when no survey qualifies."""
+    if not tenant_ids:
+        return None
+    ab = AGAbfrage.objects.filter(date__lte=as_of).order_by("-date").first()
+    if ab is None:
+        return None
+    results = AGAbfrageResult.objects.filter(abfrage=ab, tenant_id__in=tenant_ids)
+    by_tenant: dict[int, list] = {tid: [] for tid in tenant_ids}
+    for r in results:
+        by_tenant[r.tenant_id].append(r)
+    met = sum(0 if engagement_verdict(rs) else 1 for rs in by_tenant.values())
+    return {"met": met, "total": len(tenant_ids), "abfrage": ab}
+
+
 @login_required
-def wg_detail_stub(request: HttpRequest, pk: int):
-    """Placeholder replaced by Task 4. Raises 404 so wg_list template can url-reverse it."""
-    raise Http404
+def wg_detail(request: HttpRequest, pk: int):
+    wg = get_object_or_404(WG, pk=pk)
+    roles = global_roles(request.user)
+    may_see_names = "first_name" in visible_fields(roles)
+    show_engagement = bool({"cluster", "admin"} & roles)
+    as_of = parse_as_of(request)
+    today = date.today()
+
+    can_edit_rooms = bool({"mietverwaltung", "admin", "belegium"} & roles)
+    if request.method == "POST":
+        if not can_edit_rooms:
+            messages.error(request, "Keine Berechtigung zum Bearbeiten.")
+            return redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
+        a_forms = submitted_assignment_forms(
+            request, roles, today,
+            TenantRoomAssignment.objects.filter(room__wg=wg),
+        )
+        if all(rf.is_valid() for _, rf in a_forms):
+            for _, rf in a_forms:
+                rf.save()
+            messages.success(request, "Gespeichert.")
+            return redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
+        messages.error(request, "Bitte Eingaben prüfen.")
+        # fall through to re-render; failed forms are re-bound below by pk match
+        failed = {a.pk: rf for a, rf in a_forms}
+    else:
+        failed = {}
+
+    active_pks = set(
+        TenantRoomAssignment.objects.filter(assignment_active_on(as_of), room__wg=wg)
+        .values_list("id", flat=True)
+    )
+
+    rooms = []
+    active_tenant_ids: set[int] = set()
+    for room in Room.objects.filter(wg=wg).order_by("name"):
+        assignments = list(
+            TenantRoomAssignment.objects.filter(room=room)
+            .select_related("tenant", "room__wg__building", "sublet_of_tenant")
+            .order_by("-moved_in")
+        )
+        cards = []
+        for a in assignments:
+            a.active_on_asof = a.id in active_pks
+            if a.active_on_asof:
+                active_tenant_ids.add(a.tenant_id)
+            if can_edit_rooms and assignment_editable_by(a, roles, today):
+                aform = failed.get(a.pk) or TenantRoomAssignmentForm(instance=a, prefix=f"room_{a.pk}")
+            else:
+                aform = None
+            cards.append({"assignment": a, "aform": aform})
+        rooms.append({"room": room, "cards": cards})
+
+    rollup = _engagement_rollup(list(active_tenant_ids), as_of) if show_engagement else None
+
+    return render(request, "app/wg_detail.html", {
+        "wg": wg, "as_of": as_of, "rooms": rooms,
+        "show_engagement": show_engagement, "rollup": rollup,
+        "may_see_names": may_see_names,
+    })
 
 
 @login_required
