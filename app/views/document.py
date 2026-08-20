@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
@@ -16,6 +17,15 @@ from app.uploads import upload_error
 
 def _caller(user):
     return Tenant.objects.filter(intranet_username=user.username).first()
+
+
+def _assignment_redirect(request, assignment):
+    """Back to the posting page (?next=) when it's a safe same-host URL — so
+    assignment docs edited from the WG view stay there — else the tenant page."""
+    nxt = request.POST.get("next")
+    if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return redirect(nxt)
+    return redirect("tenant_detail", pk=assignment.tenant_id)
 
 
 def _is_mv(user):
@@ -139,7 +149,7 @@ def upload_assignment_document(request, assignment_pk):
     err = upload_error(f)
     if err:
         messages.error(request, err)
-        return redirect("tenant_detail", pk=assignment.tenant_id)
+        return _assignment_redirect(request, assignment)
 
     values = {}
     for field in spec["dates"]:
@@ -161,7 +171,7 @@ def upload_assignment_document(request, assignment_pk):
         uploaded_by=caller,
         **values,
     )
-    return redirect("tenant_detail", pk=assignment.tenant_id)
+    return _assignment_redirect(request, assignment)
 
 
 @login_required
@@ -179,11 +189,11 @@ def revoke_assignment_document(request, assignment_pk, document_type, doc_pk):
     if not note:
         return HttpResponseBadRequest()
     if doc.revoked_at is not None:
-        return redirect("tenant_detail", pk=assignment.tenant_id)
+        return _assignment_redirect(request, assignment)
     model.objects.filter(pk=doc.pk).update(
         revoked_at=now(), revoked_by_id=caller.pk, revoked_note=note,
     )
-    return redirect("tenant_detail", pk=assignment.tenant_id)
+    return _assignment_redirect(request, assignment)
 
 
 @login_required

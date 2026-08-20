@@ -6,11 +6,12 @@ from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import RoomFurnitureForm, TenantRoomAssignmentForm
-from app.models import AGAbfrage, AGAbfrageResult, Building, Room, TenantRoomAssignment, WG
+from app.models import AGAbfrage, AGAbfrageResult, Building, Room, Tenant, TenantRoomAssignment, WG
 from app.residency import assignment_active_on
 from app.tenant_access import global_roles, visible_fields
 from app.views._shared import (
     ACTIVE_STATES,
+    assignment_doc_groups,
     assignment_editable_by,
     display,
     submitted_assignment_forms,
@@ -122,6 +123,10 @@ def wg_detail(request: HttpRequest, pk: int):
 
     can_edit_rooms = bool({"mietverwaltung", "admin", "belegium"} & roles)
     can_edit_furniture = bool({"mietverwaltung", "admin", "werkstatt"} & roles)
+    # Assignment documents (Mietvertrag etc.) are MV/admin only — Belegium sees
+    # room data but not contracts, matching the tenant detail view's gating.
+    can_see_assignment_docs = bool({"mietverwaltung", "admin"} & roles)
+    can_manage_documents = can_see_assignment_docs
     if request.method == "POST" and "furniture_room_id" in request.POST:
         redirect_to = redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
         if not can_edit_furniture:
@@ -174,6 +179,8 @@ def wg_detail(request: HttpRequest, pk: int):
         active_count = 0
         for a in assignments:
             a.active_on_asof = a.id in active_pks
+            if can_see_assignment_docs:
+                a.doc_groups = assignment_doc_groups(a)
             if a.active_on_asof:
                 active_tenant_ids.add(a.tenant_id)
                 active_count += 1
@@ -196,6 +203,9 @@ def wg_detail(request: HttpRequest, pk: int):
         "show_engagement": show_engagement, "rollup": rollup,
         "may_see_names": may_see_names, "can_edit_rooms": can_edit_rooms,
         "can_edit_furniture": can_edit_furniture,
+        "can_see_assignment_docs": can_see_assignment_docs,
+        "can_manage_documents": can_manage_documents,
+        "all_tenants": list(Tenant.objects.order_by("last_name", "first_name")) if can_manage_documents else [],
     })
 
 

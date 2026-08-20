@@ -3,7 +3,7 @@ tenant.py so rooms.py can reuse them without a circular import."""
 from datetime import timedelta
 
 from app.forms import TenantRoomAssignmentForm
-from app.models import TenantRoomAssignment
+from app.models import ASSIGNMENT_DOCUMENT_MODELS, AssignmentDocumentType, TenantRoomAssignment
 
 # Statuses that clear the engagement flag: being reported active in an AG.
 ACTIVE_STATES = {"AKTIV", "ZU_AKTIV"}
@@ -15,6 +15,24 @@ BELEGIUM_EDIT_WINDOW = timedelta(days=14)
 
 def display(tenant):
     return tenant.preferred_name or f"{tenant.first_name} {tenant.last_name}".strip()
+
+
+def assignment_doc_groups(assignment):
+    """Signed documents for one room assignment, grouped by type, newest first,
+    with the current active (non-revoked) doc surfaced. Powers the per-card
+    Dokumente block in both the tenant and WG detail views."""
+    groups = []
+    for dtype, model in ASSIGNMENT_DOCUMENT_MODELS.items():
+        docs = list(model.objects.filter(assignment=assignment).order_by("-uploaded_at"))
+        for d in docs:
+            d.doc_type = dtype
+        groups.append({
+            "type": dtype,
+            "label": AssignmentDocumentType(dtype).label,
+            "active_doc": next((d for d in docs if d.revoked_at is None), None),
+            "docs": docs,
+        })
+    return groups
 
 
 def engagement_verdict(results):

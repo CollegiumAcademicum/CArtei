@@ -124,3 +124,30 @@ def test_revoke_without_note_rejected(client, setup):
     assert resp.status_code == 400
     doc.refresh_from_db()
     assert doc.revoked_at is None
+
+
+def test_upload_honors_safe_next(client, setup):
+    client.login(username="mv_adoc", password="x")
+    wg_path = reverse("wg_detail", args=[setup["assignment"].room.wg_id])
+    data = {
+        "document_type": "mietbedingungen",
+        "signed_at": "2026-08-01",
+        "next": wg_path,
+        "document_file": SimpleUploadedFile("m.pdf", b"%PDF-1.4 m", content_type="application/pdf"),
+    }
+    resp = client.post(reverse("assignment_document_upload", args=[setup["assignment"].pk]), data)
+    assert resp.status_code == 302
+    assert resp["Location"] == wg_path
+
+
+def test_upload_rejects_offsite_next(client, setup):
+    client.login(username="mv_adoc", password="x")
+    data = {
+        "document_type": "mietbedingungen",
+        "signed_at": "2026-08-01",
+        "next": "https://evil.example.com/",
+        "document_file": SimpleUploadedFile("m.pdf", b"%PDF-1.4 m", content_type="application/pdf"),
+    }
+    resp = client.post(reverse("assignment_document_upload", args=[setup["assignment"].pk]), data)
+    assert resp.status_code == 302
+    assert resp["Location"] == reverse("tenant_detail", args=[setup["tenant"].pk])

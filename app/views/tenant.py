@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
-    AGAbfrage, AGAbfrageResult, AGStatus, ASSIGNMENT_DOCUMENT_MODELS, AssignmentDocumentType,
+    AGAbfrage, AGAbfrageResult, AGStatus,
     DOCUMENT_MODELS, DocumentType,
     EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
 )
@@ -18,7 +18,7 @@ from app.tenant_access import (
     SECTIONS, editable_fields, global_roles, viewer_roles, visible_fields,
 )
 from app.views._shared import (
-    ACTIVE_STATES, BELEGIUM_EDIT_WINDOW, assignment_editable_by,
+    ACTIVE_STATES, BELEGIUM_EDIT_WINDOW, assignment_doc_groups, assignment_editable_by,
     display, engagement_verdict, submitted_assignment_forms,
 )
 
@@ -26,21 +26,6 @@ ProofStatus = namedtuple("ProofStatus", "state count")
 
 
 _DOC_SHORT = {"datenschutz": "DS", "photoerlaubnis": "FoE", "vertraulichkeitserklaerung": "VE"}
-
-
-def _assignment_doc_groups(assignment):
-    groups = []
-    for dtype, model in ASSIGNMENT_DOCUMENT_MODELS.items():
-        docs = list(model.objects.filter(assignment=assignment).order_by("-uploaded_at"))
-        for d in docs:
-            d.doc_type = dtype
-        groups.append({
-            "type": dtype,
-            "label": AssignmentDocumentType(dtype).label,
-            "active_doc": next((d for d in docs if d.revoked_at is None), None),
-            "docs": docs,
-        })
-    return groups
 
 
 def _proof_status(proofs, today):
@@ -354,7 +339,7 @@ def tenant_detail(request: HttpRequest, pk: int):
     ctx["sublet_out"] = sublet_out
 
     for a in active_assignments + past_assignments:
-        a.doc_groups = _assignment_doc_groups(a)
+        a.doc_groups = assignment_doc_groups(a)
 
     # Internal notes on room assignments: a shared Belegung thread, read+write for
     # Mietverwaltung and Belegium (independent of the room-data edit window).

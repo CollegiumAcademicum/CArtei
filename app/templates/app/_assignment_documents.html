@@ -30,6 +30,7 @@ section. Needs: assignment, mode ("status" | "edit"), can_manage_documents, all_
       {% if mode == "edit" and can_manage_documents %}
       <form method="post" action="{% url 'assignment_document_revoke' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;">
         {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
         <input name="revoked_note" type="text" required placeholder="Grund des Widerrufs" style="padding:.2rem;">
         <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;" onclick="return confirm('Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.');">Widerrufen</button>
       </form>
@@ -47,6 +48,7 @@ section. Needs: assignment, mode ("status" | "edit"), can_manage_documents, all_
     {% if mode == "edit" and can_manage_documents and not g.active_doc %}
     <form method="post" action="{% url 'assignment_document_upload' assignment_pk=assignment.pk %}" enctype="multipart/form-data" class="ca-doc-upload">
       {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
       <input type="hidden" name="document_type" value="{{ g.type }}">
       {% if g.type == "mietvertrag" %}
       <label style="font-size:.85rem;">Mieter*in unterschrieben <input type="date" name="renter_signed_at" required style="padding:.3rem;"></label>

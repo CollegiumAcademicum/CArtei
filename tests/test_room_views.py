@@ -144,6 +144,22 @@ def test_detail_engagement_rollup_time_travels(client):
     assert b"0 von 2" in resp2.content
 
 
+def test_detail_shows_assignment_docs_for_mv(client):
+    _login(client, "ag.mietverwaltung")
+    b, wg, room, t = _housing()
+    a = TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=datetime.date(2026, 1, 1))
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert reverse("assignment_document_upload", args=[a.pk]).encode() in resp.content
+
+
+def test_detail_hides_assignment_docs_from_belegium(client):
+    _login(client, "gr.belegium")  # sees the room card, not the contracts
+    b, wg, room, t = _housing()
+    a = TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=datetime.date(2026, 1, 1))
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert reverse("assignment_document_upload", args=[a.pk]).encode() not in resp.content
+
+
 def test_detail_engagement_breakdown_per_state(client):
     _login(client, "admins")
     b, wg, room, t = _housing()
