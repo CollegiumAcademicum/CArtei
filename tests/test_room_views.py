@@ -181,6 +181,38 @@ def test_detail_hides_assignment_notes_from_cluster(client):
     assert "Interne Notizen (Belegung)".encode() not in resp.content
 
 
+def test_detail_mv_can_create_assignment(client):
+    _login(client, "ag.mietverwaltung")
+    b, wg, room, t = _housing()
+    resp = client.post(reverse("wg_detail", args=[wg.pk]), {
+        "new_assignment_room_id": str(room.pk),
+        f"new_{room.pk}-tenant": str(t.pk),
+        f"new_{room.pk}-moved_in": "2026-09-01",
+    })
+    assert resp.status_code == 302
+    a = TenantRoomAssignment.objects.get(room=room, tenant=t)
+    assert a.moved_in == datetime.date(2026, 9, 1)
+
+
+def test_detail_belegium_cannot_create_past_assignment(client):
+    _login(client, "gr.belegium")  # only inside the move-in window
+    b, wg, room, t = _housing()
+    resp = client.post(reverse("wg_detail", args=[wg.pk]), {
+        "new_assignment_room_id": str(room.pk),
+        f"new_{room.pk}-tenant": str(t.pk),
+        f"new_{room.pk}-moved_in": "2026-01-01",
+    })
+    assert resp.status_code == 200  # re-rendered with error, no redirect
+    assert not TenantRoomAssignment.objects.filter(room=room).exists()
+
+
+def test_detail_create_form_hidden_for_cluster(client):
+    _login(client, "gr.cluster")
+    b, wg, room, t = _housing()
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert "Bewohner*in zuordnen".encode() not in resp.content
+
+
 def test_detail_engagement_breakdown_per_state(client):
     _login(client, "admins")
     b, wg, room, t = _housing()

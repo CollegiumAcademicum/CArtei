@@ -28,7 +28,7 @@
   {% endif %}
 
   {% for r in rooms %}
-  <details id="room-{{ r.room.pk }}" class="ca-collapse" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+  <details id="room-{{ r.room.pk }}" class="ca-collapse" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;" {% if r.cform.errors %}open{% endif %}>
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
       <span>{{ r.room.name }}</span>
       <span style="color:#888;font-weight:400;font-size:.9rem;">{{ r.room.size_sqm }} m²</span>
@@ -65,6 +65,68 @@
       {% empty %}
       <p style="color:#888;">Keine Belegung erfasst.</p>
       {% endfor %}
+      {% if r.cform %}
+      <details class="ca-collapse" style="margin-top:.75rem;" {% if r.cform.errors %}open{% endif %}>
+        <summary style="cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:.5rem;">
+          <span class="ca-button-outline" style="padding:.1rem .55rem;font-size:1.1rem;border-radius:4px;line-height:1.4;">+</span>
+          <span style="font-size:.9rem;color:#555;">Bewohner*in zuordnen</span>
+        </summary>
+        {% if r.cform.non_field_errors %}<div style="color:#b00;font-size:.85rem;margin-top:.5rem;">{{ r.cform.non_field_errors }}</div>{% endif %}
+        {# novalidate: server-side validation surfaces errors; HTML5 required would block the empty POST from a collapsed section. #}
+        <form method="post" novalidate class="ca-room-assignment">
+          {% csrf_token %}
+          <input type="hidden" name="new_assignment_room_id" value="{{ r.room.pk }}">
+          <div class="ca-field-grid" style="margin-top:.5rem;">
+            <div class="ca-field{% if r.cform.tenant.errors %} ca-field-error{% endif %}">
+              <span class="ca-field-label">Bewohner*in</span>
+              {{ r.cform.tenant }}
+              {% if r.cform.tenant.errors %}<div style="color:#b00;font-size:.85rem;">{{ r.cform.tenant.errors }}</div>{% endif %}
+            </div>
+            <div class="ca-field{% if r.cform.moved_in.errors %} ca-field-error{% endif %}">
+              <span class="ca-field-label">Eingezogen</span>
+              {{ r.cform.moved_in }}
+              {% if r.cform.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ r.cform.moved_in.errors }}</div>{% endif %}
+            </div>
+            <div class="ca-field">
+              <span class="ca-field-label">Ausgezogen</span>
+              {{ r.cform.moved_out }}
+            </div>
+            <div class="ca-field">
+              <span class="ca-field-label">Briefkastenschlüssel erhalten</span>
+              {{ r.cform.mailbox_key_received }}
+            </div>
+            <div class="ca-field">
+              <span class="ca-field-label">Briefkastenschlüssel abgegeben</span>
+              {{ r.cform.mailbox_key_returned }}
+            </div>
+            <div class="ca-field">
+              <span class="ca-field-label">Schlüssel erhalten</span>
+              {{ r.cform.key_received }}
+            </div>
+            <div class="ca-field">
+              <span class="ca-field-label">Schlüssel wieder abgegeben</span>
+              {{ r.cform.key_returned }}
+            </div>
+            <div class="ca-field ca-sublet-toggle">
+              <span class="ca-field-label">Untermiete</span>
+              {{ r.cform.is_sublet }}
+            </div>
+            <div class="ca-field ca-sublet-dep">
+              <span class="ca-field-label">Untervermietet von</span>
+              {{ r.cform.sublet_of_tenant }}
+              {% if r.cform.sublet_of_tenant.errors %}<div style="color:#b00;font-size:.85rem;">{{ r.cform.sublet_of_tenant.errors }}</div>{% endif %}
+            </div>
+            <div class="ca-field">
+              <span class="ca-field-label">Kaution IBAN</span>
+              {{ r.cform.deposit_iban }}
+            </div>
+          </div>
+          <div style="margin-top:.75rem;">
+            <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Zuordnen</button>
+          </div>
+        </form>
+      </details>
+      {% endif %}
     {% else %}
       {% if r.active_count %}<p style="color:#888;">belegt ({{ r.active_count }})</p>
       {% else %}<p style="color:#888;">frei</p>{% endif %}

@@ -95,3 +95,50 @@ class TenantRoomAssignmentForm(forms.ModelForm):
                     "Diese Person mietet das ausgewählte Zimmer nicht.",
                 )
         return cleaned
+
+
+class RoomAssignmentCreateForm(forms.ModelForm):
+    """Create an assignment for a fixed room (WG detail): pick the tenant, the
+    room comes from the page. Mirror of TenantRoomAssignmentForm with room↔tenant
+    swapped; the room is passed in and set by the view before save."""
+
+    class Meta:
+        model = TenantRoomAssignment
+        fields = [
+            "tenant", "moved_in", "moved_out", "mailbox_key_received",
+            "mailbox_key_returned", "is_sublet", "sublet_of_tenant",
+            "key_received", "key_returned", "deposit_iban",
+        ]
+
+    def __init__(self, *args, room=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.room = room
+        self.fields["tenant"].queryset = Tenant.objects.order_by("last_name", "first_name")
+        self.fields["sublet_of_tenant"].queryset = Tenant.objects.order_by("last_name", "first_name")
+        self.fields["sublet_of_tenant"].required = False
+        for field in self.fields.values():
+            if isinstance(field, forms.DateField):
+                field.widget = forms.DateInput(
+                    attrs={"type": "date", "class": "ca-input"}, format="%Y-%m-%d"
+                )
+                field.input_formats = ["%Y-%m-%d"]
+            elif not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.setdefault("class", "ca-input")
+
+    def clean(self):
+        cleaned = super().clean()
+        source = cleaned.get("sublet_of_tenant")
+        # Same rule as above, against the fixed room this card belongs to.
+        if self.room and source:
+            today = date.today()
+            rents = (
+                TenantRoomAssignment.objects.filter(room=self.room, tenant=source)
+                .filter(Q(moved_out__isnull=True) | Q(moved_out__gt=today))
+                .exists()
+            )
+            if not rents:
+                self.add_error(
+                    "sublet_of_tenant",
+                    "Diese Person mietet das ausgewählte Zimmer nicht.",
+                )
+        return cleaned

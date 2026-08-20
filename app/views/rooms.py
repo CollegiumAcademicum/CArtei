@@ -5,12 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
-from app.forms import RoomFurnitureForm, TenantRoomAssignmentForm
+from app.forms import RoomAssignmentCreateForm, RoomFurnitureForm, TenantRoomAssignmentForm
 from app.models import AGAbfrage, AGAbfrageResult, Building, InternalNote, Room, Tenant, TenantRoomAssignment, WG
 from app.residency import assignment_active_on
 from app.tenant_access import global_roles, visible_fields
 from app.views._shared import (
     ACTIVE_STATES,
+    BELEGIUM_EDIT_WINDOW,
     assignment_doc_groups,
     assignment_editable_by,
     display,
@@ -145,7 +146,32 @@ def wg_detail(request: HttpRequest, pk: int):
         else:
             messages.error(request, "Bitte Eingaben prüfen.")
         return redirect_to
-    if request.method == "POST":
+    # Create a new assignment for one room (tenant chosen, room fixed by the card).
+    new_room_forms: dict[int, RoomAssignmentCreateForm] = {}
+    if request.method == "POST" and "new_assignment_room_id" in request.POST:
+        redirect_to = redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
+        if not can_edit_rooms:
+            messages.error(request, "Keine Berechtigung zum Bearbeiten.")
+            return redirect_to
+        room = Room.objects.filter(wg=wg, pk=request.POST["new_assignment_room_id"]).first()
+        if room is None:
+            messages.error(request, "Zimmer nicht gefunden.")
+            return redirect_to
+        cf = RoomAssignmentCreateForm(request.POST, room=room, prefix=f"new_{room.pk}")
+        # Belegium may only create assignments within their edit window.
+        if (cf.is_valid() and "belegium" in roles and not {"mietverwaltung", "admin"} & roles
+                and cf.cleaned_data["moved_in"] < today - BELEGIUM_EDIT_WINDOW):
+            cf.add_error("moved_in", "Belegium darf Zimmer nur ab zwei Wochen vor Einzug zuordnen.")
+        if cf.is_valid():
+            obj = cf.save(commit=False)
+            obj.room = room
+            obj.save()
+            messages.success(request, "Zimmer zugeordnet.")
+            return redirect_to
+        messages.error(request, "Bitte Eingaben prüfen.")
+        new_room_forms[room.pk] = cf  # re-render this room's form open with errors
+        failed = {}
+    elif request.method == "POST":
         if not can_edit_rooms:
             messages.error(request, "Keine Berechtigung zum Bearbeiten.")
             return redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
@@ -210,6 +236,8 @@ def wg_detail(request: HttpRequest, pk: int):
             "room": room, "cards": cards, "active_count": active_count,
             "ausstattung": [label for attr, label in AUSSTATTUNG if getattr(room, attr)],
             "fform": RoomFurnitureForm(instance=room, prefix=f"furn_{room.pk}") if can_edit_furniture else None,
+            "cform": (new_room_forms.get(room.pk)
+                      or RoomAssignmentCreateForm(room=room, prefix=f"new_{room.pk}")) if can_edit_rooms else None,
         })
 
     rollup = _engagement_rollup(list(active_tenant_ids), as_of) if show_engagement else None
