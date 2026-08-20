@@ -14,6 +14,7 @@ _OWN_MV = frozenset({"owner", "mietverwaltung"})
 _MV = frozenset({"mietverwaltung"})
 _ADMIN = frozenset({"admin"})
 _OWN_MV_BELEGIUM = frozenset({"owner", "mietverwaltung", "belegium"})
+_HELPER = "mietverwaltung_helfer"
 
 def _f(name, label, visible_to, editable_by):
     return Field(name, label, frozenset(visible_to), frozenset(editable_by))
@@ -23,8 +24,8 @@ SECTIONS = [
     Section("personal", "Persönliche Informationen", [
         _f("preferred_name", "Rufname", _PUBLIC, _OWNER),
         _f("pronouns", "Pronomen", _PUBLIC, _OWNER),
-        _f("first_name", "Vorname", _OWN_MV, _ADMIN),
-        _f("last_name", "Nachname", _OWN_MV, _ADMIN),
+        _f("first_name", "Vorname", _OWN_MV | {_HELPER}, _ADMIN),
+        _f("last_name", "Nachname", _OWN_MV | {_HELPER}, _ADMIN),
         _f("email", "E-Mail", _OWN_MV, _OWN_MV),
         _f("phone", "Telefon", _OWN_MV, _OWN_MV),
         _f("is_flinta", "FLINTA", _OWN_MV, _OWN_MV),
@@ -36,8 +37,8 @@ SECTIONS = [
     Section("housing", "Wohnen", [
         # Computed from room assignments — view-only, no editors. Belegium sees these
         # (and the assignment cards live in this section) for room allocation.
-        _f("ersteinzug", "Ersteinzug", _OWN_MV_BELEGIUM, frozenset()),
-        _f("auszug", "Auszug", _OWN_MV_BELEGIUM, frozenset()),
+        _f("ersteinzug", "Ersteinzug", _OWN_MV_BELEGIUM | {_HELPER}, frozenset()),
+        _f("auszug", "Auszug", _OWN_MV_BELEGIUM | {_HELPER}, frozenset()),
     ]),
     Section("legal", "Rechtliches", [
         _f("comments", "Admin-Kommentare", _ADMIN, _ADMIN),
@@ -55,7 +56,7 @@ _ROOM_STAFF = frozenset({"mietverwaltung", "admin", "belegium"})
 # Non-field access rules shown in the permission matrix (not form fields).
 RESOURCE_SECTIONS = [
     Section("rooms", "Zimmer & Mietverträge", [
-        _f("room_assignments_view", "Zimmer-Zuweisungen (aktuell + vergangen)", _OWN_MV_ADMIN | {"belegium"}, _ROOM_STAFF),
+        _f("room_assignments_view", "Zimmer-Zuweisungen (aktuell + vergangen)", _OWN_MV_ADMIN | {"belegium", _HELPER}, _ROOM_STAFF),
         _f("room_assignments_new", "Neues Zimmer zuweisen", frozenset(), _ROOM_STAFF),
         _f("room_assignment_notes", "Zimmerbelegung-Notizen (Belegung)", _ROOM_STAFF, _ROOM_STAFF),
     ]),
@@ -71,6 +72,7 @@ EDITABLE_COLUMNS = sorted({
 })
 
 _ALL_FIELDS = [f for s in SECTIONS for f in s.fields]
+_ALL_VISIBLE_FIELDS = _ALL_FIELDS + [f for s in RESOURCE_SECTIONS for f in s.fields]
 
 
 def global_roles(user) -> set[str]:
@@ -93,9 +95,9 @@ def viewer_roles(user, tenant, current_tenant) -> set[str]:
 
 def visible_fields(roles: set[str]) -> set[str]:
     if "admin" in roles:
-        return {f.name for f in _ALL_FIELDS}
+        return {f.name for f in _ALL_VISIBLE_FIELDS}
     r = frozenset(roles)
-    return {f.name for f in _ALL_FIELDS if r & f.visible_to}
+    return {f.name for f in _ALL_VISIBLE_FIELDS if r & f.visible_to}
 
 
 def editable_fields(roles: set[str]) -> set[str]:
