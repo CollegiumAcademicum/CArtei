@@ -6,9 +6,10 @@ from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import RoomAssignmentCreateForm, RoomFurnitureForm, TenantRoomAssignmentForm
-from app.models import AGAbfrage, AGAbfrageResult, Building, InternalNote, Room, Tenant, TenantRoomAssignment, WG
+from app.models import AGAbfrage, AGAbfrageResult, Building, InternalNote, Room, Tenant, TenantRoomAssignment, UebergabeProtokoll, WG
 from app.residency import assignment_active_on
 from app.tenant_access import global_roles, visible_fields
+from app.views.uebergabe import can_do_uebergabe
 from app.views._shared import (
     ACTIVE_STATES,
     BELEGIUM_EDIT_WINDOW,
@@ -122,6 +123,7 @@ def wg_detail(request: HttpRequest, pk: int):
     as_of = parse_as_of(request)
     today = date.today()
 
+    can_do_uebergabe_flag = can_do_uebergabe(request.user)
     can_edit_rooms = bool({"mietverwaltung", "admin", "belegium"} & roles)
     can_edit_furniture = bool({"mietverwaltung", "admin", "werkstatt"} & roles)
     # Assignment documents (Mietvertrag etc.) are MV/admin only — Belegium sees
@@ -221,6 +223,10 @@ def wg_detail(request: HttpRequest, pk: int):
             a.active_on_asof = a.id in active_pks
             if can_see_assignment_docs:
                 a.doc_groups = assignment_doc_groups(a)
+            if can_do_uebergabe_flag:
+                a.protocols = list(UebergabeProtokoll.objects.filter(assignment=a).order_by("-created_at"))
+                for pr in a.protocols:
+                    pr.active_scan = pr.scans.filter(revoked_at__isnull=True).order_by("-uploaded_at").first()
             if show_assignment_notes:
                 a.notes = notes_by_aid.get(a.id, [])
             if a.active_on_asof:
@@ -250,6 +256,7 @@ def wg_detail(request: HttpRequest, pk: int):
         "can_see_assignment_docs": can_see_assignment_docs,
         "can_manage_documents": can_manage_documents,
         "show_assignment_notes": show_assignment_notes,
+        "can_do_uebergabe": can_do_uebergabe_flag,
         "all_tenants": list(Tenant.objects.order_by("last_name", "first_name")) if can_manage_documents else [],
     })
 

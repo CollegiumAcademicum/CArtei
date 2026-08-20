@@ -61,6 +61,7 @@
       <div class="{% if c.assignment.active_on_asof %}wg-current{% endif %}">
         {% if c.occupant %}<div class="wg-occupant"><a href="{% url 'tenant_detail' c.assignment.tenant.pk %}" class="ca-tl-name">{{ c.occupant }}</a></div>{% endif %}
         {% include "app/_room_assignment_edit.html" with assignment=c.assignment aform=c.aform %}
+        {% include "app/_uebergabe_block.html" with a=c.assignment can_do_uebergabe=can_do_uebergabe %}
       </div>
       {% empty %}
       <p style="color:#888;">Keine Belegung erfasst.</p>
@@ -130,6 +131,14 @@
     {% else %}
       {% if r.active_count %}<p style="color:#888;">belegt ({{ r.active_count }})</p>
       {% else %}<p style="color:#888;">frei</p>{% endif %}
+      {% if can_do_uebergabe %}
+        {% for c in r.cards %}
+        <div>
+          {% if c.occupant %}<div class="wg-occupant">{{ c.occupant }}</div>{% endif %}
+          {% include "app/_uebergabe_block.html" with a=c.assignment can_do_uebergabe=can_do_uebergabe %}
+        </div>
+        {% endfor %}
+      {% endif %}
     {% endif %}
 
     {# Schäden (Datenmodell folgt später) #}

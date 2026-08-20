@@ -1,0 +1,22 @@
+{% if can_do_uebergabe %}
+<div class="uebergabe-block">
+  <strong>Übergabeprotokoll</strong>
+  <form method="post" action="{% url 'uebergabe_start' a.pk 'EINZUG' %}" style="display:inline">{% csrf_token %}<button>Einzug</button></form>
+  <form method="post" action="{% url 'uebergabe_start' a.pk 'AUSZUG' %}" style="display:inline">{% csrf_token %}<button>Auszug</button></form>
+  <ul>
+    {% for pr in a.protocols %}
+      <li>{{ pr.get_protocol_type_display }} ({{ pr.created_at|date:"Y-m-d" }})
+        <a href="{% url 'uebergabe_step' pr.pk 0 %}">bearbeiten</a>
+        <a href="{% url 'uebergabe_pdf' pr.pk %}">PDF</a>
+        {% if pr.active_scan %}
+          <a href="{% url 'uebergabe_scan_download' pr.pk pr.active_scan.pk %}">unterschrieben</a>
+        {% else %}
+          <form method="post" action="{% url 'uebergabe_scan_upload' pr.pk %}" enctype="multipart/form-data" style="display:inline">
+            {% csrf_token %}<input type="file" name="document_file"><button>Hochladen</button>
+          </form>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}

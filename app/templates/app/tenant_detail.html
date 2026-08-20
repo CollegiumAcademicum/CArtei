@@ -78,6 +78,7 @@
         {% if can_create_room %}<span class="ca-hint" tabindex="0" role="button" aria-label="Wer kann Zimmerbelegungen bearbeiten?">i<span class="ca-hint-bubble">Die Mietverwaltung kann Zimmerbelegungen jederzeit bearbeiten. Die Belegium nur bei zukünftigen Einzügen und in den ersten zwei Wochen nach Einzug – danach nur Lesezugriff. Notizen bleiben für beide immer bearbeitbar.</span></span>{% endif %}</p>
       {% for assignment, aform in active_assignment_cards %}
       {% include "app/_room_assignment_edit.html" %}
+      {% include "app/_uebergabe_block.html" with a=assignment can_do_uebergabe=can_do_uebergabe %}
       {% empty %}
       <p style="color:#888;font-size:.9rem;margin:.25rem 0;">Kein aktuelles Zimmer.</p>
       {% endfor %}
@@ -89,6 +90,7 @@
         <div style="margin-top:.4rem;">
         {% for assignment, aform in past_assignment_cards %}
         {% include "app/_room_assignment_edit.html" %}
+        {% include "app/_uebergabe_block.html" with a=assignment can_do_uebergabe=can_do_uebergabe %}
         {% endfor %}
         </div>
       </details>
