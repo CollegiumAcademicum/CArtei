@@ -1,0 +1,37 @@
+{# CArtei/app/templates/app/uebergabe/step.html #}
+{% extends "app/base.html" %}
+{% block content %}
+<h1>Übergabeprotokoll ({{ protocol.get_protocol_type_display }})</h1>
+<p>Zimmer {{ assignment.room.name }} — {{ assignment.tenant.first_name }} {{ assignment.tenant.last_name }}</p>
+<p>Schritt {{ step|add:1 }} / {{ steps|length }}: {{ cfg.title }}</p>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% if hform %}{{ hform.as_p }}{% endif %}
+  {% if damage_rows %}
+    {{ fset.management_form }}
+    {% for row in damage_rows %}
+      <fieldset>
+        <legend>{{ row.label }}</legend>
+        {{ row.form.id }}
+        {% for col, blabel in row.buckets %}
+          <label>{{ blabel }}
+            {% if col == "count_lt1" %}{{ row.form.count_lt1 }}
+            {% elif col == "count_mid" %}{{ row.form.count_mid }}
+            {% else %}{{ row.form.count_gt }}{% endif %}
+          </label>
+        {% endfor %}
+        <label>Bemerkung {{ row.form.note }}</label>
+      </fieldset>
+    {% endfor %}
+  {% endif %}
+
+  {% if step > 0 %}<button name="direction" value="zurueck">Zurück</button>{% endif %}
+  {% if is_last %}
+    <a href="{% url 'uebergabe_pdf' protocol.pk %}">PDF erzeugen</a>
+    <button name="direction" value="weiter">Speichern</button>
+  {% else %}
+    <button name="direction" value="weiter">Weiter</button>
+  {% endif %}
+</form>
+{% endblock %}
