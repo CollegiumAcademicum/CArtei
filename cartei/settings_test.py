@@ -50,6 +50,7 @@ TENANT_ROLE_GROUPS = {
     "cluster": ["gr.cluster"],
     "belegium": ["gr.belegium"],
     "mietverwaltung": ["ag.mietverwaltung"],
+    "mietverwaltung_helfer": ["cartei_helfer_mietverwaltung"],
     "werkstatt": ["cartei_werkstatt"],
     "finanzierung": ["ag.finanzierung"],
 }

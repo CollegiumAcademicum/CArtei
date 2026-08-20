@@ -43,6 +43,7 @@ class CustomLDAPBackend(LDAPBackend):
         admin_dn = getattr(settings, "CARTEI_ADMIN_GROUP", "").lower()
         cluster_dn = getattr(settings, "CARTEI_CLUSTER_GROUP", "").lower()
         mietverwaltung_dn = getattr(settings, "CARTEI_MIETVERWALTUNG_GROUP", "").lower()
+        helper_dn = getattr(settings, "CARTEI_HELFER_MIETVERWALTUNG_GROUP", "").lower()
         try:
             member_of: list[str] = user.ldap_user.attrs.get("memberOf", [])
             desired: set[str] = set()
@@ -58,6 +59,8 @@ class CustomLDAPBackend(LDAPBackend):
                     desired.add("gr.cluster")
                 if dn_l == mietverwaltung_dn:
                     desired.add("cartei_mietverwaltung")
+                if dn_l == helper_dn:
+                    desired.add("cartei_helfer_mietverwaltung")
                 cn = _dn_to_cn(dn)
                 if cn.startswith(GROUP_PREFIXES):
                     desired.add(cn)

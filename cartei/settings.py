@@ -143,6 +143,10 @@ CARTEI_MIETVERWALTUNG_GROUP = os.environ.get(
     "CARTEI_MIETVERWALTUNG_GROUP",
     "cn=cartei_mietverwaltung,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
 )
+CARTEI_HELFER_MIETVERWALTUNG_GROUP = os.environ.get(
+    "CARTEI_HELFER_MIETVERWALTUNG_GROUP",
+    "cn=cartei_helfer_mietverwaltung,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
+)
 LDAP_USER_SEARCH_BASE = os.environ.get(
     "LDAP_USER_SEARCH_BASE",
     "cn=users,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
@@ -169,6 +173,7 @@ TENANT_ROLE_GROUPS = {
     "cluster": _group_list("TENANT_GROUP_CLUSTER", "gr.cluster"),
     "belegium": _group_list("TENANT_GROUP_BELEGIUM", "gr.belegium"),
     "mietverwaltung": _group_list("TENANT_GROUP_MIETVERWALTUNG", "cartei_mietverwaltung"),
+    "mietverwaltung_helfer": _group_list("TENANT_GROUP_MIETVERWALTUNG_HELFER", "cartei_helfer_mietverwaltung"),
     # AG Werkstatt: may edit room furniture (Ausstattung) only, nothing else.
     "werkstatt": _group_list("TENANT_GROUP_WERKSTATT", "cartei_werkstatt"),
     "finanzierung": _group_list("TENANT_GROUP_FINANZIERUNG", "ag.finanzierung"),
