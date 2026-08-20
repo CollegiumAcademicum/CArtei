@@ -33,3 +33,39 @@ def test_scan_upload_and_download(client, protocol, helper):
     doc = UebergabeProtokollDocument.objects.get(protocol=protocol)
     dl = client.get(reverse("uebergabe_scan_download", args=[protocol.pk, doc.pk]))
     assert dl.status_code == 200 and b"%PDF" in dl.getvalue()
+
+
+def _upload(client, protocol):
+    f = SimpleUploadedFile("scan.pdf", b"%PDF-1.4 data", content_type="application/pdf")
+    client.post(reverse("uebergabe_scan_upload", args=[protocol.pk]), {"document_file": f})
+    return UebergabeProtokollDocument.objects.get(protocol=protocol)
+
+
+@pytest.mark.django_db
+def test_scan_revoke(client, protocol, helper):
+    client.force_login(helper)
+    doc = _upload(client, protocol)
+    resp = client.post(reverse("uebergabe_scan_revoke", args=[protocol.pk, doc.pk]),
+                       {"revoked_note": "Falsch gescannt"})
+    assert resp.status_code == 302
+    doc.refresh_from_db()
+    assert doc.revoked_at is not None and doc.revoked_note == "Falsch gescannt"
+
+
+@pytest.mark.django_db
+def test_scan_revoke_requires_note(client, protocol, helper):
+    client.force_login(helper)
+    doc = _upload(client, protocol)
+    resp = client.post(reverse("uebergabe_scan_revoke", args=[protocol.pk, doc.pk]), {"revoked_note": "  "})
+    assert resp.status_code == 302
+    doc.refresh_from_db()
+    assert doc.revoked_at is None
+
+
+@pytest.mark.django_db
+def test_scan_double_revoke_no_500(client, protocol, helper):
+    client.force_login(helper)
+    doc = _upload(client, protocol)
+    client.post(reverse("uebergabe_scan_revoke", args=[protocol.pk, doc.pk]), {"revoked_note": "erst"})
+    resp = client.post(reverse("uebergabe_scan_revoke", args=[protocol.pk, doc.pk]), {"revoked_note": "nochmal"})
+    assert resp.status_code == 302

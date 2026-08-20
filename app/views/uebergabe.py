@@ -137,10 +137,12 @@ def uebergabe_scan_revoke(request, pk, doc_pk):
     if not note:
         messages.error(request, "Begründung erforderlich.")
         return redirect("uebergabe_step", pk=pk, step=0)
-    doc.revoked_at = now()
-    doc.revoked_by = _caller(request.user)
-    doc.revoked_note = note
-    doc.save()
+    if doc.revoked_at is not None:
+        return redirect("uebergabe_step", pk=pk, step=0)
+    caller = _caller(request.user)
+    UebergabeProtokollDocument.objects.filter(pk=doc.pk).update(
+        revoked_at=now(), revoked_by_id=caller.pk, revoked_note=note,
+    )
     return redirect("uebergabe_step", pk=pk, step=0)
 
 
