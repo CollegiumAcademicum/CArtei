@@ -340,8 +340,11 @@ def tenant_detail(request: HttpRequest, pk: int):
         sublet_out = []
     ctx["sublet_out"] = sublet_out
 
+    # Documents stay owner/MV-only — Belegium/helpers see room data, not Mietverträge.
+    can_see_assignment_docs = bool({"owner", "mietverwaltung", "admin"} & roles)
     for a in active_assignments + past_assignments:
-        a.doc_groups = assignment_doc_groups(a)
+        if can_see_assignment_docs:
+            a.doc_groups = assignment_doc_groups(a)
         if can_do_uebergabe_flag:
             a.protocols = list(UebergabeProtokoll.objects.filter(assignment=a).order_by("-created_at"))
             for pr in a.protocols:
@@ -349,10 +352,9 @@ def tenant_detail(request: HttpRequest, pk: int):
 
     # Internal notes on room assignments: a shared Belegung thread, read+write for
     # Mietverwaltung and Belegium (independent of the room-data edit window).
-    # Documents stay owner/MV-only — Belegium sees notes, not Mietverträge.
     show_assignment_notes = bool({"mietverwaltung", "belegium", "admin"} & roles)
     ctx["show_assignment_notes"] = show_assignment_notes
-    ctx["can_see_assignment_docs"] = bool({"owner", "mietverwaltung", "admin"} & roles)
+    ctx["can_see_assignment_docs"] = can_see_assignment_docs
     notes_by_aid = {}
     if show_assignment_notes and (active_assignments or past_assignments):
         aids = [a.pk for a in active_assignments + past_assignments]

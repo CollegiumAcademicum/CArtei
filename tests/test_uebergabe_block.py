@@ -12,6 +12,7 @@ def wg_setup(db):
     room = Room.objects.create(wg=wg, name="1.01", size_sqm=14)
     t = Tenant.objects.create(first_name="Alice", last_name="B", intranet_username="ab", intranet_uuid=uuid.uuid4())
     TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=datetime.date(2026, 1, 1))
+    wg.tenant = t
     return wg
 
 @pytest.fixture
@@ -26,4 +27,13 @@ def test_helper_sees_protocol_block_not_contracts(client, wg_setup, helper):
     html = client.get(reverse("wg_detail", args=[wg_setup.pk])).content.decode()
     assert "Übergabeprotokoll" in html          # protocol block present
     assert "Alice" in html                        # occupant name visible
+    assert "Mietvertrag" not in html              # MV-only docs hidden
+
+
+@pytest.mark.django_db
+def test_helper_sees_protocol_block_on_tenant_detail(client, wg_setup, helper):
+    client.force_login(helper)
+    html = client.get(reverse("tenant_detail", args=[wg_setup.tenant.pk])).content.decode()
+    assert "Übergabeprotokoll" in html          # protocol block present
+    assert "Alice" in html                        # tenant name visible
     assert "Mietvertrag" not in html              # MV-only docs hidden
