@@ -6,6 +6,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libldap-dev \
     libsasl2-dev \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libcairo2 \
+    libffi8 \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml .
