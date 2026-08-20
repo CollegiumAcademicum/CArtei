@@ -69,3 +69,28 @@ def test_scan_double_revoke_no_500(client, protocol, helper):
     client.post(reverse("uebergabe_scan_revoke", args=[protocol.pk, doc.pk]), {"revoked_note": "erst"})
     resp = client.post(reverse("uebergabe_scan_revoke", args=[protocol.pk, doc.pk]), {"revoked_note": "nochmal"})
     assert resp.status_code == 302
+
+
+@pytest.mark.django_db
+def test_revoke_caller_none_returns_400(client, protocol, db):
+    """User with permission but no matching Tenant row must get 400, not 500."""
+    u = User.objects.create_user("notenantuser", password="x")
+    u.groups.add(Group.objects.create(name="cartei_helfer_mietverwaltung_notenant"))
+    # Wire the permission group the view checks by adding the real group name.
+    from django.contrib.auth.models import Group as G
+    g, _ = G.objects.get_or_create(name="cartei_helfer_mietverwaltung")
+    u.groups.add(g)
+    client.force_login(u)
+    # Upload a doc as the regular helper first (reuse protocol fixture's Tenant).
+    from django.contrib.auth.models import User as U
+    helper_u = U.objects.create_user("helper", password="x")
+    helper_u.groups.add(g)
+    client.force_login(helper_u)
+    f = SimpleUploadedFile("scan.pdf", b"%PDF-1.4 data", content_type="application/pdf")
+    client.post(reverse("uebergabe_scan_upload", args=[protocol.pk]), {"document_file": f})
+    doc = UebergabeProtokollDocument.objects.get(protocol=protocol)
+    # Now switch to the user with no Tenant row and try to revoke.
+    client.force_login(u)
+    resp = client.post(reverse("uebergabe_scan_revoke", args=[protocol.pk, doc.pk]),
+                       {"revoked_note": "test"})
+    assert resp.status_code == 400

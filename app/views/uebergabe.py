@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.forms import modelform_factory, modelformset_factory
+from django.forms import ModelForm, modelform_factory, modelformset_factory
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -49,8 +49,29 @@ def _header_form_cls(fields):
     return modelform_factory(UebergabeProtokoll, fields=fields)
 
 
+class DamageForm(ModelForm):
+    """Omitted count buckets (e.g. count_mid for Löcher rows) default to 0."""
+    class Meta:
+        model = UebergabeProtokollDamage
+        fields = ["count_lt1", "count_mid", "count_gt", "note"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in ("count_lt1", "count_mid", "count_gt"):
+            self.fields[field].required = False
+
+    def clean_count_lt1(self):
+        return self.cleaned_data.get("count_lt1") or 0
+
+    def clean_count_mid(self):
+        return self.cleaned_data.get("count_mid") or 0
+
+    def clean_count_gt(self):
+        return self.cleaned_data.get("count_gt") or 0
+
+
 _DamageFormSet = modelformset_factory(
-    UebergabeProtokollDamage, fields=["count_lt1", "count_mid", "count_gt", "note"], extra=0,
+    UebergabeProtokollDamage, form=DamageForm, extra=0,
 )
 
 
@@ -140,6 +161,8 @@ def uebergabe_scan_revoke(request, pk, doc_pk):
     if doc.revoked_at is not None:
         return redirect("uebergabe_step", pk=pk, step=0)
     caller = _caller(request.user)
+    if caller is None:
+        return HttpResponseBadRequest()
     UebergabeProtokollDocument.objects.filter(pk=doc.pk).update(
         revoked_at=now(), revoked_by_id=caller.pk, revoked_note=note,
     )

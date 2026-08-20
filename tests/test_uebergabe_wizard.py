@@ -60,6 +60,34 @@ def test_step_saves_and_advances(client, assignment, helper):
     assert UebergabeProtokollDamage.objects.get(pk=rows[0].pk).count_lt1 == 3
 
 
+@pytest.mark.django_db
+def test_loecher_step_omitting_count_mid_saves_zero(client, assignment, helper):
+    """Real browser POST for a Löcher row omits count_mid; must 302 and persist 0."""
+    client.force_login(helper)
+    client.post(reverse("uebergabe_start", args=[assignment.pk, "EINZUG"]))
+    p = UebergabeProtokoll.objects.get(assignment=assignment)
+
+    # Step 4 = Tür: TUER_FLECKEN (flecken, 3 buckets) + TUER_LOECHER (loecher, 2 buckets).
+    rows = list(p.damages.filter(line__in=["TUER_FLECKEN", "TUER_LOECHER"]).order_by("line"))
+    data = {
+        "direction": "weiter",
+        "form-TOTAL_FORMS": "2", "form-INITIAL_FORMS": "2",
+        "form-MIN_NUM_FORMS": "0", "form-MAX_NUM_FORMS": "1000",
+    }
+    for i, r in enumerate(rows):
+        data[f"form-{i}-id"] = str(r.pk)
+        data[f"form-{i}-count_lt1"] = "2"
+        # count_mid intentionally omitted for both rows (simulates browser not rendering it for Löcher)
+        data[f"form-{i}-count_gt"] = "1"
+        data[f"form-{i}-note"] = ""
+    resp = client.post(reverse("uebergabe_step", args=[p.pk, 4]), data)
+    assert resp.status_code == 302, "Expected 302 (advance); got 200 meaning form invalid"
+    loecher = UebergabeProtokollDamage.objects.get(pk=rows[1].pk)  # TUER_LOECHER
+    assert loecher.count_mid == 0
+    assert loecher.count_lt1 == 2
+    assert loecher.count_gt == 1
+
+
 import datetime as _dt
 
 def _weasyprint_available():
