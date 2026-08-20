@@ -36,4 +36,7 @@ urlpatterns = [
     path("assignments/<int:assignment_pk>/uebergabe/<str:protocol_type>/start/", uebergabe.uebergabe_start, name="uebergabe_start"),
     path("uebergabe/<int:pk>/step/<int:step>/", uebergabe.uebergabe_step, name="uebergabe_step"),
     path("uebergabe/<int:pk>/pdf/", uebergabe.uebergabe_pdf, name="uebergabe_pdf"),
+    path("uebergabe/<int:pk>/scan/upload/", uebergabe.uebergabe_scan_upload, name="uebergabe_scan_upload"),
+    path("uebergabe/<int:pk>/scan/<int:doc_pk>/download/", uebergabe.uebergabe_scan_download, name="uebergabe_scan_download"),
+    path("uebergabe/<int:pk>/scan/<int:doc_pk>/revoke/", uebergabe.uebergabe_scan_revoke, name="uebergabe_scan_revoke"),
 ]

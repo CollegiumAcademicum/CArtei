@@ -7,10 +7,13 @@ from django.template.loader import render_to_string
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
+from django.contrib import messages
+
 from app.models import (
     Tenant, TenantRoomAssignment, UebergabeProtokoll, UebergabeProtokollDamage,
-    UebergabeProtokollType,
+    UebergabeProtokollDocument, UebergabeProtokollType,
 )
+from app.uploads import upload_error
 from app.tenant_access import global_roles
 from app.uebergabe_steps import BUCKETS, DAMAGE_META, STEPS, protocol_lines
 
@@ -90,6 +93,55 @@ def uebergabe_step(request, pk, step):
         "cfg": cfg, "hform": hform, "fset": fset, "damage_rows": damage_rows,
         "is_last": step == len(STEPS) - 1,
     })
+
+
+@login_required
+@require_POST
+def uebergabe_scan_upload(request, pk):
+    if not can_do_uebergabe(request.user):
+        raise PermissionDenied
+    p = get_object_or_404(UebergabeProtokoll, pk=pk)
+    caller = _caller(request.user)
+    f = request.FILES.get("document_file")
+    if not f or caller is None:
+        return HttpResponseBadRequest()
+    err = upload_error(f)
+    if err:
+        messages.error(request, err)
+        return redirect("uebergabe_step", pk=p.pk, step=0)
+    UebergabeProtokollDocument.objects.create(
+        assignment=p.assignment, protocol=p, file_name=f.name, file_data=f.read(),
+        uploaded_at=now(), uploaded_by=caller,
+    )
+    messages.success(request, "Unterschriebenes Protokoll hochgeladen.")
+    return redirect("uebergabe_step", pk=p.pk, step=0)
+
+
+@login_required
+def uebergabe_scan_download(request, pk, doc_pk):
+    if not can_do_uebergabe(request.user):
+        raise PermissionDenied
+    doc = get_object_or_404(UebergabeProtokollDocument, pk=doc_pk, protocol_id=pk)
+    resp = HttpResponse(bytes(doc.file_data), content_type="application/pdf")
+    resp["Content-Disposition"] = f'attachment; filename="{doc.file_name}"'
+    return resp
+
+
+@login_required
+@require_POST
+def uebergabe_scan_revoke(request, pk, doc_pk):
+    if not can_do_uebergabe(request.user):
+        raise PermissionDenied
+    doc = get_object_or_404(UebergabeProtokollDocument, pk=doc_pk, protocol_id=pk)
+    note = (request.POST.get("revoked_note") or "").strip()
+    if not note:
+        messages.error(request, "Begründung erforderlich.")
+        return redirect("uebergabe_step", pk=pk, step=0)
+    doc.revoked_at = now()
+    doc.revoked_by = _caller(request.user)
+    doc.revoked_note = note
+    doc.save()
+    return redirect("uebergabe_step", pk=pk, step=0)
 
 
 @login_required
