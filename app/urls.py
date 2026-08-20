@@ -35,4 +35,5 @@ urlpatterns = [
     path("admin/permissions/", admin_views.permission_matrix, name="permission_matrix"),
     path("assignments/<int:assignment_pk>/uebergabe/<str:protocol_type>/start/", uebergabe.uebergabe_start, name="uebergabe_start"),
     path("uebergabe/<int:pk>/step/<int:step>/", uebergabe.uebergabe_step, name="uebergabe_step"),
+    path("uebergabe/<int:pk>/pdf/", uebergabe.uebergabe_pdf, name="uebergabe_pdf"),
 ]

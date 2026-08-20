@@ -10,6 +10,7 @@ dependencies = [
     "gunicorn>=22.0",
     "python-dotenv>=1.0",
     "whitenoise>=6.0",
+    "weasyprint>=69.0",
 ]
 
 [dependency-groups]

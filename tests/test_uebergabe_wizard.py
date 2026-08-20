@@ -58,3 +58,30 @@ def test_step_saves_and_advances(client, assignment, helper):
     resp = client.post(reverse("uebergabe_step", args=[p.pk, 2]), data)
     assert resp.status_code == 302 and resp.url.endswith("/step/3/")
     assert UebergabeProtokollDamage.objects.get(pk=rows[0].pk).count_lt1 == 3
+
+
+import datetime as _dt
+
+def _weasyprint_available():
+    try:
+        from weasyprint import HTML  # triggers native-lib load
+        return True
+    except OSError:
+        return False
+
+@pytest.mark.skipif(not _weasyprint_available(), reason="WeasyPrint native libs not available")
+@pytest.mark.django_db
+def test_pdf_requires_header_then_renders(client, assignment, helper):
+    client.force_login(helper)
+    client.post(reverse("uebergabe_start", args=[assignment.pk, "EINZUG"]))
+    p = UebergabeProtokoll.objects.get(assignment=assignment)
+    # Missing mv_representative/protocol_at -> 400.
+    assert client.get(reverse("uebergabe_pdf", args=[p.pk])).status_code == 400
+    p.mv_representative = assignment.tenant
+    p.protocol_at = _dt.datetime(2026, 1, 2, 10, 0, tzinfo=_dt.timezone.utc)
+    p.save()
+    resp = client.get(reverse("uebergabe_pdf", args=[p.pk]))
+    assert resp.status_code == 200 and resp["Content-Type"] == "application/pdf"
+    assert resp.content[:4] == b"%PDF"
+    p.refresh_from_db()
+    assert p.finalized_at is not None

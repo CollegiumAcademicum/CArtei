@@ -1,0 +1,29 @@
+{# CArtei/app/templates/app/uebergabe/pdf.html #}
+<html><head><meta charset="utf-8"><style>
+  body { font-family: sans-serif; font-size: 11pt; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border: 1px solid #999; padding: 2px 4px; }
+  .sig { margin-top: 40px; }
+</style></head><body>
+  <h1>Übergabeprotokoll – {{ protocol.get_protocol_type_display }}</h1>
+  <p>Zimmer {{ assignment.room.name }} ({{ assignment.room.wg.name }})<br>
+     Mieter*in: {{ assignment.tenant.first_name }} {{ assignment.tenant.last_name }}<br>
+     Vertretung Mietverwaltung: {{ protocol.mv_representative.first_name }} {{ protocol.mv_representative.last_name }}<br>
+     Datum/Uhrzeit: {{ protocol.protocol_at }}</p>
+  <p>Zwischenwand: {{ protocol.get_partition_position_display|default:"—" }},
+     barrierefrei: {% if protocol.barrierefrei %}ja{% else %}nein{% endif %}</p>
+  <table><tr><th>Schaden</th><th>&lt;1 cm</th><th>1–5 cm</th><th>&gt;5 / &gt;1 cm</th><th>Bemerkung</th></tr>
+    {% for label, d in damages %}
+      <tr><td>{{ d.get_line_display }}</td><td>{{ d.count_lt1 }}</td><td>{{ d.count_mid }}</td><td>{{ d.count_gt }}</td><td>{{ d.note|default:"" }}</td></tr>
+    {% endfor %}
+  </table>
+  <p>Bett: {{ protocol.get_bed_source_display|default:"—" }} · Matratze: {{ protocol.get_mattress_source_display|default:"—" }}
+     · Schreibtisch: {{ protocol.get_desk_source_display|default:"—" }} · Schrank: {{ protocol.get_closet_source_display|default:"—" }}</p>
+  <p><b>Sonstige Schäden:</b> {{ protocol.sonstige_schaeden|default:"—" }}<br>
+     <b>Sonstige Möbel:</b> {{ protocol.sonstige_moebel|default:"—" }}<br>
+     <b>Küche:</b> {{ protocol.kueche_schaeden|default:"—" }}<br>
+     <b>Bad:</b> {{ protocol.bad_schaeden|default:"—" }}<br>
+     <b>Gemeinschaftsfläche:</b> {{ protocol.gemeinschaftsflaeche|default:"—" }}</p>
+  <div class="sig">_______________________  &nbsp;&nbsp; _______________________<br>
+     Mieter*in &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Mietverwaltung</div>
+</body></html>

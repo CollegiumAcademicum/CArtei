@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.forms import modelform_factory, modelformset_factory
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
@@ -89,3 +90,23 @@ def uebergabe_step(request, pk, step):
         "cfg": cfg, "hform": hform, "fset": fset, "damage_rows": damage_rows,
         "is_last": step == len(STEPS) - 1,
     })
+
+
+@login_required
+def uebergabe_pdf(request, pk):
+    from weasyprint import HTML  # lazy: avoid boot-time native-lib load
+    if not can_do_uebergabe(request.user):
+        raise PermissionDenied
+    p = get_object_or_404(UebergabeProtokoll, pk=pk)
+    if p.mv_representative_id is None or p.protocol_at is None:
+        return HttpResponseBadRequest("Vertretung und Datum/Uhrzeit sind erforderlich.")
+    damages = [(DAMAGE_META[d.line][0], d) for d in p.damages.all()]
+    html = render_to_string("app/uebergabe/pdf.html",
+                            {"protocol": p, "assignment": p.assignment, "damages": damages})
+    if p.finalized_at is None:
+        p.finalized_at = now()
+        p.save(update_fields=["finalized_at"])
+    pdf = HTML(string=html).write_pdf()
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    resp["Content-Disposition"] = f'inline; filename="uebergabeprotokoll_{p.pk}.pdf"'
+    return resp
