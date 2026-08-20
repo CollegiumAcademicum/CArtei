@@ -6,7 +6,7 @@ from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
 from app.forms import RoomFurnitureForm, TenantRoomAssignmentForm
-from app.models import AGAbfrage, AGAbfrageResult, Building, Room, Tenant, TenantRoomAssignment, WG
+from app.models import AGAbfrage, AGAbfrageResult, Building, InternalNote, Room, Tenant, TenantRoomAssignment, WG
 from app.residency import assignment_active_on
 from app.tenant_access import global_roles, visible_fields
 from app.views._shared import (
@@ -127,6 +127,8 @@ def wg_detail(request: HttpRequest, pk: int):
     # room data but not contracts, matching the tenant detail view's gating.
     can_see_assignment_docs = bool({"mietverwaltung", "admin"} & roles)
     can_manage_documents = can_see_assignment_docs
+    # The shared Belegung note thread: read+write for MV, Belegium and Admin.
+    show_assignment_notes = bool({"mietverwaltung", "belegium", "admin"} & roles)
     if request.method == "POST" and "furniture_room_id" in request.POST:
         redirect_to = redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
         if not can_edit_furniture:
@@ -167,6 +169,18 @@ def wg_detail(request: HttpRequest, pk: int):
         .values_list("id", flat=True)
     )
 
+    # Belegung notes for every assignment in the WG, fetched in one query.
+    notes_by_aid: dict[int, list] = {}
+    if show_assignment_notes:
+        aids = list(TenantRoomAssignment.objects.filter(room__wg=wg).values_list("id", flat=True))
+        for n in (
+            InternalNote.objects
+            .filter(subject_type="room_assignment", subject_id__in=aids,
+                    source_group="belegung", deleted_at__isnull=True)
+            .select_related("created_by").order_by("created_at")
+        ):
+            notes_by_aid.setdefault(n.subject_id, []).append(n)
+
     rooms = []
     active_tenant_ids: set[int] = set()
     for room in Room.objects.filter(wg=wg).order_by("name"):
@@ -181,6 +195,8 @@ def wg_detail(request: HttpRequest, pk: int):
             a.active_on_asof = a.id in active_pks
             if can_see_assignment_docs:
                 a.doc_groups = assignment_doc_groups(a)
+            if show_assignment_notes:
+                a.notes = notes_by_aid.get(a.id, [])
             if a.active_on_asof:
                 active_tenant_ids.add(a.tenant_id)
                 active_count += 1
@@ -205,6 +221,7 @@ def wg_detail(request: HttpRequest, pk: int):
         "can_edit_furniture": can_edit_furniture,
         "can_see_assignment_docs": can_see_assignment_docs,
         "can_manage_documents": can_manage_documents,
+        "show_assignment_notes": show_assignment_notes,
         "all_tenants": list(Tenant.objects.order_by("last_name", "first_name")) if can_manage_documents else [],
     })
 

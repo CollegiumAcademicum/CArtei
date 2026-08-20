@@ -5,7 +5,7 @@ import pytest
 from django.contrib.auth.models import Group, User
 from django.urls import reverse
 
-from app.models import AGAbfrage, AGAbfrageResult, Building, Room, Tenant, TenantRoomAssignment, WG
+from app.models import AGAbfrage, AGAbfrageResult, Building, InternalNote, Room, Tenant, TenantRoomAssignment, WG
 from app.forms import TenantRoomAssignmentForm  # noqa: F401
 
 pytestmark = pytest.mark.django_db
@@ -158,6 +158,27 @@ def test_detail_hides_assignment_docs_from_belegium(client):
     a = TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=datetime.date(2026, 1, 1))
     resp = client.get(reverse("wg_detail", args=[wg.pk]))
     assert reverse("assignment_document_upload", args=[a.pk]).encode() not in resp.content
+
+
+def test_detail_shows_assignment_notes_for_belegium(client):
+    from django.utils.timezone import now
+    _login(client, "gr.belegium")
+    b, wg, room, t = _housing()
+    a = TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=datetime.date(2026, 1, 1))
+    InternalNote.objects.create(
+        body="WG-Notiz sichtbar", source_group="belegung", subject_type="room_assignment",
+        subject_id=a.pk, created_at=now(), created_by=t,
+    )
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert b"WG-Notiz sichtbar" in resp.content
+
+
+def test_detail_hides_assignment_notes_from_cluster(client):
+    _login(client, "gr.cluster")  # engagement yes, Belegung notes no
+    b, wg, room, t = _housing()
+    TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=datetime.date(2026, 1, 1))
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert "Interne Notizen (Belegung)".encode() not in resp.content
 
 
 def test_detail_engagement_breakdown_per_state(client):

@@ -48,6 +48,7 @@ LDAP_USER_SEARCH_BASE = "cn=users,dc=test"
 TENANT_ROLE_GROUPS = {
     "admin": ["admins"],
     "cluster": ["gr.cluster"],
+    "belegium": ["gr.belegium"],
     "mietverwaltung": ["ag.mietverwaltung"],
     "werkstatt": ["cartei_werkstatt"],
     "finanzierung": ["ag.finanzierung"],
