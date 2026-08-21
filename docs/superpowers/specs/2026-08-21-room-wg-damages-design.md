@@ -103,17 +103,17 @@ class RoomDamageLine(str, Enum):
     SCHRANK_FLECKEN, SCHRANK_LOECHER
 
 class WGDamageLine(str, Enum):
-    # common areas × surface defect
-    KUECHE_BODEN_*, KUECHE_WAND_*, KUECHE_FENSTER_* ...
-    BAD_BODEN_*, BAD_WAND_*, BAD_FENSTER_* ...
-    FLUR_*, TREPPENHAUS_*, GEMEINSCHAFT_* ...
+    # 3 common areas × defect (surface, if relevant, goes in the note)
+    BAD_FLECK, BAD_LOCH, BAD_KLEBER, BAD_SONSTIGES
+    KUECHE_FLECK, KUECHE_LOCH, KUECHE_KLEBER, KUECHE_SONSTIGES
+    GEMEINSCHAFT_FLECK, GEMEINSCHAFT_LOCH, GEMEINSCHAFT_KLEBER, GEMEINSCHAFT_SONSTIGES
 ```
 
 `RoomDamageLine` reuses the old room catalog verbatim. `WGDamageLine` is the
-proposed common-area set. **Open item:** exact `WGDamageLine` values to be
-finalized with the user during implementation (see Open Items). The two are
-distinct enums / distinct Postgres enum types (`roomdamageline`,
-`wgdamageline`, `damagesize`).
+three common areas (**Bad / Küche / Gemeinschaftsflächen**) × a small defect set
+(Fleck / Loch / Kleberückstand / Sonstiges) — the exact surface is captured in
+the free-text note rather than the enum. The two are distinct enums / distinct
+Postgres enum types (`roomdamageline`, `wgdamageline`, `damagesize`).
 
 ### No-delete trigger — `cartei_db/damage_triggers.py`
 
@@ -241,8 +241,7 @@ Per the project's one rule (schema lives in `cartei_db` only):
 
 ## Open items (resolve during implementation)
 
-1. **Exact `WGDamageLine` values.** Design proposes Küche / Bad / Flur /
-   Treppenhaus / Gemeinschaftsfläche × surface defects; confirm the precise
-   line list (and German labels) with the user before finalizing the enum.
-2. Confirm resident capability once more if it changes: current decision is
-   **add + view own, no fix**.
+1. German display labels for each `RoomDamageLine` / `WGDamageLine` /
+   `DamageSize` value (mechanical; finalize when writing the `TextChoices`).
+2. Resident capability is locked to **add + view own, no fix** — revisit only
+   if requirements change.

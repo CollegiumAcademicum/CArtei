@@ -1,6 +1,6 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, dashboard, document, enrollment_proof, landing, notes, rooms, tenant, uebergabe
+from app.views import abfragen, admin_views, dashboard, document, enrollment_proof, landing, notes, rooms, tenant
 
 urlpatterns = [
     path("info/", landing.landing, name="landing"),
@@ -33,10 +33,4 @@ urlpatterns = [
     path("admin/", admin_views.admin_portal, name="admin_portal"),
     path("admin/sync-from-ldap/", admin_views.sync_from_ldap, name="sync_from_ldap"),
     path("admin/permissions/", admin_views.permission_matrix, name="permission_matrix"),
-    path("assignments/<int:assignment_pk>/uebergabe/<str:protocol_type>/start/", uebergabe.uebergabe_start, name="uebergabe_start"),
-    path("uebergabe/<int:pk>/step/<int:step>/", uebergabe.uebergabe_step, name="uebergabe_step"),
-    path("uebergabe/<int:pk>/pdf/", uebergabe.uebergabe_pdf, name="uebergabe_pdf"),
-    path("uebergabe/<int:pk>/scan/upload/", uebergabe.uebergabe_scan_upload, name="uebergabe_scan_upload"),
-    path("uebergabe/<int:pk>/scan/<int:doc_pk>/download/", uebergabe.uebergabe_scan_download, name="uebergabe_scan_download"),
-    path("uebergabe/<int:pk>/scan/<int:doc_pk>/revoke/", uebergabe.uebergabe_scan_revoke, name="uebergabe_scan_revoke"),
 ]
