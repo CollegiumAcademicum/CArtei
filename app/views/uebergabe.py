@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.forms import ModelForm, modelform_factory, modelformset_factory
+from django.forms import DateTimeInput, ModelForm, modelform_factory, modelformset_factory
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -51,8 +51,18 @@ def uebergabe_start(request, assignment_pk, protocol_type):
     return redirect("uebergabe_step", pk=p.pk, step=0)
 
 
+# datetime-local needs both the widget type and a matching parse/format string,
+# else Django rejects the "YYYY-MM-DDTHH:MM" the browser submits.
+_DTLOCAL = DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M")
+
+
 def _header_form_cls(fields):
-    return modelform_factory(UebergabeProtokoll, fields=fields)
+    widgets = {"protocol_at": _DTLOCAL} if "protocol_at" in fields else {}
+    cls = modelform_factory(UebergabeProtokoll, fields=fields, widgets=widgets)
+    if "protocol_at" in fields:
+        # de-de locale's input formats don't accept datetime-local's value.
+        cls.base_fields["protocol_at"].input_formats = ["%Y-%m-%dT%H:%M"]
+    return cls
 
 
 class DamageForm(ModelForm):
