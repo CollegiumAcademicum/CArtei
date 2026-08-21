@@ -8,6 +8,7 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
 from django.contrib import messages
+from django.db import transaction
 
 from app.models import (
     Tenant, TenantRoomAssignment, UebergabeProtokoll, UebergabeProtokollDamage,
@@ -36,12 +37,17 @@ def uebergabe_start(request, assignment_pk, protocol_type):
     if protocol_type not in UebergabeProtokollType.values:
         return HttpResponseBadRequest()
     assignment = get_object_or_404(TenantRoomAssignment, pk=assignment_pk)
-    p = UebergabeProtokoll.objects.create(
-        assignment=assignment, protocol_type=protocol_type, created_at=now(),
-    )
-    UebergabeProtokollDamage.objects.bulk_create(
-        [UebergabeProtokollDamage(protocol=p, line=line) for line in protocol_lines()]
-    )
+    # One protocol + its 18 damage rows, atomically. NOTE: create the damage
+    # rows individually rather than bulk_create — `line` is a native Postgres
+    # enum (damageline), and bulk_create's `UNNEST(...::varchar[])` form won't
+    # implicitly cast varchar -> enum (DatatypeMismatch). Single-row inserts
+    # coerce the text value to the enum fine.
+    with transaction.atomic():
+        p = UebergabeProtokoll.objects.create(
+            assignment=assignment, protocol_type=protocol_type, created_at=now(),
+        )
+        for line in protocol_lines():
+            UebergabeProtokollDamage.objects.create(protocol=p, line=line)
     return redirect("uebergabe_step", pk=p.pk, step=0)
 
 
