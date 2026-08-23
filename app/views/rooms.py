@@ -5,8 +5,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
+from app.damages import can_view_damages
 from app.forms import RoomAssignmentCreateForm, RoomFurnitureForm, TenantRoomAssignmentForm
-from app.models import AGAbfrage, AGAbfrageResult, Building, InternalNote, Room, Tenant, TenantRoomAssignment, WG
+from app.models import AGAbfrage, AGAbfrageResult, Building, DamageSize, InternalNote, Room, RoomDamage, RoomDamageLine, Tenant, TenantRoomAssignment, WG, WGDamage, WGDamageLine
 from app.residency import assignment_active_on
 from app.tenant_access import global_roles, visible_fields
 from app.views._shared import (
@@ -117,6 +118,7 @@ def _wg_engagement(room_statuses):
 def wg_detail(request: HttpRequest, pk: int):
     wg = get_object_or_404(WG, pk=pk)
     roles = global_roles(request.user)
+    show_damages = can_view_damages(roles)
     may_see_names = "first_name" in visible_fields(roles)
     show_engagement = bool({"cluster", "admin"} & roles)
     as_of = parse_as_of(request)
@@ -232,6 +234,10 @@ def wg_detail(request: HttpRequest, pk: int):
                 aform = None
             occupant = display(a.tenant) if may_see_names else None
             cards.append({"assignment": a, "aform": aform, "occupant": occupant})
+        if show_damages:
+            room.damage_list = list(
+                RoomDamage.objects.filter(room=room).order_by("fixed_at", "-created_at")
+            )
         rooms.append({
             "room": room, "cards": cards, "active_count": active_count,
             "ausstattung": [label for attr, label in AUSSTATTUNG if getattr(room, attr)],
@@ -241,6 +247,10 @@ def wg_detail(request: HttpRequest, pk: int):
         })
 
     rollup = _engagement_rollup(list(active_tenant_ids), as_of) if show_engagement else None
+    wg_damage_list = (
+        list(WGDamage.objects.filter(wg=wg).order_by("fixed_at", "-created_at"))
+        if show_damages else []
+    )
 
     return render(request, "app/wg_detail.html", {
         "wg": wg, "as_of": as_of, "rooms": rooms,
@@ -251,6 +261,11 @@ def wg_detail(request: HttpRequest, pk: int):
         "can_manage_documents": can_manage_documents,
         "show_assignment_notes": show_assignment_notes,
         "all_tenants": list(Tenant.objects.order_by("last_name", "first_name")) if can_manage_documents else [],
+        "show_damages": show_damages,
+        "wg_damage_list": wg_damage_list,
+        "room_damage_lines": RoomDamageLine.choices,
+        "wg_damage_lines": WGDamageLine.choices,
+        "damage_sizes": DamageSize.choices,
     })
 
 
