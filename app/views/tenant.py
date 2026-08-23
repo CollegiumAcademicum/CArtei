@@ -11,13 +11,13 @@ from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
     AGAbfrage, AGAbfrageResult, AGStatus,
     DOCUMENT_MODELS, DocumentType,
-    EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment, UebergabeProtokoll,
+    EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
+    RoomDamage, WGDamage, RoomDamageLine, WGDamageLine, DamageSize,
 )
 from app.residency import has_active_assignment, set_move_dates
 from app.tenant_access import (
     SECTIONS, editable_fields, global_roles, viewer_roles, visible_fields,
 )
-from app.views.uebergabe import can_do_uebergabe
 from app.views._shared import (
     ACTIVE_STATES, BELEGIUM_EDIT_WINDOW, assignment_doc_groups, assignment_editable_by,
     display, engagement_verdict, submitted_assignment_forms,
@@ -316,7 +316,6 @@ def tenant_detail(request: HttpRequest, pk: int):
         "roles": roles,
     }
 
-    can_do_uebergabe_flag = can_do_uebergabe(request.user)
     # Room assignments — fetch for owners, mietverwaltung, admins, Belegium and Übergabe helpers.
     if {"owner", "mietverwaltung", "admin", "belegium", "mietverwaltung_helfer"} & roles:
         assignments = list(
@@ -345,10 +344,6 @@ def tenant_detail(request: HttpRequest, pk: int):
     for a in active_assignments + past_assignments:
         if can_see_assignment_docs:
             a.doc_groups = assignment_doc_groups(a)
-        if can_do_uebergabe_flag:
-            a.protocols = list(UebergabeProtokoll.objects.filter(assignment=a).order_by("-created_at"))
-            for pr in a.protocols:
-                pr.active_scan = pr.scans.filter(revoked_at__isnull=True).order_by("-uploaded_at").first()
 
     # Internal notes on room assignments: a shared Belegung thread, read+write for
     # Mietverwaltung and Belegium (independent of the room-data edit window).
@@ -435,7 +430,21 @@ def tenant_detail(request: HttpRequest, pk: int):
         list(Tenant.objects.order_by("last_name", "first_name"))
         if ctx.get("can_manage_documents") else []
     )
-    ctx["can_do_uebergabe"] = can_do_uebergabe_flag
+
+    ctx["show_resident_damages"] = "owner" in roles
+    ctx["room_damage_lines"] = RoomDamageLine.choices
+    ctx["wg_damage_lines"] = WGDamageLine.choices
+    ctx["damage_sizes"] = DamageSize.choices
+    if "owner" in roles:
+        for a in active_assignments:
+            a.room_damage_list = list(
+                RoomDamage.objects.filter(room_id=a.room_id, fixed_at__isnull=True)
+                .order_by("-created_at")
+            )
+            a.wg_damage_list = list(
+                WGDamage.objects.filter(wg_id=a.room.wg_id, fixed_at__isnull=True)
+                .order_by("-created_at")
+            )
 
     return render(request, "app/tenant_detail.html", ctx)
 

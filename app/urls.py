@@ -1,6 +1,6 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, dashboard, document, enrollment_proof, landing, notes, rooms, tenant, uebergabe
+from app.views import abfragen, admin_views, damages, dashboard, document, enrollment_proof, landing, notes, rooms, tenant
 
 urlpatterns = [
     path("info/", landing.landing, name="landing"),
@@ -28,15 +28,13 @@ urlpatterns = [
     path("assignments/<int:assignment_pk>/documents/upload/", document.upload_assignment_document, name="assignment_document_upload"),
     path("assignments/<int:assignment_pk>/documents/<str:document_type>/<int:doc_pk>/revoke/", document.revoke_assignment_document, name="assignment_document_revoke"),
     path("assignments/<int:assignment_pk>/documents/<str:document_type>/<int:doc_pk>/download/", document.download_assignment_document, name="assignment_document_download"),
+    path("rooms/<int:room_pk>/damages/add/", damages.room_damage_add, name="room_damage_add"),
+    path("wgs/<int:wg_pk>/damages/add/", damages.wg_damage_add, name="wg_damage_add"),
+    path("damages/room/<int:pk>/fix/", damages.room_damage_fix, name="room_damage_fix"),
+    path("damages/wg/<int:pk>/fix/", damages.wg_damage_fix, name="wg_damage_fix"),
     path("notes/add/", notes.add_note, name="note_add"),
     path("notes/<int:pk>/delete/", notes.delete_note, name="note_delete"),
     path("admin/", admin_views.admin_portal, name="admin_portal"),
     path("admin/sync-from-ldap/", admin_views.sync_from_ldap, name="sync_from_ldap"),
     path("admin/permissions/", admin_views.permission_matrix, name="permission_matrix"),
-    path("assignments/<int:assignment_pk>/uebergabe/<str:protocol_type>/start/", uebergabe.uebergabe_start, name="uebergabe_start"),
-    path("uebergabe/<int:pk>/step/<int:step>/", uebergabe.uebergabe_step, name="uebergabe_step"),
-    path("uebergabe/<int:pk>/pdf/", uebergabe.uebergabe_pdf, name="uebergabe_pdf"),
-    path("uebergabe/<int:pk>/scan/upload/", uebergabe.uebergabe_scan_upload, name="uebergabe_scan_upload"),
-    path("uebergabe/<int:pk>/scan/<int:doc_pk>/download/", uebergabe.uebergabe_scan_download, name="uebergabe_scan_download"),
-    path("uebergabe/<int:pk>/scan/<int:doc_pk>/revoke/", uebergabe.uebergabe_scan_revoke, name="uebergabe_scan_revoke"),
 ]

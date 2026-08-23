@@ -355,28 +355,13 @@ ASSIGNMENT_DOCUMENT_MODELS = {
 }
 
 
-class UebergabeProtokollType(models.TextChoices):
-    EINZUG = "EINZUG", "Einzug"
-    AUSZUG = "AUSZUG", "Auszug"
+class DamageSize(models.TextChoices):
+    LT1 = "LT1", "< 1 cm"
+    MID = "MID", "1–5 cm"
+    GT = "GT", "> 5 cm"
 
 
-class PartitionPosition(models.TextChoices):
-    SQM_7 = "SQM_7", "7 m²"
-    SQM_14 = "SQM_14", "14 m²"
-
-
-class FurnitureSource(models.TextChoices):
-    GEFRAEST = "GEFRAEST", "Gefräst"
-    MOEBELSPENDE = "MOEBELSPENDE", "Möbelspende"
-    NICHT_VORHANDEN = "NICHT_VORHANDEN", "Nicht vorhanden"
-
-
-class MattressSource(models.TextChoices):
-    CA = "CA", "CA"
-    NICHT_VORHANDEN = "NICHT_VORHANDEN", "Nicht vorhanden"
-
-
-class DamageLine(models.TextChoices):
+class RoomDamageLine(models.TextChoices):
     BODEN_FLECKEN = "BODEN_FLECKEN", "Boden – Flecken"
     BODEN_LOECHER = "BODEN_LOECHER", "Boden – Löcher"
     FUSSLEISTE_FLECKEN = "FUSSLEISTE_FLECKEN", "Fußleiste – Flecken"
@@ -397,58 +382,63 @@ class DamageLine(models.TextChoices):
     SCHRANK_LOECHER = "SCHRANK_LOECHER", "Schrank – Löcher"
 
 
-class UebergabeProtokoll(models.Model):
-    assignment = models.ForeignKey(
-        TenantRoomAssignment, on_delete=models.DO_NOTHING, db_constraint=False,
-        related_name="uebergabeprotokolle", db_column="tenant_room_assignment_id",
-    )
-    protocol_type = models.CharField(max_length=16, choices=UebergabeProtokollType.choices)
-    mv_representative = models.ForeignKey(
-        Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True,
-        related_name="+", db_column="mv_representative_id",
-    )
-    protocol_at = models.DateTimeField(null=True, blank=True)
-    partition_position = models.CharField(max_length=8, choices=PartitionPosition.choices, null=True, blank=True)
-    barrierefrei = models.BooleanField(default=False)
-    bed_source = models.CharField(max_length=16, choices=FurnitureSource.choices, null=True, blank=True)
-    mattress_source = models.CharField(max_length=16, choices=MattressSource.choices, null=True, blank=True)
-    desk_source = models.CharField(max_length=16, choices=FurnitureSource.choices, null=True, blank=True)
-    closet_source = models.CharField(max_length=16, choices=FurnitureSource.choices, null=True, blank=True)
-    sonstige_schaeden = models.TextField(null=True, blank=True)
-    sonstige_moebel = models.TextField(null=True, blank=True)
-    kueche_schaeden = models.TextField(null=True, blank=True)
-    bad_schaeden = models.TextField(null=True, blank=True)
-    gemeinschaftsflaeche = models.TextField(null=True, blank=True)
-    created_at = models.DateTimeField()
-    finalized_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        managed = False
-        db_table = "uebergabeprotokoll"
+class WGDamageLine(models.TextChoices):
+    BAD_FLECK = "BAD_FLECK", "Bad – Fleck"
+    BAD_LOCH = "BAD_LOCH", "Bad – Loch"
+    BAD_KLEBER = "BAD_KLEBER", "Bad – Kleberückstände"
+    BAD_SONSTIGES = "BAD_SONSTIGES", "Bad – Sonstiges"
+    KUECHE_FLECK = "KUECHE_FLECK", "Küche – Fleck"
+    KUECHE_LOCH = "KUECHE_LOCH", "Küche – Loch"
+    KUECHE_KLEBER = "KUECHE_KLEBER", "Küche – Kleberückstände"
+    KUECHE_SONSTIGES = "KUECHE_SONSTIGES", "Küche – Sonstiges"
+    GEMEINSCHAFT_FLECK = "GEMEINSCHAFT_FLECK", "Gemeinschaftsfläche – Fleck"
+    GEMEINSCHAFT_LOCH = "GEMEINSCHAFT_LOCH", "Gemeinschaftsfläche – Loch"
+    GEMEINSCHAFT_KLEBER = "GEMEINSCHAFT_KLEBER", "Gemeinschaftsfläche – Kleberückstände"
+    GEMEINSCHAFT_SONSTIGES = "GEMEINSCHAFT_SONSTIGES", "Gemeinschaftsfläche – Sonstiges"
 
 
-class UebergabeProtokollDamage(models.Model):
-    protocol = models.ForeignKey(
-        UebergabeProtokoll, on_delete=models.DO_NOTHING, db_constraint=False,
-        related_name="damages", db_column="protocol_id",
-    )
-    line = models.CharField(max_length=32, choices=DamageLine.choices)
-    count_lt1 = models.IntegerField(default=0)
-    count_mid = models.IntegerField(default=0)
-    count_gt = models.IntegerField(default=0)
+class DamageBase(models.Model):
+    size = models.CharField(max_length=8, choices=DamageSize.choices, null=True, blank=True)
     note = models.TextField(null=True, blank=True)
-
-    class Meta:
-        managed = False
-        db_table = "uebergabeprotokoll_damage"
-
-
-class UebergabeProtokollDocument(RoomAssignmentDocumentBase):
-    protocol = models.ForeignKey(
-        UebergabeProtokoll, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True,
-        related_name="scans", db_column="uebergabeprotokoll_id",
+    created_at = models.DateTimeField()
+    created_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="+", db_column="created_by_id",
+    )
+    fixed_at = models.DateTimeField(null=True, blank=True)
+    fixed_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True,
+        related_name="+", db_column="fixed_by_id",
     )
 
     class Meta:
+        abstract = True
         managed = False
-        db_table = "uebergabeprotokoll_document"
+
+    @property
+    def is_open(self):
+        return self.fixed_at is None
+
+
+class RoomDamage(DamageBase):
+    room = models.ForeignKey(
+        Room, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="damages", db_column="room_id",
+    )
+    line = models.CharField(max_length=32, choices=RoomDamageLine.choices)
+
+    class Meta:
+        managed = False
+        db_table = "room_damage"
+
+
+class WGDamage(DamageBase):
+    wg = models.ForeignKey(
+        WG, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="damages", db_column="wg_id",
+    )
+    line = models.CharField(max_length=32, choices=WGDamageLine.choices)
+
+    class Meta:
+        managed = False
+        db_table = "wg_damage"
