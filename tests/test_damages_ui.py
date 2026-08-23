@@ -1,8 +1,10 @@
 import uuid
+from datetime import date
+
 import pytest
 from django.contrib.auth.models import User, Group
 
-from app.models import Building, WG, Room, Tenant
+from app.models import Building, WG, Room, Tenant, RoomDamage, RoomDamageLine, TenantRoomAssignment
 
 
 def _login(client, username, group=None):
@@ -35,3 +37,25 @@ def test_belegium_sees_no_damage_panels(client, world):
     r = client.get(f"/wgs/{world['wg'].id}/")
     assert r.status_code == 200
     assert b"damages/add" not in r.content  # no add form action rendered
+
+
+def test_resident_sees_report_form_on_own_card(client, world):
+    u = _login(client, "resi")
+    t = Tenant.objects.get(intranet_username="resi")
+    TenantRoomAssignment.objects.create(tenant=t, room=world["room"], moved_in=date(2026, 1, 1))
+    r = client.get(f"/tenants/{t.id}/")
+    assert r.status_code == 200
+    assert f"/rooms/{world['room'].id}/damages/add/".encode() in r.content
+    assert f"/wgs/{world['wg'].id}/damages/add/".encode() in r.content
+
+
+def test_resident_has_no_fix_button(client, world):
+    u = _login(client, "resi")
+    t = Tenant.objects.get(intranet_username="resi")
+    TenantRoomAssignment.objects.create(tenant=t, room=world["room"], moved_in=date(2026, 1, 1))
+    RoomDamage.objects.create(
+        room=world["room"], line=RoomDamageLine.BODEN_FLECKEN,
+        created_at="2026-08-22T00:00:00Z", created_by=t,
+    )
+    r = client.get(f"/tenants/{t.id}/")
+    assert b"als behoben markieren" not in r.content

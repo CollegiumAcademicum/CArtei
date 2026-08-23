@@ -12,6 +12,7 @@ from app.models import (
     AGAbfrage, AGAbfrageResult, AGStatus,
     DOCUMENT_MODELS, DocumentType,
     EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
+    RoomDamage, WGDamage, RoomDamageLine, WGDamageLine, DamageSize,
 )
 from app.residency import has_active_assignment, set_move_dates
 from app.tenant_access import (
@@ -429,6 +430,21 @@ def tenant_detail(request: HttpRequest, pk: int):
         list(Tenant.objects.order_by("last_name", "first_name"))
         if ctx.get("can_manage_documents") else []
     )
+
+    ctx["show_resident_damages"] = "owner" in roles
+    ctx["room_damage_lines"] = RoomDamageLine.choices
+    ctx["wg_damage_lines"] = WGDamageLine.choices
+    ctx["damage_sizes"] = DamageSize.choices
+    if "owner" in roles:
+        for a in active_assignments:
+            a.room_damage_list = list(
+                RoomDamage.objects.filter(room_id=a.room_id, fixed_at__isnull=True)
+                .order_by("-created_at")
+            )
+            a.wg_damage_list = list(
+                WGDamage.objects.filter(wg_id=a.room.wg_id, fixed_at__isnull=True)
+                .order_by("-created_at")
+            )
 
     return render(request, "app/tenant_detail.html", ctx)
 
