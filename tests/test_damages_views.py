@@ -67,6 +67,7 @@ def test_belegium_add_denied(client, world):
         {"line": RoomDamageLine.BODEN_FLECKEN, "next": "/"},
     )
     assert r.status_code == 403
+    assert RoomDamage.objects.count() == 0
 
 
 def test_invalid_line_rejected(client, world):
@@ -97,3 +98,31 @@ def test_fix_and_reopen_staff_only(client, world):
     # staff can reopen
     client.post(f"/damages/room/{d.id}/fix/", {"next": "/"})
     assert RoomDamage.objects.get(pk=d.id).fixed_at is None
+
+
+def test_staff_add_wg_damage(client, world):
+    _login(client, "cartei_werkstatt", "cartei_werkstatt")
+    r = client.post(
+        f"/wgs/{world['wg'].id}/damages/add/",
+        {"line": WGDamageLine.BAD_FLECK, "next": "/"},
+    )
+    assert r.status_code == 302
+    assert WGDamage.objects.filter(wg=world["wg"], line=WGDamageLine.BAD_FLECK).count() == 1
+
+
+def test_wg_fix_and_reopen_staff_only(client, world):
+    resi = _login(client, "wgresi")
+    t = Tenant.objects.get(intranet_username="wgresi")
+    d = WGDamage.objects.create(
+        wg=world["wg"], line=WGDamageLine.BAD_FLECK, created_at=now(), created_by=t,
+    )
+    # resident cannot fix
+    r = client.post(f"/damages/wg/{d.id}/fix/", {"next": "/"})
+    assert r.status_code == 403
+    assert WGDamage.objects.get(pk=d.id).fixed_at is None
+    # staff can fix, then reopen
+    _login(client, "mv_staff", "ag.mietverwaltung")
+    client.post(f"/damages/wg/{d.id}/fix/", {"next": "/"})
+    assert WGDamage.objects.get(pk=d.id).fixed_at is not None
+    client.post(f"/damages/wg/{d.id}/fix/", {"next": "/"})
+    assert WGDamage.objects.get(pk=d.id).fixed_at is None
