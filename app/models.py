@@ -353,3 +353,92 @@ ASSIGNMENT_DOCUMENT_MODELS = {
     AssignmentDocumentType.MIETBEDINGUNGEN.value: MietbedingungenDocument,
     AssignmentDocumentType.WOHNUNGSGEBERBESCHEINIGUNG.value: WohnungsgeberbescheinigungDocument,
 }
+
+
+class DamageSize(models.TextChoices):
+    LT1 = "LT1", "< 1 cm"
+    MID = "MID", "1–5 cm"
+    GT = "GT", "> 5 cm"
+
+
+class RoomDamageLine(models.TextChoices):
+    BODEN_FLECKEN = "BODEN_FLECKEN", "Boden – Flecken"
+    BODEN_LOECHER = "BODEN_LOECHER", "Boden – Löcher"
+    FUSSLEISTE_FLECKEN = "FUSSLEISTE_FLECKEN", "Fußleiste – Flecken"
+    WAND_FLECKEN = "WAND_FLECKEN", "Wände – Flecken"
+    WAND_LOECHER = "WAND_LOECHER", "Wände – Löcher"
+    WAND_KLEBER = "WAND_KLEBER", "Wände – Kleberückstände"
+    TUER_FLECKEN = "TUER_FLECKEN", "Tür – Flecken"
+    TUER_LOECHER = "TUER_LOECHER", "Tür – Löcher"
+    FENSTER_RAHMEN_FLECKEN = "FENSTER_RAHMEN_FLECKEN", "Fenster – Flecken Rahmen"
+    FENSTER_BANK_FLECKEN = "FENSTER_BANK_FLECKEN", "Fenster – Flecken Fensterbank"
+    FENSTER_KLEBER = "FENSTER_KLEBER", "Fenster – Kleberückstände"
+    BETT_FLECKEN = "BETT_FLECKEN", "Bett – Flecken"
+    BETT_LOECHER = "BETT_LOECHER", "Bett – Löcher"
+    MATRATZE_FLECKEN = "MATRATZE_FLECKEN", "Matratze – Flecken"
+    SCHREIBTISCH_FLECKEN = "SCHREIBTISCH_FLECKEN", "Schreibtisch – Flecken"
+    SCHREIBTISCH_LOECHER = "SCHREIBTISCH_LOECHER", "Schreibtisch – Löcher"
+    SCHRANK_FLECKEN = "SCHRANK_FLECKEN", "Schrank – Flecken"
+    SCHRANK_LOECHER = "SCHRANK_LOECHER", "Schrank – Löcher"
+
+
+class WGDamageLine(models.TextChoices):
+    BAD_FLECK = "BAD_FLECK", "Bad – Fleck"
+    BAD_LOCH = "BAD_LOCH", "Bad – Loch"
+    BAD_KLEBER = "BAD_KLEBER", "Bad – Kleberückstände"
+    BAD_SONSTIGES = "BAD_SONSTIGES", "Bad – Sonstiges"
+    KUECHE_FLECK = "KUECHE_FLECK", "Küche – Fleck"
+    KUECHE_LOCH = "KUECHE_LOCH", "Küche – Loch"
+    KUECHE_KLEBER = "KUECHE_KLEBER", "Küche – Kleberückstände"
+    KUECHE_SONSTIGES = "KUECHE_SONSTIGES", "Küche – Sonstiges"
+    GEMEINSCHAFT_FLECK = "GEMEINSCHAFT_FLECK", "Gemeinschaftsfläche – Fleck"
+    GEMEINSCHAFT_LOCH = "GEMEINSCHAFT_LOCH", "Gemeinschaftsfläche – Loch"
+    GEMEINSCHAFT_KLEBER = "GEMEINSCHAFT_KLEBER", "Gemeinschaftsfläche – Kleberückstände"
+    GEMEINSCHAFT_SONSTIGES = "GEMEINSCHAFT_SONSTIGES", "Gemeinschaftsfläche – Sonstiges"
+
+
+class DamageBase(models.Model):
+    size = models.CharField(max_length=8, choices=DamageSize.choices, null=True, blank=True)
+    note = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField()
+    created_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="+", db_column="created_by_id",
+    )
+    fixed_at = models.DateTimeField(null=True, blank=True)
+    fixed_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True,
+        related_name="+", db_column="fixed_by_id",
+    )
+
+    class Meta:
+        abstract = True
+        managed = False
+
+    @property
+    def is_open(self):
+        return self.fixed_at is None
+
+
+class RoomDamage(DamageBase):
+    room = models.ForeignKey(
+        Room, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="damages", db_column="room_id",
+    )
+    line = models.CharField(max_length=32, choices=RoomDamageLine.choices)
+
+    class Meta:
+        managed = False
+        db_table = "room_damage"
+
+
+class WGDamage(DamageBase):
+    wg = models.ForeignKey(
+        WG, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="damages", db_column="wg_id",
+    )
+    line = models.CharField(max_length=32, choices=WGDamageLine.choices)
+
+    class Meta:
+        managed = False
+        db_table = "wg_damage"
