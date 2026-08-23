@@ -2,8 +2,8 @@
 templates never re-derive them. Staff (werkstatt/mietverwaltung/admin) manage
 all damages; residents may add + view damages on their own room/WG only and may
 not mark them fixed; belegium has no access."""
-from app.models import Tenant, TenantRoomAssignment, DamageSize
-from app.residency import active_assignment_q
+from app.models import Tenant, TenantRoomAssignment
+from app.residency import assignment_active_on
 
 STAFF_ROLES = {"werkstatt", "mietverwaltung", "admin"}
 
@@ -25,7 +25,7 @@ def is_room_resident(tenant, room_id, today) -> bool:
         return False
     return (
         TenantRoomAssignment.objects.filter(tenant=tenant, room_id=room_id)
-        .filter(active_assignment_q(today)).exists()
+        .filter(assignment_active_on(today)).exists()
     )
 
 
@@ -34,7 +34,7 @@ def is_wg_resident(tenant, wg_id, today) -> bool:
         return False
     return (
         TenantRoomAssignment.objects.filter(tenant=tenant, room__wg_id=wg_id)
-        .filter(active_assignment_q(today)).exists()
+        .filter(assignment_active_on(today)).exists()
     )
 
 
@@ -48,10 +48,3 @@ def can_add_wg_damage(user, roles, wg_id, today) -> bool:
     if STAFF_ROLES & roles:
         return True
     return is_wg_resident(author_for(user), wg_id, today)
-
-
-def size_options(line: str) -> list:
-    """Holes take only two sizes (<1 cm / >1 cm); stains/sonstiges take all three."""
-    if line.endswith("LOECHER") or line.endswith("LOCH"):
-        return [DamageSize.LT1, DamageSize.GT]
-    return [DamageSize.LT1, DamageSize.MID, DamageSize.GT]

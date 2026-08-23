@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -68,6 +68,16 @@ def test_resident_scoping():
     assert damages.is_wg_resident(t, wg.id, today)
 
 
-def test_size_options():
-    assert damages.size_options(RoomDamageLine.WAND_LOECHER) == [DamageSize.LT1, DamageSize.GT]
-    assert damages.size_options(RoomDamageLine.WAND_FLECKEN) == [DamageSize.LT1, DamageSize.MID, DamageSize.GT]
+@pytest.mark.django_db
+def test_future_move_in_not_resident():
+    """A tenant with a future move-in must NOT count as a current resident."""
+    b = Building.objects.create(name="C")
+    wg = WG.objects.create(building=b, name="W2")
+    room = Room.objects.create(wg=wg, name="2.01", size_sqm="14.00")
+    t = Tenant.objects.create(first_name="F", last_name="ut", intranet_username="fut", intranet_uuid=uuid.uuid4())
+    today = date(2026, 8, 24)
+    TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=today + timedelta(days=30))
+    assert not damages.is_room_resident(t, room.id, today)
+    assert not damages.is_wg_resident(t, wg.id, today)
+
+

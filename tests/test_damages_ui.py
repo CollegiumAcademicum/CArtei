@@ -53,9 +53,12 @@ def test_resident_has_no_fix_button(client, world):
     u = _login(client, "resi")
     t = Tenant.objects.get(intranet_username="resi")
     TenantRoomAssignment.objects.create(tenant=t, room=world["room"], moved_in=date(2026, 1, 1))
-    RoomDamage.objects.create(
+    dmg = RoomDamage.objects.create(
         room=world["room"], line=RoomDamageLine.BODEN_FLECKEN,
         created_at="2026-08-22T00:00:00Z", created_by=t,
     )
     r = client.get(f"/tenants/{t.id}/")
+    # Confirm damage section rendered (if this fails, the whole test is moot)
+    assert dmg.get_line_display().encode() in r.content
+    # Resident must not see the fix button
     assert b"als behoben markieren" not in r.content
