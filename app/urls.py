@@ -1,6 +1,6 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, dashboard, document, enrollment_proof, landing, notes, rooms, tenant
+from app.views import abfragen, admin_views, damages, dashboard, document, enrollment_proof, landing, notes, rooms, tenant
 
 urlpatterns = [
     path("info/", landing.landing, name="landing"),
@@ -28,6 +28,10 @@ urlpatterns = [
     path("assignments/<int:assignment_pk>/documents/upload/", document.upload_assignment_document, name="assignment_document_upload"),
     path("assignments/<int:assignment_pk>/documents/<str:document_type>/<int:doc_pk>/revoke/", document.revoke_assignment_document, name="assignment_document_revoke"),
     path("assignments/<int:assignment_pk>/documents/<str:document_type>/<int:doc_pk>/download/", document.download_assignment_document, name="assignment_document_download"),
+    path("rooms/<int:room_pk>/damages/add/", damages.room_damage_add, name="room_damage_add"),
+    path("wgs/<int:wg_pk>/damages/add/", damages.wg_damage_add, name="wg_damage_add"),
+    path("damages/room/<int:pk>/fix/", damages.room_damage_fix, name="room_damage_fix"),
+    path("damages/wg/<int:pk>/fix/", damages.wg_damage_fix, name="wg_damage_fix"),
     path("notes/add/", notes.add_note, name="note_add"),
     path("notes/<int:pk>/delete/", notes.delete_note, name="note_delete"),
     path("admin/", admin_views.admin_portal, name="admin_portal"),
