@@ -62,3 +62,81 @@ def test_resident_has_no_fix_button(client, world):
     assert dmg.get_line_display().encode() in r.content
     # Resident must not see the fix button
     assert b"als behoben markieren" not in r.content
+
+
+# --- damages on tenant_detail assignment cards (staff + richer rows) ---
+from datetime import datetime, timezone
+from app.models import WGDamage
+
+
+def _occupant_with_room(world, username="occ"):
+    t = Tenant.objects.create(
+        first_name="Occ", last_name="Upant", intranet_username=username, intranet_uuid=uuid.uuid4()
+    )
+    TenantRoomAssignment.objects.create(tenant=t, room=world["room"], moved_in=date(2026, 1, 1))
+    return t
+
+
+def test_staff_sees_damages_and_fix_on_tenant_detail(client, world):
+    t = _occupant_with_room(world)
+    RoomDamage.objects.create(
+        room=world["room"], line=RoomDamageLine.BODEN_FLECKEN,
+        created_at=datetime(2026, 8, 15, 12, tzinfo=timezone.utc), created_by=t,
+    )
+    _login(client, "mvstaff", "ag.mietverwaltung")
+    r = client.get(f"/tenants/{t.id}/")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert f"/rooms/{world['room'].id}/damages/add/" in body   # staff add form present
+    assert f"/wgs/{world['wg'].id}/damages/add/" in body
+    assert "als behoben markieren" in body                      # staff fix button
+    assert "2026-08-15" in body                                 # submission date shown
+    assert "Upant" in body                                      # reporter name shown
+
+
+def test_fixed_damage_collapsed_with_fixer_on_tenant_detail(client, world):
+    t = _occupant_with_room(world, "occ2")
+    fixer = Tenant.objects.create(
+        first_name="Hans", last_name="Fixer", intranet_username="fixer", intranet_uuid=uuid.uuid4()
+    )
+    RoomDamage.objects.create(
+        room=world["room"], line=RoomDamageLine.WAND_LOECHER,
+        created_at=datetime(2026, 8, 1, 12, tzinfo=timezone.utc), created_by=t,
+        fixed_at=datetime(2026, 8, 10, 12, tzinfo=timezone.utc), fixed_by=fixer,
+    )
+    _login(client, "mvstaff2", "ag.mietverwaltung")
+    body = client.get(f"/tenants/{t.id}/").content.decode()
+    assert "Behobene Schäden" in body        # collapsed fixed section heading
+    assert "Fixer" in body                    # fixer name
+    assert "2026-08-10" in body               # fixed date
+    assert "wieder öffnen" in body            # staff reopen button
+
+
+def test_stranger_sees_no_damages_on_tenant_detail(client, world):
+    t = _occupant_with_room(world, "occ3")
+    RoomDamage.objects.create(
+        room=world["room"], line=RoomDamageLine.BODEN_FLECKEN,
+        created_at=datetime(2026, 8, 15, 12, tzinfo=timezone.utc), created_by=t,
+    )
+    _login(client, "stranger", None)
+    body = client.get(f"/tenants/{t.id}/").content.decode()
+    assert "damages/add" not in body
+
+
+def test_resident_sees_fixed_section_but_no_buttons(client, world):
+    t = _occupant_with_room(world, "selfres")
+    RoomDamage.objects.create(
+        room=world["room"], line=RoomDamageLine.BODEN_FLECKEN,
+        created_at=datetime(2026, 8, 1, tzinfo=timezone.utc), created_by=t,
+        fixed_at=datetime(2026, 8, 5, tzinfo=timezone.utc), fixed_by=t,
+    )
+    # log in AS the occupant (owner of the page)
+    u = User.objects.create_user(username="selfres_u", password="x")
+    # reuse the occupant tenant as the logged-in identity
+    t.intranet_username = "selfres_u"
+    t.save()
+    client.force_login(u)
+    body = client.get(f"/tenants/{t.id}/").content.decode()
+    assert "Behobene Schäden" in body            # resident sees fixed section
+    assert "wieder öffnen" not in body           # but no reopen button
+    assert "als behoben markieren" not in body   # and no fix button

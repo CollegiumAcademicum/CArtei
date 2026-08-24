@@ -136,7 +136,7 @@
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
     {% if show_damages %}
       {% url 'room_damage_add' r.room.id as room_add_url %}
-      {% include "app/_damages.html" with damages=r.room.damage_list add_url=room_add_url lines=room_damage_lines sizes=damage_sizes can_fix=True fix_url_name="room_damage_fix" next=request.path %}
+      {% include "app/_damages.html" with open_damages=r.room.damages_open fixed_damages=r.room.damages_fixed add_url=room_add_url lines=room_damage_lines sizes=damage_sizes can_fix=True fix_url_name="room_damage_fix" next=request.path %}
     {% else %}
       <p style="font-weight:500;margin:.25rem 0 .4rem;">Schäden</p>
       <p style="color:#888;">Schadenskatalog und Übergabeprotokolle folgen in einem späteren Schritt.</p>
@@ -154,7 +154,7 @@
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
     {% if show_damages %}
       {% url 'wg_damage_add' wg.id as wg_add_url %}
-      {% include "app/_damages.html" with damages=wg_damage_list add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=True fix_url_name="wg_damage_fix" next=request.path %}
+      {% include "app/_damages.html" with open_damages=wg_damages_open fixed_damages=wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=True fix_url_name="wg_damage_fix" next=request.path %}
     {% else %}
       <p style="font-weight:500;margin:.25rem 0 .4rem;">Schäden</p>
       <p style="color:#888;">Schadenskatalog und Übergabeprotokolle folgen in einem späteren Schritt.</p>

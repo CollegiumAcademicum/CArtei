@@ -48,3 +48,10 @@ def can_add_wg_damage(user, roles, wg_id, today) -> bool:
     if STAFF_ROLES & roles:
         return True
     return is_wg_resident(author_for(user), wg_id, today)
+
+
+def open_and_fixed(qs):
+    """Split a damage queryset into (open, fixed) lists, newest-first, with the
+    reporter/fixer prefetched. One query."""
+    rows = list(qs.select_related("created_by", "fixed_by").order_by("-created_at"))
+    return [d for d in rows if d.is_open], [d for d in rows if not d.is_open]

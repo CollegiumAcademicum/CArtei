@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
-from app.damages import can_view_damages
+from app.damages import can_view_damages, open_and_fixed
 from app.forms import RoomAssignmentCreateForm, RoomFurnitureForm, TenantRoomAssignmentForm
 from app.models import AGAbfrage, AGAbfrageResult, Building, DamageSize, InternalNote, Room, RoomDamage, RoomDamageLine, Tenant, TenantRoomAssignment, WG, WGDamage, WGDamageLine
 from app.residency import assignment_active_on
@@ -235,8 +235,8 @@ def wg_detail(request: HttpRequest, pk: int):
             occupant = display(a.tenant) if may_see_names else None
             cards.append({"assignment": a, "aform": aform, "occupant": occupant})
         if show_damages:
-            room.damage_list = list(
-                RoomDamage.objects.filter(room=room).order_by("fixed_at", "-created_at")
+            room.damages_open, room.damages_fixed = open_and_fixed(
+                RoomDamage.objects.filter(room=room)
             )
         rooms.append({
             "room": room, "cards": cards, "active_count": active_count,
@@ -247,9 +247,8 @@ def wg_detail(request: HttpRequest, pk: int):
         })
 
     rollup = _engagement_rollup(list(active_tenant_ids), as_of) if show_engagement else None
-    wg_damage_list = (
-        list(WGDamage.objects.filter(wg=wg).order_by("fixed_at", "-created_at"))
-        if show_damages else []
+    wg_damages_open, wg_damages_fixed = (
+        open_and_fixed(WGDamage.objects.filter(wg=wg)) if show_damages else ([], [])
     )
 
     return render(request, "app/wg_detail.html", {
@@ -262,7 +261,8 @@ def wg_detail(request: HttpRequest, pk: int):
         "show_assignment_notes": show_assignment_notes,
         "all_tenants": list(Tenant.objects.order_by("last_name", "first_name")) if can_manage_documents else [],
         "show_damages": show_damages,
-        "wg_damage_list": wg_damage_list,
+        "wg_damages_open": wg_damages_open,
+        "wg_damages_fixed": wg_damages_fixed,
         "room_damage_lines": RoomDamageLine.choices,
         "wg_damage_lines": WGDamageLine.choices,
         "damage_sizes": DamageSize.choices,

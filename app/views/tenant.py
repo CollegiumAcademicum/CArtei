@@ -14,6 +14,7 @@ from app.models import (
     EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
     RoomDamage, WGDamage, RoomDamageLine, WGDamageLine, DamageSize,
 )
+from app.damages import can_view_damages, can_fix_damage, open_and_fixed
 from app.residency import has_active_assignment, set_move_dates
 from app.tenant_access import (
     SECTIONS, editable_fields, global_roles, viewer_roles, visible_fields,
@@ -431,19 +432,19 @@ def tenant_detail(request: HttpRequest, pk: int):
         if ctx.get("can_manage_documents") else []
     )
 
-    ctx["show_resident_damages"] = "owner" in roles
+    show_assignment_damages = can_view_damages(roles) or "owner" in roles
+    ctx["show_assignment_damages"] = show_assignment_damages
+    ctx["can_fix_damages"] = can_fix_damage(roles)
     ctx["room_damage_lines"] = RoomDamageLine.choices
     ctx["wg_damage_lines"] = WGDamageLine.choices
     ctx["damage_sizes"] = DamageSize.choices
-    if "owner" in roles:
+    if show_assignment_damages:
         for a in active_assignments:
-            a.room_damage_list = list(
-                RoomDamage.objects.filter(room_id=a.room_id, fixed_at__isnull=True)
-                .order_by("-created_at")
+            a.room_damages_open, a.room_damages_fixed = open_and_fixed(
+                RoomDamage.objects.filter(room_id=a.room_id)
             )
-            a.wg_damage_list = list(
-                WGDamage.objects.filter(wg_id=a.room.wg_id, fixed_at__isnull=True)
-                .order_by("-created_at")
+            a.wg_damages_open, a.wg_damages_fixed = open_and_fixed(
+                WGDamage.objects.filter(wg_id=a.room.wg_id)
             )
 
     return render(request, "app/tenant_detail.html", ctx)
