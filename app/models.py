@@ -380,6 +380,7 @@ class RoomDamageLine(models.TextChoices):
     SCHREIBTISCH_LOECHER = "SCHREIBTISCH_LOECHER", "Schreibtisch – Löcher"
     SCHRANK_FLECKEN = "SCHRANK_FLECKEN", "Schrank – Flecken"
     SCHRANK_LOECHER = "SCHRANK_LOECHER", "Schrank – Löcher"
+    SONSTIGES = "SONSTIGES", "Sonstiges"
 
 
 class WGDamageLine(models.TextChoices):
