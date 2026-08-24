@@ -1,9 +1,9 @@
 {% comment %} Reusable damage list. Context: open_damages, fixed_damages, add_url,
-lines, sizes, can_fix, fix_url_name, next. Open damages show directly; fixed ones
+lines, sizes, can_fix, fix_url_name, next, title. Open damages show directly; fixed ones
 sit in a collapsed (animated ca-collapse) section. can_fix gates the fix/reopen
 buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
 <div class="ca-damages">
-  <p style="font-weight:500;margin:.4rem 0 .25rem;">Schäden</p>
+  <p style="font-weight:500;margin:.4rem 0 .25rem;">{{ title|default:"Schäden" }}</p>
   {% for d in open_damages %}
     <div style="font-size:.9rem;margin:.15rem 0;display:flex;gap:.5rem;align-items:baseline;">
       <span style="color:#7a7a7a;white-space:nowrap;">{{ d.created_at|date:"Y-m-d" }}</span>
@@ -15,7 +15,7 @@ buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
       {% if can_fix %}
         <form method="post" action="{% url fix_url_name d.pk %}" style="display:inline;">
           {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
-          <button type="submit" class="ca-link-btn">als behoben markieren</button>
+          <button type="submit" class="ca-button-outline ca-button-sm">als behoben markieren</button>
         </form>
       {% endif %}
     </div>
@@ -38,7 +38,7 @@ buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
         {% if can_fix %}
           <form method="post" action="{% url fix_url_name d.pk %}" style="display:inline;">
             {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
-            <button type="submit" class="ca-link-btn">wieder öffnen</button>
+            <button type="submit" class="ca-button-outline ca-button-sm">wieder öffnen</button>
           </form>
         {% endif %}
       </div>
@@ -58,7 +58,7 @@ buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
         {% for value, label in sizes %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
       </select>
       <input type="text" name="note" placeholder="Notiz (optional)" maxlength="500">
-      <button type="submit">Schaden erfassen</button>
+      <button type="submit" class="ca-button ca-button-sm">Schaden erfassen</button>
     </form>
   {% endif %}
 </div>
