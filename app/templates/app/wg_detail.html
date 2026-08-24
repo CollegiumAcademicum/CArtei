@@ -27,6 +27,24 @@
   </div>
   {% endif %}
 
+  {# WG-level shared spaces #}
+  <details id="section-gemeinschaft" class="ca-collapse" style="margin-bottom:1.5rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
+    <summary style="font-weight:600;cursor:pointer;">Gemeinschaftsflächen</summary>
+    <p style="font-weight:500;margin:.75rem 0 .4rem;">Ausstattung</p>
+    <p style="color:#888;">Ausstattung der Gemeinschaftsflächen folgt in einem späteren Schritt.</p>
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    {% if show_damages %}
+      {% url 'wg_damage_add' wg.id as wg_add_url %}
+      {% include "app/_damages.html" with open_damages=wg_damages_open fixed_damages=wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=True fix_url_name="wg_damage_fix" kind="wg" next=request.path title="Schäden an Gemeinschaftsflächen (WG)" %}
+    {% elif resident_wg %}
+      {% url 'wg_damage_add' wg.id as wg_add_url %}
+      {% include "app/_damages.html" with open_damages=wg_damages_open fixed_damages=wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=False kind="wg" next=request.path title="Schäden an Gemeinschaftsflächen (WG)" %}
+    {% else %}
+      <p style="font-weight:500;margin:.25rem 0 .4rem;">Schäden</p>
+      <p style="color:#888;">Schadenskatalog und Übergabeprotokolle folgen in einem späteren Schritt.</p>
+    {% endif %}
+  </details>
+
   {% for r in rooms %}
   <details id="room-{{ r.room.pk }}" class="ca-collapse" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;" {% if r.cform.errors %}open{% endif %}>
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
@@ -57,14 +75,29 @@
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
     <p style="font-weight:500;margin:.25rem 0 .4rem;">Bewohner*innen</p>
     {% if can_edit_rooms %}
-      {% for c in r.cards %}
-      <div class="{% if c.assignment.active_on_asof %}wg-current{% endif %}">
+      {% for c in r.active_cards %}
+      <div class="wg-current">
         {% if c.occupant %}<div class="wg-occupant"><a href="{% url 'tenant_detail' c.assignment.tenant.pk %}" class="ca-tl-name">{{ c.occupant }}</a></div>{% endif %}
         {% include "app/_room_assignment_edit.html" with assignment=c.assignment aform=c.aform %}
       </div>
       {% empty %}
-      <p style="color:#888;">Keine Belegung erfasst.</p>
+      <p style="color:#888;">Keine aktuelle Belegung.</p>
       {% endfor %}
+      {% if r.past_cards %}
+      <details class="ca-collapse" style="margin-top:.75rem;">
+        <summary style="cursor:pointer;list-style:none;font-weight:500;">
+          Frühere Belegungen ({{ r.past_cards|length }}) ▾
+        </summary>
+        <div style="margin-top:.4rem;">
+        {% for c in r.past_cards %}
+        <div>
+          {% if c.occupant %}<div class="wg-occupant"><a href="{% url 'tenant_detail' c.assignment.tenant.pk %}" class="ca-tl-name">{{ c.occupant }}</a></div>{% endif %}
+          {% include "app/_room_assignment_edit.html" with assignment=c.assignment aform=c.aform %}
+        </div>
+        {% endfor %}
+        </div>
+      </details>
+      {% endif %}
       {% if r.cform %}
       <details class="ca-collapse" style="margin-top:.75rem;" {% if r.cform.errors %}open{% endif %}>
         <summary style="cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:.5rem;">
@@ -152,24 +185,6 @@
   {% empty %}
   <p style="color:#888;">Keine Zimmer erfasst.</p>
   {% endfor %}
-
-  {# WG-level shared spaces #}
-  <details id="section-gemeinschaft" class="ca-collapse" style="margin-top:1.5rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="font-weight:600;cursor:pointer;">Gemeinschaftsflächen</summary>
-    <p style="font-weight:500;margin:.75rem 0 .4rem;">Ausstattung</p>
-    <p style="color:#888;">Ausstattung der Gemeinschaftsflächen folgt in einem späteren Schritt.</p>
-    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
-    {% if show_damages %}
-      {% url 'wg_damage_add' wg.id as wg_add_url %}
-      {% include "app/_damages.html" with open_damages=wg_damages_open fixed_damages=wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=True fix_url_name="wg_damage_fix" kind="wg" next=request.path title="Schäden an Gemeinschaftsflächen (WG)" %}
-    {% elif resident_wg %}
-      {% url 'wg_damage_add' wg.id as wg_add_url %}
-      {% include "app/_damages.html" with open_damages=wg_damages_open fixed_damages=wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=False kind="wg" next=request.path title="Schäden an Gemeinschaftsflächen (WG)" %}
-    {% else %}
-      <p style="font-weight:500;margin:.25rem 0 .4rem;">Schäden</p>
-      <p style="color:#888;">Schadenskatalog und Übergabeprotokolle folgen in einem späteren Schritt.</p>
-    {% endif %}
-  </details>
 </div>
 
 <script>

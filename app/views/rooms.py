@@ -249,6 +249,8 @@ def wg_detail(request: HttpRequest, pk: int):
             )
         rooms.append({
             "room": room, "cards": cards, "active_count": active_count,
+            "active_cards": [c for c in cards if c["assignment"].active_on_asof],
+            "past_cards": [c for c in cards if not c["assignment"].active_on_asof],
             "own_resident": own_resident, "own_cards": own_cards,
             "ausstattung": [label for attr, label in AUSSTATTUNG if getattr(room, attr)],
             "fform": RoomFurnitureForm(instance=room, prefix=f"furn_{room.pk}") if can_edit_furniture else None,
