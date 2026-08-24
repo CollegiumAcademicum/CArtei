@@ -44,11 +44,11 @@
         <thead>
           <tr><th>Bewohner:in</th><th>Status</th><th>Notiz (optional)</th></tr>
         </thead>
-        <tbody>
+        <tbody id="ag-rows">
         {% for row in rows %}
         <tr>
           <td>
-            {% if row.tenant %}<a href="{% url 'tenant_detail' row.tenant.pk %}" style="color:var(--ca-teal);">{{ row.member.first_name }} {{ row.member.last_name }}</a>{% else %}{{ row.member.first_name }} {{ row.member.last_name }}<br><em style="color:#999;font-size:0.8rem;">(kein Eintrag im System)</em>{% endif %}
+            {% if row.tenant %}<a href="{% url 'tenant_detail' row.tenant.pk %}" style="color:var(--ca-teal);">{{ row.name }}</a>{% else %}{{ row.name }}<br><em style="color:#999;font-size:0.8rem;">(kein Eintrag im System)</em>{% endif %}
           </td>
           {% if row.tenant %}
           <td>
@@ -71,6 +71,31 @@
         </tbody>
       </table>
     </div>
+
+    <div style="margin-top:0.5rem;margin-bottom:1.5rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+      <select id="add-tenant-select" class="input is-small" style="max-width:340px;">
+        <option value="">Weitere:n Bewohner:in hinzufügen …</option>
+        {% for t in all_tenants %}
+        <option value="{{ t.pk }}" data-name="{{ t.first_name }} {{ t.last_name }}">{{ t.last_name }}, {{ t.first_name }} ({{ t.intranet_username }})</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="ca-button-sm" id="add-tenant-btn">Hinzufügen</button>
+    </div>
+
+    <template id="ag-row-tpl">
+      <tr>
+        <td class="tenant-name"></td>
+        <td>
+          <div class="ca-slider" data-values="ZU_AKTIV,AKTIV,NICHT_AUSREICHEND,IM_GESPRAECH,INAKTIV" data-labels="zu aktiv,aktiv,nicht ausreichend,im Gespräch,inaktiv">
+            <input type="range" min="0" max="4" step="1" data-initial="INAKTIV">
+            <input type="hidden" name="status___PK__" value="INAKTIV">
+            <output class="ca-slider-out"></output>
+          </div>
+        </td>
+        <td><input class="input is-small" type="text" name="note___PK__" placeholder="Notiz …"></td>
+      </tr>
+    </template>
+
     <button type="submit" class="ca-button">Speichern</button>
   </form>
 
@@ -81,7 +106,7 @@
       ZU_AKTIV:'#155724', AKTIV:'#2e7d32', NICHT_AUSREICHEND:'#e08a00',
       IM_GESPRAECH:'#c9a400', INAKTIV:'#B61B29'
     };
-    document.querySelectorAll('.ca-slider').forEach(function (w) {
+    function initSlider(w) {
       var values = w.dataset.values.split(',');
       var labels = w.dataset.labels.split(',');
       var range = w.querySelector('input[type=range]');
@@ -99,6 +124,24 @@
       range.value = i < 0 ? 0 : i;
       range.addEventListener('input', sync);
       sync();
+    }
+    document.querySelectorAll('.ca-slider').forEach(initSlider);
+
+    var sel = document.getElementById('add-tenant-select');
+    var btn = document.getElementById('add-tenant-btn');
+    var tbody = document.getElementById('ag-rows');
+    if (btn) btn.addEventListener('click', function () {
+      var opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) return;
+      if (tbody.querySelector('input[name="status_' + opt.value + '"]')) { sel.value = ''; return; }
+      var html = document.getElementById('ag-row-tpl').innerHTML.replace(/__PK__/g, opt.value);
+      var tmp = document.createElement('tbody');
+      tmp.innerHTML = html.trim();
+      var tr = tmp.firstElementChild;
+      tr.querySelector('.tenant-name').textContent = opt.dataset.name;
+      tbody.appendChild(tr);
+      tr.querySelectorAll('.ca-slider').forEach(initSlider);
+      sel.value = '';
     });
   })();
   </script>

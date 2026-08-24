@@ -144,6 +144,36 @@ def test_ag_edit_post_saves_result():
 
 
 @pytest.mark.django_db
+def test_ag_edit_post_saves_arbitrary_tenant():
+    # A tenant who is NOT an LDAP member of the AG can still be recorded via the picker.
+    from app.models import AGAbfrageResult, Tenant
+    abfrage = _open_abfrage()
+    editor = _user_in_group("editor_arb", "ag.kueche")
+    outsider = Tenant.objects.create(
+        first_name="Out", last_name="Sider", email="out@ca.de",
+        intranet_username="outsider", intranet_uuid=uuid.uuid4(),
+    )
+    client = Client()
+    client.force_login(editor)
+
+    # LDAP returns no members — the outsider is added purely via the arbitrary picker.
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=[]):
+        response = client.post(
+            f"/abfragen/{abfrage.pk}/ag/ag.kueche/",
+            {f"status_{outsider.pk}": "IM_GESPRAECH", f"note_{outsider.pk}": "extern"},
+        )
+        assert response.status_code == 302
+        result = AGAbfrageResult.objects.get(abfrage=abfrage, tenant=outsider, ag_name="ag.kueche")
+        assert result.status == "IM_GESPRAECH"
+        assert result.note == "extern"
+
+        # Reappears on reload even though the tenant is not an LDAP member.
+        get = client.get(f"/abfragen/{abfrage.pk}/ag/ag.kueche/")
+    assert b"Out Sider" in get.content
+    assert f'name="status_{outsider.pk}"'.encode() in get.content
+
+
+@pytest.mark.django_db
 def test_ag_edit_post_saves_health():
     from app.models import AGAbfrageHealth
     abfrage = _open_abfrage()
