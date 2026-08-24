@@ -537,3 +537,6 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ca-pill-no     { background: #e7e7e7; color: #555; }
 .ca-pill-flinta { background: #e7ddf3; color: #5b3a8a; }
 .ca-pill-bf     { background: #d7eaf7; color: #1c5a80; }
+
+/* Drag-and-drop file upload feedback (dragdrop.js) */
+.ca-dragover { outline: 2px dashed var(--ca-teal); outline-offset: 3px; background: #eef7f5; }
