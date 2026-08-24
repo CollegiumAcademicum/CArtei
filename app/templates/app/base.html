@@ -57,5 +57,43 @@
 </footer>
 
 <script src="{% static 'app/dragdrop.js' %}"></script>
+<script>
+// AJAX form swap: POST forms are submitted in place and only .ca-main is
+// replaced, so scroll position and open <details> survive with no reload — no
+// post-redirect scroll replay needed. This handler lives outside .ca-main so
+// the swap never duplicates it.
+document.addEventListener('submit', function(e) {
+  var f = e.target;
+  if (!f.closest('.ca-main') || f.method.toLowerCase() !== 'post') return;
+  e.preventDefault();
+  fetch(f.action || location.href, { method: 'POST', body: new FormData(f) })
+    .then(function(r) {
+      var ct = r.headers.get('content-type') || '';
+      // File download, or a redirect to a different page → let the browser take
+      // over with a real navigation.
+      if (!ct.includes('text/html') ||
+          (r.redirected && new URL(r.url).pathname !== location.pathname)) {
+        location = r.url;
+        return null;
+      }
+      if (r.redirected) history.replaceState({}, '', r.url); // keep ?query in sync
+      return r.text();
+    })
+    .then(function(html) {
+      if (html === null) return;
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var next = doc.querySelector('.ca-main');
+      document.querySelector('.ca-main').replaceWith(next);
+      // innerHTML-inserted <script> won't run — recreate each so the per-card
+      // revert/edit binding re-attaches to the fresh DOM.
+      next.querySelectorAll('script').forEach(function(s) {
+        var n = document.createElement('script');
+        if (s.src) n.src = s.src; else n.textContent = s.textContent;
+        s.replaceWith(n);
+      });
+      if (window.caWireDropZones) window.caWireDropZones();
+    });
+}, true);
+</script>
 </body>
 </html>

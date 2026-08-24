@@ -40,10 +40,13 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  // Idempotent (ddWired guard) — safe to re-run after an AJAX .ca-main swap.
+  window.caWireDropZones = function () {
     document.querySelectorAll('input[type="file"]').forEach(function (input) {
       var zone = input.closest("form");
       if (zone) wireZone(zone);
     });
-  });
+  };
+
+  document.addEventListener("DOMContentLoaded", window.caWireDropZones);
 })();
