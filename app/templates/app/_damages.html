@@ -51,7 +51,7 @@ buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
   {% endif %}
 
   {% if add_url %}
-    <form method="post" action="{{ add_url }}" style="margin-top:.3rem;">
+    <form method="post" action="{{ add_url }}" enctype="multipart/form-data" style="margin-top:.3rem;">
       {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
       <select name="line" required>
         {% for value, label in lines %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
@@ -61,6 +61,7 @@ buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
         {% for value, label in sizes %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
       </select>
       <input type="text" name="note" placeholder="Notiz (optional)" maxlength="500">
+      <input type="file" name="photo" accept="image/jpeg,image/png,application/pdf" title="Foto (optional)">
       <button type="submit" class="ca-button ca-button-sm">Schaden erfassen</button>
     </form>
   {% endif %}

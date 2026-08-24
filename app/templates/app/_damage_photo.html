@@ -1,17 +1,16 @@
 {% comment %} Photo cell for one damage. Context: d, kind, add_url, next.
-Single photo per damage; re-uploading replaces it. Image → thumbnail, PDF → link.
-Upload form shown only when add_url is set (same gate as adding a damage).
-The download view enforces the real permission. {% endcomment %}
+One photo per damage, set once and not overwritable. Image → thumbnail, PDF → link.
+When there is no photo yet, add_url gates a one-click upload (same gate as adding
+a damage). The download/set views enforce the real permission. {% endcomment %}
 {% if d.has_photo %}
   {% if d.photo_name|lower|slice:"-4:" == ".pdf" %}
     <a href="{% url 'damage_photo' kind d.pk %}" target="_blank" style="white-space:nowrap;">📄 Foto</a>
   {% else %}
     <a href="{% url 'damage_photo' kind d.pk %}" target="_blank"><img src="{% url 'damage_photo' kind d.pk %}" alt="Schaden-Foto" style="height:44px;border-radius:4px;border:1px solid #ddd;display:block;"></a>
   {% endif %}
-{% endif %}
-{% if add_url %}
+{% elif add_url %}
   <form method="post" action="{% url 'damage_photo_set' kind d.pk %}" enctype="multipart/form-data" style="display:inline;">
     {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
-    <label class="ca-button-outline ca-button-sm" style="cursor:pointer;white-space:nowrap;">{% if d.has_photo %}Foto ändern{% else %}Foto{% endif %}<input type="file" name="photo" accept="image/jpeg,image/png,application/pdf" onchange="this.form.submit()" style="display:none;"></label>
+    <label class="ca-button-outline ca-button-sm" style="cursor:pointer;white-space:nowrap;">Foto<input type="file" name="photo" accept="image/jpeg,image/png,application/pdf" onchange="this.form.submit()" style="display:none;"></label>
   </form>
 {% endif %}

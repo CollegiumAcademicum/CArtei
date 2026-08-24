@@ -36,6 +36,12 @@ def _add(request, *, model, target_kwarg, target_id, line_choices, allowed):
     line = request.POST.get("line", "")
     if line not in line_choices.values:
         raise PermissionDenied
+    f = request.FILES.get("photo")
+    if f:
+        err = upload_error(f)
+        if err:
+            messages.error(request, err)
+            return redirect(request.POST.get("next", "/"))
     model.objects.create(
         **{target_kwarg: target_id},
         line=line,
@@ -43,6 +49,8 @@ def _add(request, *, model, target_kwarg, target_id, line_choices, allowed):
         note=(request.POST.get("note", "").strip() or None),
         created_at=now(),
         created_by=author,
+        photo_name=f.name if f else None,
+        photo_data=f.read() if f else None,
     )
     return redirect(request.POST.get("next", "/"))
 
@@ -96,14 +104,17 @@ def wg_damage_fix(request, pk):
 @login_required
 @require_POST
 def damage_photo_set(request, kind, pk):
-    """Attach or replace the single photo on an existing damage. Same gate as
-    adding a damage: staff, or a resident of that room/WG."""
+    """Attach a photo to an existing damage that has none yet. Same gate as
+    adding a damage: staff, or a resident of that room/WG. Photos are not
+    overwritable once set."""
     if kind not in _KINDS:
         return HttpResponseBadRequest()
     model, target_col, allowed = _KINDS[kind]
     d = get_object_or_404(model, pk=pk)
     if not allowed(request.user, global_roles(request.user), getattr(d, target_col), date.today()):
         raise PermissionDenied
+    if d.photo_name:
+        return HttpResponseBadRequest()  # already has a photo; no overwrite
     f = request.FILES.get("photo")
     if not f:
         return HttpResponseBadRequest()

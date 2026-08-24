@@ -77,13 +77,7 @@
       <p style="font-weight:500;margin:.25rem 0 .4rem;">Aktuelle Zimmer
         {% if can_create_room %}<span class="ca-hint" tabindex="0" role="button" aria-label="Wer kann Zimmerbelegungen bearbeiten?">i<span class="ca-hint-bubble">Die Mietverwaltung kann Zimmerbelegungen jederzeit bearbeiten. Die Belegium nur bei zukünftigen Einzügen und in den ersten zwei Wochen nach Einzug – danach nur Lesezugriff. Notizen bleiben für beide immer bearbeitbar.</span></span>{% endif %}</p>
       {% for assignment, aform in active_assignment_cards %}
-      {% include "app/_room_assignment_edit.html" %}
-      {% if show_assignment_damages %}
-        {% url 'room_damage_add' assignment.room_id as room_add_url %}
-        {% include "app/_damages.html" with open_damages=assignment.room_damages_open fixed_damages=assignment.room_damages_fixed add_url=room_add_url lines=room_damage_lines sizes=damage_sizes can_fix=can_fix_damages fix_url_name="room_damage_fix" kind="room" next=request.path title="Schäden am Zimmer" %}
-        {% url 'wg_damage_add' assignment.room.wg_id as wg_add_url %}
-        {% include "app/_damages.html" with open_damages=assignment.wg_damages_open fixed_damages=assignment.wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=can_fix_damages fix_url_name="wg_damage_fix" kind="wg" next=request.path title="Schäden an Gemeinschaftsflächen (WG)" %}
-      {% endif %}
+      {% include "app/_room_assignment_edit.html" with show_damages_here=show_assignment_damages %}
       {% empty %}
       <p style="color:#888;font-size:.9rem;margin:.25rem 0;">Kein aktuelles Zimmer.</p>
       {% endfor %}

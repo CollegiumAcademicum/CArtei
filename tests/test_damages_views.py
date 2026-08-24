@@ -137,7 +137,32 @@ def _room_damage(world, tenant):
     )
 
 
-def test_resident_sets_and_replaces_photo(client, world):
+def test_add_room_damage_with_photo(client, world):
+    _login(client, "resi")
+    t = Tenant.objects.get(intranet_username="resi")
+    TenantRoomAssignment.objects.create(tenant=t, room=world["room"], moved_in=date(2026, 1, 1))
+    r = client.post(
+        f"/rooms/{world['room'].id}/damages/add/",
+        {"line": RoomDamageLine.BODEN_FLECKEN, "next": "/",
+         "photo": SimpleUploadedFile("a.png", PNG, content_type="image/png")},
+    )
+    assert r.status_code == 302
+    d = RoomDamage.objects.get(room=world["room"])
+    assert d.photo_name == "a.png" and bytes(d.photo_data) == PNG
+
+
+def test_add_damage_with_bad_photo_not_created(client, world):
+    _login(client, "cartei_werkstatt", "cartei_werkstatt")
+    r = client.post(
+        f"/rooms/{world['room'].id}/damages/add/",
+        {"line": RoomDamageLine.BODEN_FLECKEN, "next": "/",
+         "photo": SimpleUploadedFile("evil.png", b"<html>", content_type="image/png")},
+    )
+    assert r.status_code == 302  # redirected with an error message
+    assert RoomDamage.objects.count() == 0
+
+
+def test_resident_sets_photo_once(client, world):
     _login(client, "resi")
     t = Tenant.objects.get(intranet_username="resi")
     TenantRoomAssignment.objects.create(tenant=t, room=world["room"], moved_in=date(2026, 1, 1))
@@ -149,13 +174,14 @@ def test_resident_sets_and_replaces_photo(client, world):
     assert r.status_code == 302
     d.refresh_from_db()
     assert d.photo_name == "a.png" and bytes(d.photo_data) == PNG
-    # re-upload replaces the single photo
-    client.post(
+    # a photo already exists — no overwrite
+    r = client.post(
         f"/damages/room/{d.id}/photo/set/",
         {"next": "/", "photo": SimpleUploadedFile("b.png", PNG, content_type="image/png")},
     )
+    assert r.status_code == 400
     d.refresh_from_db()
-    assert d.photo_name == "b.png"
+    assert d.photo_name == "a.png"
 
 
 def test_photo_bad_type_rejected(client, world):
