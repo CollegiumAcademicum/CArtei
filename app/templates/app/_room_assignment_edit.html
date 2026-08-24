@@ -99,13 +99,15 @@ onto the assignment and provides the choice lists + can_fix_damages).{% endcomme
   {% endif %}
   {% if show_damages_here %}
     {% url 'room_damage_add' assignment.room_id as room_add_url %}
-    <details class="ca-collapse" open style="margin-top:.5rem;border-top:1px dashed #e0e0e0;padding-top:.4rem;">
-      <summary style="cursor:pointer;font-weight:500;">Schäden am Zimmer ▾</summary>
+    <details class="ca-collapse" style="margin-top:.5rem;border-top:1px dashed #e0e0e0;padding-top:.4rem;">
+      <summary style="cursor:pointer;font-weight:500;">Schäden am Zimmer
+        <span style="font-weight:400;color:#888;font-size:.85rem;">({% if assignment.room_damages_open %}<span style="color:#b00;">{{ assignment.room_damages_open|length }}</span>{% else %}0{% endif %} offen · {{ assignment.room_damages_fixed|length }} behoben)</span> ▾</summary>
       {% include "app/_damages.html" with open_damages=assignment.room_damages_open fixed_damages=assignment.room_damages_fixed add_url=room_add_url lines=room_damage_lines sizes=damage_sizes can_fix=can_fix_damages fix_url_name="room_damage_fix" kind="room" next=request.path hide_title=True %}
     </details>
     {% url 'wg_damage_add' assignment.room.wg_id as wg_add_url %}
-    <details class="ca-collapse" open style="margin-top:.5rem;border-top:1px dashed #e0e0e0;padding-top:.4rem;">
-      <summary style="cursor:pointer;font-weight:500;">Schäden an Gemeinschaftsflächen (WG) ▾</summary>
+    <details class="ca-collapse" style="margin-top:.5rem;border-top:1px dashed #e0e0e0;padding-top:.4rem;">
+      <summary style="cursor:pointer;font-weight:500;">Schäden an Gemeinschaftsflächen (WG)
+        <span style="font-weight:400;color:#888;font-size:.85rem;">({% if assignment.wg_damages_open %}<span style="color:#b00;">{{ assignment.wg_damages_open|length }}</span>{% else %}0{% endif %} offen · {{ assignment.wg_damages_fixed|length }} behoben)</span> ▾</summary>
       {% include "app/_damages.html" with open_damages=assignment.wg_damages_open fixed_damages=assignment.wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=can_fix_damages fix_url_name="wg_damage_fix" kind="wg" next=request.path hide_title=True %}
     </details>
   {% endif %}
