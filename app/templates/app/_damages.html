@@ -1,22 +1,52 @@
-{% comment %} Reusable damage list + add form.
-Context: damages, add_url, lines, sizes, can_fix, fix_url_name, next.
-Read-only list when can_fix is false and no add_url. {% endcomment %}
+{% comment %} Reusable damage list. Context: open_damages, fixed_damages, add_url,
+lines, sizes, can_fix, fix_url_name, next. Open damages show directly; fixed ones
+sit in a collapsed (animated ca-collapse) section. can_fix gates the fix/reopen
+buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
 <div class="ca-damages">
   <p style="font-weight:500;margin:.4rem 0 .25rem;">Schäden</p>
-  {% for d in damages %}
-    <div style="font-size:.9rem;margin:.15rem 0;{% if not d.is_open %}color:#888;{% endif %}">
-      {{ d.get_line_display }}{% if d.size %} ({{ d.get_size_display }}){% endif %}{% if d.note %} — {{ d.note }}{% endif %}
-      {% if d.is_open %}<span style="color:#b00;">· offen</span>{% else %}<span>· behoben</span>{% endif %}
+  {% for d in open_damages %}
+    <div style="font-size:.9rem;margin:.15rem 0;display:flex;gap:.5rem;align-items:baseline;">
+      <span style="color:#7a7a7a;white-space:nowrap;">{{ d.created_at|date:"Y-m-d" }}</span>
+      <span style="flex:1;">
+        {{ d.get_line_display }}{% if d.size %} ({{ d.get_size_display }}){% endif %}{% if d.note %} — {{ d.note }}{% endif %}
+        <span style="color:#b00;">· offen</span>
+        <span style="color:#888;">· gemeldet von {{ d.created_by.first_name }} {{ d.created_by.last_name }}</span>
+      </span>
       {% if can_fix %}
         <form method="post" action="{% url fix_url_name d.pk %}" style="display:inline;">
           {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
-          <button type="submit" class="ca-link-btn">{% if d.is_open %}als behoben markieren{% else %}wieder öffnen{% endif %}</button>
+          <button type="submit" class="ca-link-btn">als behoben markieren</button>
         </form>
       {% endif %}
     </div>
   {% empty %}
-    <p style="color:#888;font-size:.85rem;margin:.15rem 0;">Keine Schäden erfasst.</p>
+    <p style="color:#888;font-size:.85rem;margin:.15rem 0;">Keine offenen Schäden.</p>
   {% endfor %}
+
+  {% if fixed_damages %}
+  <details class="ca-collapse" style="margin-top:.4rem;">
+    <summary style="cursor:pointer;font-size:.85rem;color:#555;">Behobene Schäden ({{ fixed_damages|length }})</summary>
+    <div style="margin-top:.3rem;">
+    {% for d in fixed_damages %}
+      <div style="font-size:.9rem;margin:.15rem 0;color:#888;display:flex;gap:.5rem;align-items:baseline;">
+        <span style="white-space:nowrap;">{{ d.created_at|date:"Y-m-d" }}</span>
+        <span style="flex:1;">
+          {{ d.get_line_display }}{% if d.size %} ({{ d.get_size_display }}){% endif %}{% if d.note %} — {{ d.note }}{% endif %}
+          <span>· gemeldet von {{ d.created_by.first_name }} {{ d.created_by.last_name }}</span>
+          {% if d.fixed_by %}<span>· behoben von {{ d.fixed_by.first_name }} {{ d.fixed_by.last_name }} am {{ d.fixed_at|date:"Y-m-d" }}</span>{% endif %}
+        </span>
+        {% if can_fix %}
+          <form method="post" action="{% url fix_url_name d.pk %}" style="display:inline;">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="ca-link-btn">wieder öffnen</button>
+          </form>
+        {% endif %}
+      </div>
+    {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+
   {% if add_url %}
     <form method="post" action="{{ add_url }}" style="margin-top:.3rem;">
       {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
