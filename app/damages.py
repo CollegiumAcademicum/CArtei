@@ -55,3 +55,16 @@ def open_and_fixed(qs):
     reporter/fixer prefetched. One query."""
     rows = list(qs.select_related("created_by", "fixed_by").order_by("-created_at"))
     return [d for d in rows if d.is_open], [d for d in rows if not d.is_open]
+
+
+def damage_counts(model, group_field):
+    """{group_id: (open, fixed)} over all rows of a damage model, one query — for
+    list overviews that need tallies, not full rows. Open == fixed_at NULL,
+    matching DamageBase.is_open."""
+    from django.db.models import Count, Q
+
+    rows = model.objects.values(group_field).annotate(
+        n_open=Count("pk", filter=Q(fixed_at__isnull=True)),
+        n_fixed=Count("pk", filter=Q(fixed_at__isnull=False)),
+    )
+    return {r[group_field]: (r["n_open"], r["n_fixed"]) for r in rows}

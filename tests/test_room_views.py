@@ -107,6 +107,27 @@ def test_list_engagement_hidden_for_non_cluster(client):
     assert b"Engagement" not in resp.content
 
 
+def test_list_damage_counts_per_room_and_wg(client):
+    from app.models import RoomDamage, RoomDamageLine, WGDamage, WGDamageLine
+    _login(client, "ag.mietverwaltung")  # staff → sees damages
+    b, wg, room, t = _housing()
+    kw = dict(created_at=datetime.datetime(2026, 8, 1, 12, tzinfo=datetime.timezone.utc), created_by=t)
+    RoomDamage.objects.create(room=room, line=RoomDamageLine.BODEN_FLECKEN, **kw)  # open
+    RoomDamage.objects.create(room=room, line=RoomDamageLine.WAND_LOECHER,
+                              fixed_at=kw["created_at"], fixed_by=t, **kw)  # fixed
+    WGDamage.objects.create(wg=wg, line=WGDamageLine.BAD_FLECK, **kw)  # open WG damage
+    resp = client.get(reverse("wg_list"))
+    assert b"Sch\xc3\xa4den (offen/behoben)" in resp.content  # column header
+    assert b"1 WG-Sch\xc3\xa4den offen" in resp.content  # WG tally
+
+
+def test_list_damage_column_hidden_for_belegium(client):
+    _login(client, "gr.belegium")  # no damage access
+    b, wg, room, t = _housing()
+    resp = client.get(reverse("wg_list"))
+    assert b"Sch\xc3\xa4den" not in resp.content
+
+
 # ---- Task 4: WG detail tests ------------------------------------------------
 
 def test_detail_shows_history_and_asof_marker(client):

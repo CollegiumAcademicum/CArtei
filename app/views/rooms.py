@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
-from app.damages import can_view_damages, open_and_fixed
+from app.damages import can_view_damages, damage_counts, open_and_fixed
 from app.forms import RoomAssignmentCreateForm, RoomFurnitureForm, TenantRoomAssignmentForm
 from app.models import AGAbfrage, AGAbfrageResult, Building, DamageSize, InternalNote, Room, RoomDamage, RoomDamageLine, Tenant, TenantRoomAssignment, WG, WGDamage, WGDamageLine
 from app.residency import assignment_active_on
@@ -274,9 +274,12 @@ def wg_list(request: HttpRequest):
     roles = global_roles(request.user)
     may_see_names = "first_name" in visible_fields(roles)
     show_engagement = bool({"cluster", "admin"} & roles)
+    show_damages = can_view_damages(roles)
     as_of = parse_as_of(request)
     occ = _occupants_by_room(as_of, may_see_names)
     engaged = _engaged_tenant_ids(as_of) if show_engagement else None
+    room_dmg = damage_counts(RoomDamage, "room_id") if show_damages else {}
+    wg_dmg = damage_counts(WGDamage, "wg_id") if show_damages else {}
 
     buildings = []
     total_rooms = 0
@@ -291,15 +294,20 @@ def wg_list(request: HttpRequest):
                     "occupants": occupants,
                     "ausstattung": [label for attr, label in AUSSTATTUNG if getattr(room, attr)],
                     "engagement": _room_engagement([o["pk"] for o in occupants], engaged),
+                    "damages": room_dmg.get(room.id, (0, 0)),
                 })
                 total_rooms += 1
             wgs.append({
                 "wg": wg, "rooms": rooms,
                 "engagement": _wg_engagement([r["engagement"] for r in rooms]),
+                "damages": wg_dmg.get(wg.id, (0, 0)),
             })
         buildings.append({"building": b, "wgs": wgs})
 
     return render(request, "app/wg_list.html", {
         "buildings": buildings, "as_of": as_of, "may_see_names": may_see_names,
         "total_rooms": total_rooms, "show_engagement": show_engagement,
+        "show_damages": show_damages,
+        # Zimmer, m², Ausstattung, Belegung + optional Engagement/Schäden.
+        "col_count": 4 + show_engagement + show_damages,
     })
