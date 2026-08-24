@@ -188,31 +188,6 @@
 </div>
 
 <script>
-// Restore the open section and scroll offset after a post-redirect reload so
-// saving a room stays put instead of jumping to the top.
-(function() {
-  var id = sessionStorage.getItem('restoreSection');
-  if (!id) return;
-  var y = sessionStorage.getItem('restoreScroll');
-  sessionStorage.removeItem('restoreSection');
-  sessionStorage.removeItem('restoreScroll');
-  var el = document.getElementById(id);
-  if (el) el.open = true;
-  if (y !== null) {
-    y = parseInt(y, 10);
-    window.scrollTo(0, y);
-    setTimeout(function() { window.scrollTo(0, y); }, 300);
-  }
-})();
-
-document.addEventListener('submit', function(e) {
-  var section = e.target.closest('details[id]');
-  if (section) {
-    sessionStorage.setItem('restoreSection', section.id);
-    sessionStorage.setItem('restoreScroll', window.scrollY);
-  }
-}, true);
-
 // Room assignments are read-only until "Bearbeiten"; each card saves/reverts on
 // its own. Revert restores the card's fields and collapses back to the display.
 document.querySelectorAll('.ca-room-assignment').forEach(function(card) {
