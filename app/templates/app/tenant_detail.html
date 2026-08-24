@@ -182,7 +182,7 @@
       {% for a in sublet_out %}
       <li class="ca-sublet-line">
         <a href="{% url 'tenant_detail' a.tenant.pk %}" style="color:var(--ca-teal);">{% if a.tenant.preferred_name %}{{ a.tenant.preferred_name }}{% else %}{{ a.tenant.first_name }} {{ a.tenant.last_name }}{% endif %}</a>
-        — {{ a.room.wg.building.name }} · {{ a.room.wg.name }} · {{ a.room.name }}
+        — {{ a.room.wg.building.name }} · <a href="{% url 'wg_detail' a.room.wg_id %}" style="color:var(--ca-teal);">{{ a.room.wg.name }}</a> · {{ a.room.name }}
         (seit {{ a.moved_in }}{% if a.moved_out %} bis {{ a.moved_out }}{% endif %})
       </li>
       {% endfor %}

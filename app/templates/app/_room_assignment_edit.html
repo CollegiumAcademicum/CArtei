@@ -16,7 +16,7 @@ onto the assignment and provides the choice lists + can_fix_damages).{% endcomme
   {% endif %}
   <div class="ca-room-display"{% if aform.errors %} style="display:none;"{% endif %}>
     <div class="ca-room-main">
-      <span class="ca-room-name">{{ assignment.room.wg.building.name }} · {{ assignment.room.wg.name }} · {{ assignment.room.name }}</span>
+      <span class="ca-room-name">{{ assignment.room.wg.building.name }} · <a href="{% url 'wg_detail' assignment.room.wg_id %}">{{ assignment.room.wg.name }}</a> · {{ assignment.room.name }}</span>
       <span class="ca-room-meta">
         <span>Eingezogen {{ assignment.moved_in }}</span>
         <span>{% if assignment.moved_out %}Ausgezogen {{ assignment.moved_out }}{% else %}aktuell{% endif %}</span>
