@@ -28,10 +28,11 @@
         <table class="table is-fullwidth is-hoverable" style="font-size:0.9rem;">
           <thead>
             <tr class="cluster-group-header">
-              <td colspan="{% if show_engagement %}5{% else %}4{% endif %}">
+              <td colspan="{{ col_count }}">
                 <a href="{% url 'wg_detail' w.wg.pk %}?as_of={{ as_of|date:'Y-m-d' }}">{{ w.wg.name }}</a>
                 <span class="ca-grp-tally">
                   {% if w.wg.cluster %}· Cluster {{ w.wg.cluster }} {% endif %}· {{ w.rooms|length }} Zimmer
+                  {% if show_damages and w.damages.0 %}· <span style="color:#b00;">{{ w.damages.0 }} WG-Schäden offen</span>{% endif %}
                 </span>
                 {% if show_engagement and w.engagement == "ok" %}<span class="ca-pill ca-pill-green">Engagement vollständig</span>
                 {% elif show_engagement and w.engagement == "flag" %}<span class="ca-pill ca-pill-amber">Engagement unvollständig</span>{% endif %}
@@ -43,6 +44,7 @@
               <th style="text-align:left;">Ausstattung</th>
               <th style="text-align:left;">Belegung</th>
               {% if show_engagement %}<th style="text-align:left;">Engagement</th>{% endif %}
+              {% if show_damages %}<th style="text-align:left;">Schäden (offen/behoben)</th>{% endif %}
             </tr>
           </thead>
           <tbody>
@@ -61,9 +63,12 @@
                 {% elif r.engagement == "flag" %}<span class="ca-pill ca-pill-amber">⚠</span>
                 {% else %}<span class="ca-tl-muted">—</span>{% endif %}
               </td>{% endif %}
+              {% if show_damages %}<td>
+                {% if r.damages.0 %}<span style="color:#b00;">{{ r.damages.0 }}</span>{% else %}0{% endif %}<span class="ca-tl-muted"> / {{ r.damages.1 }}</span>
+              </td>{% endif %}
             </tr>
           {% empty %}
-            <tr><td colspan="{% if show_engagement %}5{% else %}4{% endif %}" class="ca-tl-muted">Keine Zimmer.</td></tr>
+            <tr><td colspan="{{ col_count }}" class="ca-tl-muted">Keine Zimmer.</td></tr>
           {% endfor %}
           </tbody>
         </table>
