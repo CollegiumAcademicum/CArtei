@@ -82,8 +82,19 @@ document.addEventListener('submit', function(e) {
     })
     .then(function(html) {
       if (html === null) return;
-      var doc = new DOMParser().parseFromString(html, 'text/html');
-      var next = doc.querySelector('.ca-main');
+      // The server re-renders every <details> in its default (mostly closed)
+      // state, so carry the currently-open sections across the swap. Set .open on
+      // the detached node so it mounts already-expanded — no collapse animation to
+      // fight, so the document keeps its height and scrollTo below lands right.
+      // ponytail: only <details> with a stable id survive; nested id-less ones
+      // reset to default. Upgrade path: DOM morph (idiomorph) to keep all state.
+      var openIds = [];
+      document.querySelectorAll('.ca-main details[id][open]').forEach(function(d) { openIds.push(d.id); });
+      var next = new DOMParser().parseFromString(html, 'text/html').querySelector('.ca-main');
+      openIds.forEach(function(id) {
+        var d = next.querySelector('#' + CSS.escape(id));
+        if (d) d.open = true;
+      });
       document.querySelector('.ca-main').replaceWith(next);
       // innerHTML-inserted <script> won't run — recreate each so the per-card
       // revert/edit binding re-attaches to the fresh DOM.
@@ -93,8 +104,6 @@ document.addEventListener('submit', function(e) {
         s.replaceWith(n);
       });
       if (window.caWireDropZones) window.caWireDropZones();
-      // Replacing all of .ca-main collapses document height for an instant, which
-      // clamps the scroll to the top — put it back now that the content is re-laid.
       window.scrollTo(0, scrollY);
     });
 }, true);
