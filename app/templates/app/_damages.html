@@ -4,7 +4,7 @@ title. Open damages show directly; fixed ones
 sit in a collapsed (animated ca-collapse) section. can_fix gates the fix/reopen
 buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
 <div class="ca-damages">
-  <p style="font-weight:500;margin:.4rem 0 .25rem;">{{ title|default:"Schäden" }}</p>
+  {% if not hide_title %}<p style="font-weight:500;margin:.4rem 0 .25rem;">{{ title|default:"Schäden" }}</p>{% endif %}
   {% for d in open_damages %}
     <div style="font-size:.9rem;margin:.15rem 0;display:flex;gap:.5rem;align-items:center;">
       <span style="color:#7a7a7a;white-space:nowrap;align-self:baseline;">{{ d.created_at|date:"Y-m-d" }}</span>
