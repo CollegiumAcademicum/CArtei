@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
-from app.damages import can_view_damages, damage_counts, open_and_fixed
+from app.damages import author_for, can_view_damages, damage_counts, is_room_resident, is_wg_resident, open_and_fixed
 from app.forms import RoomAssignmentCreateForm, RoomFurnitureForm, TenantRoomAssignmentForm
 from app.models import AGAbfrage, AGAbfrageResult, Building, DamageSize, InternalNote, Room, RoomDamage, RoomDamageLine, Tenant, TenantRoomAssignment, WG, WGDamage, WGDamageLine
 from app.residency import assignment_active_on
@@ -124,6 +124,12 @@ def wg_detail(request: HttpRequest, pk: int):
     as_of = parse_as_of(request)
     today = date.today()
 
+    # A non-staff tenant living in this WG may see their own room assignment and
+    # the damages on their own room + the shared spaces — the same scope owners
+    # get on their tenant_detail page. Other rooms stay belegt/frei only.
+    current = author_for(request.user)
+    resident_wg = is_wg_resident(current, wg.id, today)
+
     can_edit_rooms = bool({"mietverwaltung", "admin", "belegium"} & roles)
     can_edit_furniture = bool({"mietverwaltung", "admin", "werkstatt"} & roles)
     # Assignment documents (Mietvertrag etc.) are MV/admin only — Belegium sees
@@ -234,12 +240,16 @@ def wg_detail(request: HttpRequest, pk: int):
                 aform = None
             occupant = display(a.tenant) if may_see_names else None
             cards.append({"assignment": a, "aform": aform, "occupant": occupant})
-        if show_damages:
+        # Non-staff resident: only their own card(s) for the room they live in.
+        own_resident = resident_wg and is_room_resident(current, room.id, today)
+        own_cards = [c for c in cards if c["assignment"].tenant_id == current.pk] if own_resident else []
+        if show_damages or own_resident:
             room.damages_open, room.damages_fixed = open_and_fixed(
                 RoomDamage.objects.filter(room=room)
             )
         rooms.append({
             "room": room, "cards": cards, "active_count": active_count,
+            "own_resident": own_resident, "own_cards": own_cards,
             "ausstattung": [label for attr, label in AUSSTATTUNG if getattr(room, attr)],
             "fform": RoomFurnitureForm(instance=room, prefix=f"furn_{room.pk}") if can_edit_furniture else None,
             "cform": (new_room_forms.get(room.pk)
@@ -248,7 +258,7 @@ def wg_detail(request: HttpRequest, pk: int):
 
     rollup = _engagement_rollup(list(active_tenant_ids), as_of) if show_engagement else None
     wg_damages_open, wg_damages_fixed = (
-        open_and_fixed(WGDamage.objects.filter(wg=wg)) if show_damages else ([], [])
+        open_and_fixed(WGDamage.objects.filter(wg=wg)) if show_damages or resident_wg else ([], [])
     )
 
     return render(request, "app/wg_detail.html", {
@@ -261,6 +271,7 @@ def wg_detail(request: HttpRequest, pk: int):
         "show_assignment_notes": show_assignment_notes,
         "all_tenants": list(Tenant.objects.order_by("last_name", "first_name")) if can_manage_documents else [],
         "show_damages": show_damages,
+        "resident_wg": resident_wg,
         "wg_damages_open": wg_damages_open,
         "wg_damages_fixed": wg_damages_fixed,
         "room_damage_lines": RoomDamageLine.choices,

@@ -370,6 +370,67 @@ def test_detail_werkstatt_cannot_edit_assignments(client):
     assert a.moved_in == datetime.date(2026, 1, 1)  # unchanged
 
 
+# ---- Resident self-view of their own WG ------------------------------------
+
+def _resident_login(client, tenant):
+    """Log in a plain (non-staff) user whose username matches the tenant."""
+    u = User.objects.create_user(tenant.intranet_username, password="x")
+    client.force_login(u)
+    return u
+
+
+def test_detail_resident_sees_own_room_and_damages(client):
+    from app.models import RoomDamage, RoomDamageLine, WGDamage, WGDamageLine
+    b, wg, room, t = _housing()
+    _resident_login(client, t)
+    TenantRoomAssignment.objects.create(
+        tenant=t, room=room, moved_in=datetime.date(2026, 1, 1), moved_out=None,
+    )
+    kw = dict(created_at=datetime.datetime(2026, 8, 1, 12, tzinfo=datetime.timezone.utc), created_by=t)
+    RoomDamage.objects.create(room=room, line=RoomDamageLine.BODEN_FLECKEN, note="mein Fleck", **kw)
+    WGDamage.objects.create(wg=wg, line=WGDamageLine.BAD_FLECK, note="Bad-Fleck", **kw)
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert resp.status_code == 200
+    assert b"Schaden erfassen" in resp.content        # resident may report damages
+    assert "mein Fleck".encode() in resp.content       # own room damage shown
+    assert b"Bad-Fleck" in resp.content                # shared-space damage shown
+    assert "als behoben markieren".encode() not in resp.content  # residents cannot fix
+    assert b"form-room-" not in resp.content           # read-only, no edit form
+
+
+def test_detail_resident_does_not_see_other_rooms(client):
+    b, wg, room, t = _housing()
+    _resident_login(client, t)
+    TenantRoomAssignment.objects.create(
+        tenant=t, room=room, moved_in=datetime.date(2026, 1, 1), moved_out=None,
+    )
+    other = Room.objects.create(wg=wg, name="Zimmer 2", size_sqm=12)
+    t2 = Tenant.objects.create(
+        first_name="Ada", last_name="Test", email="a@x.de",
+        intranet_username="ada", intranet_uuid="00000000-0000-0000-0000-000000000002",
+    )
+    TenantRoomAssignment.objects.create(tenant=t2, room=other, moved_in=datetime.date(2026, 1, 1), moved_out=None)
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert b"Ada" not in resp.content   # flatmate's name never leaks
+    assert b"belegt" in resp.content    # other room only shown as occupied
+
+
+def test_detail_non_resident_sees_no_damages(client):
+    """A logged-in non-staff user who lives nowhere in the WG gets the plain view."""
+    b, wg, room, t = _housing()
+    stranger = Tenant.objects.create(
+        first_name="Bo", last_name="Extern", email="b@x.de",
+        intranet_username="bo", intranet_uuid="00000000-0000-0000-0000-000000000009",
+    )
+    _resident_login(client, stranger)
+    TenantRoomAssignment.objects.create(
+        tenant=t, room=room, moved_in=datetime.date(2026, 1, 1), moved_out=None,
+    )
+    resp = client.get(reverse("wg_detail", args=[wg.pk]))
+    assert b"Schaden erfassen" not in resp.content  # not a resident → no damage UI
+    assert b"form-room-" not in resp.content
+
+
 def test_detail_non_editor_cannot_save_furniture(client):
     _login(client, "gr.cluster")
     b, wg, room, t = _housing()
