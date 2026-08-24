@@ -103,18 +103,23 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
     }
 
     if request.method == "POST":
-        for username, tenant in tenants_by_username.items():
-            key = f"status_{tenant.pk}"
-            if key in request.POST:
-                AGAbfrageResult.objects.update_or_create(
-                    abfrage=abfrage,
-                    ag_name=ag_name,
-                    tenant=tenant,
-                    defaults={
-                        "status": request.POST[key],
-                        "note": request.POST.get(f"note_{tenant.pk}", "").strip() or None,
-                    },
-                )
+        # Save every status_<tenant_id> present in the POST — this covers both LDAP
+        # members and arbitrary tenants added via the picker.
+        for key in request.POST:
+            if not key.startswith("status_"):
+                continue
+            tenant = Tenant.objects.filter(pk=key.removeprefix("status_")).first()
+            if tenant is None:
+                continue
+            AGAbfrageResult.objects.update_or_create(
+                abfrage=abfrage,
+                ag_name=ag_name,
+                tenant=tenant,
+                defaults={
+                    "status": request.POST[key],
+                    "note": request.POST.get(f"note_{tenant.pk}", "").strip() or None,
+                },
+            )
         if request.POST.get("health"):
             AGAbfrageHealth.objects.update_or_create(
                 abfrage=abfrage,
@@ -133,16 +138,25 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
     health = AGAbfrageHealth.objects.filter(abfrage=abfrage, ag_name=ag_name).first()
     rows = [
         {
+            "name": f"{m['first_name']} {m['last_name']}",
             "member": m,
             "tenant": (t := tenants_by_username.get(m["username"])),
             "result": existing.get(t.pk) if t else None,
         }
         for m in members
     ]
+    # Arbitrary tenants added outside LDAP membership — keep them visible on reload.
+    member_ids = {t.pk for t in tenants_by_username.values()}
+    extra = Tenant.objects.filter(pk__in=[tid for tid in existing if tid not in member_ids])
+    rows += [
+        {"name": f"{t.first_name} {t.last_name}", "member": None, "tenant": t, "result": existing[t.pk]}
+        for t in extra
+    ]
     return render(request, "app/abfragen/ag_edit.html", {
         "abfrage": abfrage,
         "ag_name": ag_name,
         "rows": rows,
+        "all_tenants": Tenant.objects.order_by("last_name", "first_name"),
         "status_choices": _STATUS_CHOICES,
         "health_choices": _HEALTH_CHOICES,
         "health": health,
