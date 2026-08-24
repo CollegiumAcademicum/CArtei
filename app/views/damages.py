@@ -1,7 +1,10 @@
+import mimetypes
 from datetime import date
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
@@ -9,6 +12,14 @@ from django.views.decorators.http import require_POST
 from app import damages as perms
 from app.models import Room, WG, RoomDamage, WGDamage, RoomDamageLine, WGDamageLine, DamageSize
 from app.tenant_access import global_roles
+from app.uploads import upload_error
+
+# Per damage kind: model, the FK column holding the target id, and the
+# permission gate (staff, or a resident of that room/WG).
+_KINDS = {
+    "room": (RoomDamage, "room_id", perms.can_add_room_damage),
+    "wg": (WGDamage, "wg_id", perms.can_add_wg_damage),
+}
 
 
 def _clean_size(raw):
@@ -80,3 +91,43 @@ def room_damage_fix(request, pk):
 @require_POST
 def wg_damage_fix(request, pk):
     return _fix(request, WGDamage, pk)
+
+
+@login_required
+@require_POST
+def damage_photo_set(request, kind, pk):
+    """Attach or replace the single photo on an existing damage. Same gate as
+    adding a damage: staff, or a resident of that room/WG."""
+    if kind not in _KINDS:
+        return HttpResponseBadRequest()
+    model, target_col, allowed = _KINDS[kind]
+    d = get_object_or_404(model, pk=pk)
+    if not allowed(request.user, global_roles(request.user), getattr(d, target_col), date.today()):
+        raise PermissionDenied
+    f = request.FILES.get("photo")
+    if not f:
+        return HttpResponseBadRequest()
+    err = upload_error(f)
+    if err:
+        messages.error(request, err)
+        return redirect(request.POST.get("next", "/"))
+    model.objects.filter(pk=pk).update(photo_name=f.name, photo_data=f.read())
+    return redirect(request.POST.get("next", "/"))
+
+
+@login_required
+def damage_photo(request, kind, pk):
+    """Serve a damage photo inline (image or PDF). Visible to anyone who could
+    add a damage on that room/WG (staff or the resident)."""
+    if kind not in _KINDS:
+        return HttpResponseBadRequest()
+    model, target_col, allowed = _KINDS[kind]
+    d = get_object_or_404(model, pk=pk)
+    if not allowed(request.user, global_roles(request.user), getattr(d, target_col), date.today()):
+        raise PermissionDenied
+    if not d.photo_name:
+        return HttpResponseBadRequest()
+    content_type, _ = mimetypes.guess_type(d.photo_name)
+    response = HttpResponse(bytes(d.photo_data), content_type=content_type or "application/octet-stream")
+    response["Content-Disposition"] = f'inline; filename="{d.photo_name}"'
+    return response

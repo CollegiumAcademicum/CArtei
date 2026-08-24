@@ -410,6 +410,8 @@ class DamageBase(models.Model):
         Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True,
         related_name="+", db_column="fixed_by_id",
     )
+    photo_name = models.TextField(null=True, blank=True)
+    photo_data = models.BinaryField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -418,6 +420,10 @@ class DamageBase(models.Model):
     @property
     def is_open(self):
         return self.fixed_at is None
+
+    @property
+    def has_photo(self):
+        return bool(self.photo_name)
 
 
 class RoomDamage(DamageBase):

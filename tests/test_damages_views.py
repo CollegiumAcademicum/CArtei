@@ -2,7 +2,10 @@ import uuid
 import pytest
 from datetime import date
 from django.contrib.auth.models import User, Group
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.timezone import now
+
+PNG = b"\x89PNG\r\n\x1a\n" + b"rest-of-image"
 
 from app.models import (
     Building, WG, Room, Tenant, TenantRoomAssignment,
@@ -126,3 +129,68 @@ def test_wg_fix_and_reopen_staff_only(client, world):
     assert WGDamage.objects.get(pk=d.id).fixed_at is not None
     client.post(f"/damages/wg/{d.id}/fix/", {"next": "/"})
     assert WGDamage.objects.get(pk=d.id).fixed_at is None
+
+
+def _room_damage(world, tenant):
+    return RoomDamage.objects.create(
+        room=world["room"], line=RoomDamageLine.BODEN_FLECKEN, created_at=now(), created_by=tenant,
+    )
+
+
+def test_resident_sets_and_replaces_photo(client, world):
+    _login(client, "resi")
+    t = Tenant.objects.get(intranet_username="resi")
+    TenantRoomAssignment.objects.create(tenant=t, room=world["room"], moved_in=date(2026, 1, 1))
+    d = _room_damage(world, t)
+    r = client.post(
+        f"/damages/room/{d.id}/photo/set/",
+        {"next": "/", "photo": SimpleUploadedFile("a.png", PNG, content_type="image/png")},
+    )
+    assert r.status_code == 302
+    d.refresh_from_db()
+    assert d.photo_name == "a.png" and bytes(d.photo_data) == PNG
+    # re-upload replaces the single photo
+    client.post(
+        f"/damages/room/{d.id}/photo/set/",
+        {"next": "/", "photo": SimpleUploadedFile("b.png", PNG, content_type="image/png")},
+    )
+    d.refresh_from_db()
+    assert d.photo_name == "b.png"
+
+
+def test_photo_bad_type_rejected(client, world):
+    _login(client, "cartei_werkstatt", "cartei_werkstatt")
+    t = Tenant.objects.get(intranet_username="cartei_werkstatt")
+    d = _room_damage(world, t)
+    r = client.post(
+        f"/damages/room/{d.id}/photo/set/",
+        {"next": "/", "photo": SimpleUploadedFile("evil.png", b"<html>", content_type="image/png")},
+    )
+    assert r.status_code == 302  # redirects with an error message, no save
+    d.refresh_from_db()
+    assert d.photo_name is None
+
+
+def test_nonresident_photo_denied(client, world):
+    t0 = Tenant.objects.create(first_name="x", last_name="x", intranet_username="ownerx", intranet_uuid=uuid.uuid4())
+    d = _room_damage(world, t0)
+    _login(client, "stranger")
+    r = client.post(
+        f"/damages/room/{d.id}/photo/set/",
+        {"next": "/", "photo": SimpleUploadedFile("a.png", PNG, content_type="image/png")},
+    )
+    assert r.status_code == 403
+    d.refresh_from_db()
+    assert d.photo_name is None
+
+
+def test_photo_download_serves_bytes(client, world):
+    _login(client, "cartei_werkstatt", "cartei_werkstatt")
+    t = Tenant.objects.get(intranet_username="cartei_werkstatt")
+    d = _room_damage(world, t)
+    d.photo_name, d.photo_data = "a.png", PNG
+    d.save()
+    r = client.get(f"/damages/room/{d.id}/photo/")
+    assert r.status_code == 200
+    assert r["Content-Type"] == "image/png"
+    assert r.content == PNG

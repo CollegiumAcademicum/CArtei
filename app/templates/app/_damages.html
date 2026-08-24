@@ -1,17 +1,19 @@
 {% comment %} Reusable damage list. Context: open_damages, fixed_damages, add_url,
-lines, sizes, can_fix, fix_url_name, next, title. Open damages show directly; fixed ones
+lines, sizes, can_fix, fix_url_name, kind ("room"/"wg", for photo urls), next,
+title. Open damages show directly; fixed ones
 sit in a collapsed (animated ca-collapse) section. can_fix gates the fix/reopen
 buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
 <div class="ca-damages">
   <p style="font-weight:500;margin:.4rem 0 .25rem;">{{ title|default:"Schäden" }}</p>
   {% for d in open_damages %}
-    <div style="font-size:.9rem;margin:.15rem 0;display:flex;gap:.5rem;align-items:baseline;">
-      <span style="color:#7a7a7a;white-space:nowrap;">{{ d.created_at|date:"Y-m-d" }}</span>
-      <span style="flex:1;">
+    <div style="font-size:.9rem;margin:.15rem 0;display:flex;gap:.5rem;align-items:center;">
+      <span style="color:#7a7a7a;white-space:nowrap;align-self:baseline;">{{ d.created_at|date:"Y-m-d" }}</span>
+      <span style="flex:1;align-self:baseline;">
         {{ d.get_line_display }}{% if d.size %} ({{ d.get_size_display }}){% endif %}{% if d.note %} — {{ d.note }}{% endif %}
         <span style="color:#b00;">· offen</span>
         <span style="color:#888;">· gemeldet von {{ d.created_by.first_name }} {{ d.created_by.last_name }}</span>
       </span>
+      {% include "app/_damage_photo.html" %}
       {% if can_fix %}
         <form method="post" action="{% url fix_url_name d.pk %}" style="display:inline;">
           {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
@@ -35,6 +37,7 @@ buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
           <span>· gemeldet von {{ d.created_by.first_name }} {{ d.created_by.last_name }}</span>
           {% if d.fixed_by %}<span>· behoben von {{ d.fixed_by.first_name }} {{ d.fixed_by.last_name }} am {{ d.fixed_at|date:"Y-m-d" }}</span>{% endif %}
         </span>
+        {% include "app/_damage_photo.html" with add_url="" %}
         {% if can_fix %}
           <form method="post" action="{% url fix_url_name d.pk %}" style="display:inline;">
             {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
