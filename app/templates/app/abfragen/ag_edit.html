@@ -96,7 +96,10 @@
       </tr>
     </template>
 
-    <button type="submit" class="ca-button">Speichern</button>
+    <div class="ca-form-actions" style="display:none;gap:.5rem;align-items:center;">
+      <button type="submit" class="ca-button">Speichern</button>
+      <button type="button" id="ag-revert" class="ca-button-outline">Zurücksetzen</button>
+    </div>
   </form>
 
   <script>
@@ -139,10 +142,47 @@
       tmp.innerHTML = html.trim();
       var tr = tmp.firstElementChild;
       tr.querySelector('.tenant-name').textContent = opt.dataset.name;
+      tr.dataset.added = '1';
       tbody.appendChild(tr);
       tr.querySelectorAll('.ca-slider').forEach(initSlider);
       sel.value = '';
+      checkDirty();
     });
+
+    // Dirty detection: reveal Speichern/Zurücksetzen and highlight only once
+    // something changed vs. the saved state (mirrors the tenant detail page).
+    var form = document.querySelector('form');
+    if (!form) return;
+    var card = form.closest('.ca-card');
+    var actions = form.querySelector('.ca-form-actions');
+    form.querySelectorAll('input[type=text]').forEach(function (t) { t.dataset.orig = t.value; });
+
+    function checkDirty() {
+      var dirty = false;
+      // Sliders: current hidden value vs. its data-initial (the saved value).
+      form.querySelectorAll('.ca-slider').forEach(function (w) {
+        var range = w.querySelector('input[type=range]');
+        var hidden = w.querySelector('input[type=hidden]');
+        if (hidden.value !== range.dataset.initial) dirty = true;
+      });
+      form.querySelectorAll('input[type=text]').forEach(function (t) {
+        if (t.value !== (t.dataset.orig || '')) dirty = true;
+      });
+      if (form.querySelector('#ag-rows tr[data-added]')) dirty = true;
+      if (card) card.classList.toggle('is-dirty', dirty);
+      actions.style.display = dirty ? 'flex' : 'none';
+    }
+
+    document.getElementById('ag-revert').addEventListener('click', function () {
+      form.querySelectorAll('#ag-rows tr[data-added]').forEach(function (tr) { tr.remove(); });
+      form.querySelectorAll('input[type=text]').forEach(function (t) { t.value = t.dataset.orig || ''; });
+      form.querySelectorAll('.ca-slider').forEach(initSlider);
+      checkDirty();
+    });
+
+    form.addEventListener('input', checkDirty);
+    form.addEventListener('change', checkDirty);
+    checkDirty();
   })();
   </script>
   {% endif %}
