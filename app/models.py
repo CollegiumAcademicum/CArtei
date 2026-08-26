@@ -449,3 +449,17 @@ class WGDamage(DamageBase):
     class Meta:
         managed = False
         db_table = "wg_damage"
+
+
+class UserSession(models.Model):
+    """Mirror of cartei_db.user_session — login-time metadata for a Django web
+    session. Identity is the LDAP/intranet username, matching Tenant.intranet_username."""
+    session_key = models.CharField(max_length=40, unique=True)
+    username = models.CharField(max_length=150)
+    ip_address = models.CharField(max_length=45, null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "user_session"

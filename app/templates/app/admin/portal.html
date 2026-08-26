@@ -45,5 +45,20 @@
     {% csrf_token %}
     <button type="submit" class="ca-button">Sync starten</button>
   </form>
+
+  <hr class="ca-divider">
+  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">Sitzungen</h2>
+  <p style="color:#555;margin-bottom:1rem;">
+    Einzelne Geräte verwalten oder alle Nutzer*innen abmelden.
+  </p>
+  <a href="{% url 'session_management' %}" class="ca-button-outline" style="margin-bottom:1rem;display:inline-block;">Aktive Sitzungen verwalten</a>
+  <p style="color:#555;margin-bottom:1rem;">
+    <strong>Alle</strong> Sitzungen ungültig machen meldet jede*n ab — dich selbst eingeschlossen.
+  </p>
+  <form method="post" action="{% url 'invalidate_all_sessions' %}"
+        onsubmit="return confirm('Wirklich alle Sitzungen ungültig machen? Alle Nutzer*innen werden abgemeldet.');">
+    {% csrf_token %}
+    <button type="submit" class="ca-button">Alle Sitzungen ungültig machen</button>
+  </form>
 </div>
 {% endblock %}
