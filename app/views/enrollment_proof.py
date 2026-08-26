@@ -1,17 +1,17 @@
 import datetime
-import mimetypes
 
 from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
 from app.models import EnrollmentProof, EnrollmentType, Tenant
 from app.uploads import upload_error
+from app.views._shared import inline_file_response
 
 
 def _next_semester_end(today=None):
@@ -163,7 +163,4 @@ def download_proof(request, pk, proof_pk):
     if caller.pk != pk and not _is_mv(request.user):
         raise PermissionDenied
     proof = get_object_or_404(EnrollmentProof, pk=proof_pk, tenant_id=pk)
-    content_type, _ = mimetypes.guess_type(proof.file_name)
-    response = HttpResponse(bytes(proof.file_data), content_type=content_type or "application/octet-stream")
-    response["Content-Disposition"] = f'inline; filename="{proof.file_name}"'
-    return response
+    return inline_file_response(proof)

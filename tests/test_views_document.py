@@ -90,6 +90,9 @@ def test_download_returns_bytes(client, owner):
     resp = client.get(reverse("document_download", args=[owner.pk, "datenschutz", doc.pk]))
     assert resp.status_code == 200
     assert resp.content == b"%PDF-1.4 x"
+    # Inline viewing must stay sandboxed so a crafted PDF can't run same-origin JS.
+    assert resp["Content-Security-Policy"] == "sandbox"
+    assert resp["Content-Disposition"].startswith("inline")
 
 
 def test_tenant_cannot_upload_own_document(client, db):

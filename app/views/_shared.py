@@ -1,9 +1,25 @@
 """Cross-view helpers shared by the tenant and WG views. Extracted from
 tenant.py so rooms.py can reuse them without a circular import."""
+import mimetypes
 from datetime import timedelta
+
+from django.http import HttpResponse
+from django.utils.http import content_disposition_header
 
 from app.forms import TenantRoomAssignmentForm
 from app.models import ASSIGNMENT_DOCUMENT_MODELS, AssignmentDocumentType, TenantRoomAssignment
+
+
+def inline_file_response(doc):
+    """Serve stored document/proof bytes inline (opens in the browser tab).
+    CSP sandbox neutralises scripts in a crafted PDF so inline viewing can't run
+    same-origin JS; content_disposition_header escapes the user-supplied filename.
+    Used by the document, assignment-document and enrollment-proof downloads."""
+    content_type, _ = mimetypes.guess_type(doc.file_name)
+    response = HttpResponse(bytes(doc.file_data), content_type=content_type or "application/octet-stream")
+    response["Content-Disposition"] = content_disposition_header(as_attachment=False, filename=doc.file_name)
+    response["Content-Security-Policy"] = "sandbox"
+    return response
 
 # Statuses that clear the engagement flag: being reported active in an AG.
 ACTIVE_STATES = {"AKTIV", "ZU_AKTIV"}
