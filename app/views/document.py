@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
-from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.http import content_disposition_header, url_has_allowed_host_and_scheme
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
@@ -17,6 +17,15 @@ from app.uploads import upload_error
 
 def _caller(user):
     return Tenant.objects.filter(intranet_username=user.username).first()
+
+
+def _download_response(doc):
+    """Serve stored document bytes. attachment (never inline) so a crafted PDF
+    can't render same-origin; content_disposition_header escapes the filename."""
+    content_type, _ = mimetypes.guess_type(doc.file_name)
+    response = HttpResponse(bytes(doc.file_data), content_type=content_type or "application/octet-stream")
+    response["Content-Disposition"] = content_disposition_header(as_attachment=True, filename=doc.file_name)
+    return response
 
 
 def _assignment_redirect(request, assignment):
@@ -106,10 +115,7 @@ def download_document(request, pk, document_type, doc_pk):
     if model is None:
         return HttpResponseBadRequest()
     doc = get_object_or_404(model, pk=doc_pk, tenant_id=pk)
-    content_type, _ = mimetypes.guess_type(doc.file_name)
-    response = HttpResponse(bytes(doc.file_data), content_type=content_type or "application/octet-stream")
-    response["Content-Disposition"] = f'inline; filename="{doc.file_name}"'
-    return response
+    return _download_response(doc)
 
 
 def _parse_date(value):
@@ -206,7 +212,4 @@ def download_assignment_document(request, assignment_pk, document_type, doc_pk):
     if model is None:
         return HttpResponseBadRequest()
     doc = get_object_or_404(model, pk=doc_pk, assignment_id=assignment_pk)
-    content_type, _ = mimetypes.guess_type(doc.file_name)
-    response = HttpResponse(bytes(doc.file_data), content_type=content_type or "application/octet-stream")
-    response["Content-Disposition"] = f'inline; filename="{doc.file_name}"'
-    return response
+    return _download_response(doc)
