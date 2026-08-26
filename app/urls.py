@@ -39,4 +39,8 @@ urlpatterns = [
     path("admin/", admin_views.admin_portal, name="admin_portal"),
     path("admin/sync-from-ldap/", admin_views.sync_from_ldap, name="sync_from_ldap"),
     path("admin/permissions/", admin_views.permission_matrix, name="permission_matrix"),
+    path("admin/invalidate-sessions/", admin_views.invalidate_all_sessions, name="invalidate_all_sessions"),
+    path("admin/sessions/", admin_views.session_management, name="session_management"),
+    path("admin/sessions/<str:session_key>/revoke/", admin_views.revoke_session, name="revoke_session"),
+    path("admin/sessions/user/<str:username>/revoke/", admin_views.invalidate_user_sessions, name="invalidate_user_sessions"),
 ]

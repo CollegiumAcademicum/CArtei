@@ -1,0 +1,54 @@
+{% extends "app/base.html" %}
+{% block title %}Aktive Sitzungen — CArtei{% endblock %}
+{% block content %}
+<div class="ca-card">
+  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;">Aktive Sitzungen</h1>
+  <p style="color:#555;margin-bottom:1.5rem;">
+    Angemeldete Geräte pro Nutzer*in. Einzelne Sitzung beenden oder alle Sitzungen einer Person abmelden.
+  </p>
+
+  {% for u in users %}
+  <div style="margin-bottom:1.5rem;border:1px solid #e2e2e2;border-radius:8px;padding:1rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+      <strong style="font-size:1.05rem;">{{ u.username }}</strong>
+      <form method="post" action="{% url 'invalidate_user_sessions' u.username %}"
+            onsubmit="return confirm('Alle Sitzungen von {{ u.username }} beenden?');">
+        {% csrf_token %}
+        <button type="submit" class="ca-button-outline">Überall abmelden</button>
+      </form>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+      <thead>
+        <tr style="text-align:left;color:#777;">
+          <th style="padding:0.3rem 0.5rem;">Angemeldet</th>
+          <th style="padding:0.3rem 0.5rem;">IP</th>
+          <th style="padding:0.3rem 0.5rem;">Gerät</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in u.sessions %}
+        <tr style="border-top:1px solid #eee;">
+          <td style="padding:0.4rem 0.5rem;">{{ s.created_at|date:"d.m.Y H:i" }}</td>
+          <td style="padding:0.4rem 0.5rem;">{{ s.ip_address|default:"—" }}</td>
+          <td style="padding:0.4rem 0.5rem;max-width:24rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ s.user_agent|default:"—" }}
+            {% if s.is_current %}<span style="color:#2a7;">(diese Sitzung)</span>{% endif %}
+          </td>
+          <td style="padding:0.4rem 0.5rem;text-align:right;">
+            <form method="post" action="{% url 'revoke_session' s.session_key %}"
+                  onsubmit="return confirm('Diese Sitzung beenden?');">
+              {% csrf_token %}
+              <button type="submit" class="ca-button-outline">Beenden</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% empty %}
+  <p style="color:#777;">Keine aktiven Sitzungen.</p>
+  {% endfor %}
+</div>
+{% endblock %}
