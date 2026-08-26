@@ -26,7 +26,7 @@
   {% if closed %}
   <div class="ca-message warning">Diese Abfrage ist geschlossen. Bearbeitungen sind nicht mehr möglich.</div>
   {% else %}
-  <form method="post">
+  <form id="ag-edit-form" method="post">
     {% csrf_token %}
 
     <div style="margin-bottom:1.5rem;padding:1rem;background:#fafafa;border-radius:6px;">
@@ -151,7 +151,7 @@
 
     // Dirty detection: reveal Speichern/Zurücksetzen and highlight only once
     // something changed vs. the saved state (mirrors the tenant detail page).
-    var form = document.querySelector('form');
+    var form = document.getElementById('ag-edit-form');
     if (!form) return;
     var card = form.closest('.ca-card');
     var actions = form.querySelector('.ca-form-actions');
