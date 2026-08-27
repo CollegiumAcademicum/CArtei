@@ -1,4 +1,5 @@
 {% extends "app/base.html" %}
+{% load tenant_extras %}
 {% block title %}{{ ag_name }} — {{ abfrage }} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
@@ -48,7 +49,7 @@
         {% for row in rows %}
         <tr>
           <td>
-            {% if row.tenant %}<a href="{% url 'tenant_detail' row.tenant.pk %}" style="color:var(--ca-teal);">{{ row.name }}</a>{% else %}{{ row.name }}<br><em style="color:#999;font-size:0.8rem;">(kein Eintrag im System)</em>{% endif %}
+            {% if row.tenant %}{% tenant_link row.tenant %}{% else %}{{ row.name }}<br><em style="color:#999;font-size:0.8rem;">(kein Eintrag im System)</em>{% endif %}
           </td>
           {% if row.tenant %}
           <td>

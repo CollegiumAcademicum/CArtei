@@ -1,4 +1,5 @@
 {% extends "app/base.html" %}
+{% load tenant_extras %}
 {% block title %}{{ abfrage }} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
@@ -63,7 +64,7 @@
           {% if ag.health %}<span class="badge badge-{{ ag.health.health }}" title="{{ ag.health.note|default:'' }}">{{ ag.health.get_health_display }}</span>{% else %}<span style="color:#bbb;">—</span>{% endif %}
         </td>
         {% endif %}
-        <td><a href="{% url 'tenant_detail' r.tenant.pk %}" style="color:var(--ca-teal);">{{ r.tenant }}</a></td>
+        <td>{% tenant_link r.tenant %}</td>
         <td><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
         <td>{{ r.note|default:"—" }}</td>
       </tr>

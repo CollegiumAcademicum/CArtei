@@ -56,7 +56,7 @@ def data(db):
         assignment=a, file_name="wgb.pdf", file_data=b"x", uploaded_at=now,
         uploaded_by=subject, signed_at=datetime.date(2026, 8, 1), company_signed_by=subject,
     )
-    return {"ds": ds, "sepa": sepa, "wgb": wgb}
+    return {"subject": subject, "ds": ds, "sepa": sepa, "wgb": wgb}
 
 
 def _rows(client, uname):
@@ -91,7 +91,7 @@ def test_revoked_row_included_and_flagged(client, data):
 def test_common_metadata_present(client, data):
     row = {r["type_key"]: r for r in _rows(client, "mv_dl")}["sepa_lastschriftmandat"]
     assert row["file_name"] == "sepa.pdf"
-    assert row["uploaded_by"] == "F1 L1"   # display() of the subject tenant
+    assert row["uploaded_by"] == data["subject"]   # tenant object → template links it
     assert row["signed"] == "01.08.2026"
 
 
@@ -103,14 +103,14 @@ def test_sepa_detail_lists_structured_fields(client, data):
 
 def test_assignment_detail_has_signer(client, data):
     row = {r["type_key"]: r for r in _rows(client, "mv_dl")}["wohnungsgeberbescheinigung"]
-    assert ("GmbH-Unterzeichner*in", "F1 L1") in row["detail"]
+    assert ("GmbH-Unterzeichner*in", data["subject"]) in row["detail"]
 
 
 def test_revoked_row_carries_revocation_fields(client, data):
     revoked = [r for r in _rows(client, "mv_dl")
                if r["type_key"] == "datenschutz" and r["revoked"]][0]
     assert revoked["revoked_note"] == "alt"
-    assert revoked["revoked_by"] == "F1 L1"
+    assert revoked["revoked_by"] == data["subject"]
     assert revoked["revoked_at"] == "01.08.2026"
 
 

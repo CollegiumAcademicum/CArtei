@@ -17,7 +17,7 @@ from app.models import (
 )
 from app.tenant_access import global_roles
 from app.uploads import upload_error
-from app.views._shared import display, inline_file_response
+from app.views._shared import inline_file_response
 
 
 def _caller(user):
@@ -37,12 +37,14 @@ def _signed_display(doc, dtype):
 
 
 def _detail(doc, dtype):
-    """Type-specific fields as (label, value) pairs for the expandable row."""
+    """Type-specific fields as (label, value) pairs for the expandable row. A
+    value that is a Tenant is rendered as a link by the template (its .pk is
+    truthy); plain strings render as text."""
     if dtype == DocumentType.MIETVERTRAG.value:
         return [
             ("Mieter*in unterschrieben", _fmt(doc.renter_signed_at)),
             ("GmbH unterschrieben", _fmt(doc.company_signed_at)),
-            ("GmbH-Unterzeichner*in", display(doc.company_signed_by)),
+            ("GmbH-Unterzeichner*in", doc.company_signed_by),
         ]
     if dtype == DocumentType.SEPA_LASTSCHRIFTMANDAT.value:
         return [
@@ -53,9 +55,9 @@ def _detail(doc, dtype):
             ("BIC", doc.bic),
         ]
     if dtype == DocumentType.BESCHEID_AUSBILDUNGSSTELLE.value:
-        return [("Unterzeichnet von", display(doc.signed_by))]
+        return [("Unterzeichnet von", doc.signed_by)]
     if dtype == AssignmentDocumentType.WOHNUNGSGEBERBESCHEINIGUNG.value:
-        return [("GmbH-Unterzeichner*in", display(doc.company_signed_by))]
+        return [("GmbH-Unterzeichner*in", doc.company_signed_by)]
     return []
 
 
@@ -67,10 +69,10 @@ def _row(doc, dtype, label, tenant, download_url):
         "file_name": doc.file_name,
         "signed": _signed_display(doc, dtype),
         "uploaded_at": doc.uploaded_at,
-        "uploaded_by": display(doc.uploaded_by),
+        "uploaded_by": doc.uploaded_by,
         "revoked": doc.revoked_at is not None,
         "revoked_at": _fmt(doc.revoked_at),
-        "revoked_by": display(doc.revoked_by) if doc.revoked_by_id else "",
+        "revoked_by": doc.revoked_by if doc.revoked_by_id else None,
         "revoked_note": doc.revoked_note or "",
         "detail": _detail(doc, dtype),
         "download_url": download_url,

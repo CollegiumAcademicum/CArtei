@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import models
+from django.urls import reverse
 
 
 class AGStatus(models.TextChoices):
@@ -54,6 +55,9 @@ class Tenant(models.Model):
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name} ({self.intranet_username})"
+
+    def get_absolute_url(self) -> str:
+        return reverse("tenant_detail", args=[self.pk])
 
 
 class AGAbfrage(models.Model):
