@@ -27,8 +27,11 @@ from app.views._shared import (
 ProofStatus = namedtuple("ProofStatus", "state count")
 
 
+# Short pill codes per document type — one source for the list column and the
+# detail-view Rechtsdokumente header. Ordered to match DOCUMENT_MODELS.
 _DOC_SHORT = {
     "datenschutz": "DS", "photoerlaubnis": "FoE", "vertraulichkeitserklaerung": "VE",
+    "mietvertrag": "MVt", "mietbedingungen": "AMB",
     "sepa_lastschriftmandat": "SEPA", "bescheid_ausbildungsstelle": "Bes",
     "selbstverpflichtung_engagement": "SVE",
 }
@@ -134,8 +137,8 @@ def tenant_list(request: HttpRequest):
     active_doc_ids: dict[str, set[int]] = {}
     if show_realname:
         tenant_ids = [t.pk for t in tenants]
-        # Overview column tracks the consent docs only (_DOC_SHORT), not the full
-        # per-tenant set — Mietvertrag/Mietbedingungen aren't consent completeness.
+        # Overview column tracks every per-tenant document type (_DOC_SHORT),
+        # one non-revoked-doc query per type.
         for dtype in _DOC_SHORT:
             active_doc_ids[dtype] = set(
                 DOCUMENT_MODELS[dtype].objects.filter(tenant_id__in=tenant_ids, revoked_at__isnull=True)
@@ -431,6 +434,7 @@ def tenant_detail(request: HttpRequest, pk: int):
             groups.append({
                 "type": dtype,
                 "label": DocumentType(dtype).label,
+                "short": _DOC_SHORT[dtype],
                 "docs": docs,
                 "has_active": any(d.revoked_at is None for d in docs),
             })
