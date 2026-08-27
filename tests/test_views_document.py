@@ -4,7 +4,10 @@ import pytest
 from django.contrib.auth.models import Group, User
 from django.urls import reverse
 
-from app.models import DatenschutzDocument, DocumentSigner, DocumentType, Tenant
+from app.models import (
+    DatenschutzDocument, DocumentSigner, DocumentType,
+    MietbedingungenDocument, MietvertragDocument, Tenant,
+)
 
 
 @pytest.fixture
@@ -93,6 +96,45 @@ def test_download_returns_bytes(client, owner):
     # Inline viewing must stay sandboxed so a crafted PDF can't run same-origin JS.
     assert resp["Content-Security-Policy"] == "sandbox"
     assert resp["Content-Disposition"].startswith("inline")
+
+
+def test_upload_mietbedingungen_per_tenant(client, owner):
+    # Mietbedingungen now filed under the person, not the room assignment.
+    _login(client)
+    _upload(client, owner, document_type=DocumentType.MIETBEDINGUNGEN)
+    doc = MietbedingungenDocument.objects.get(tenant=owner)
+    assert doc.signed_at == datetime.date(2026, 8, 1)
+    assert doc.uploaded_by_id == owner.pk
+
+
+def test_upload_mietvertrag_two_party_signing(client, owner):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    _login(client)
+    client.post(reverse("document_upload", args=[owner.pk]), {
+        "document_type": DocumentType.MIETVERTRAG,
+        "renter_signed_at": "2026-08-01",
+        "company_signed_at": "2026-08-03",
+        "company_signed_by": str(owner.pk),
+        "document_file": SimpleUploadedFile("v.pdf", b"%PDF-1.4 v", content_type="application/pdf"),
+    })
+    doc = MietvertragDocument.objects.get(tenant=owner)
+    assert doc.renter_signed_at == datetime.date(2026, 8, 1)
+    assert doc.company_signed_at == datetime.date(2026, 8, 3)
+    assert doc.company_signed_by_id == owner.pk
+
+
+def test_upload_mietvertrag_requires_company_signer(client, owner):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    _login(client)
+    resp = client.post(reverse("document_upload", args=[owner.pk]), {
+        "document_type": DocumentType.MIETVERTRAG,
+        "renter_signed_at": "2026-08-01",
+        "company_signed_at": "2026-08-03",
+        # company_signed_by omitted
+        "document_file": SimpleUploadedFile("v.pdf", b"%PDF-1.4 v", content_type="application/pdf"),
+    })
+    assert resp.status_code == 400
+    assert not MietvertragDocument.objects.filter(tenant=owner).exists()
 
 
 def test_tenant_cannot_upload_own_document(client, db):

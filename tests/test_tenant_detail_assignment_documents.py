@@ -6,7 +6,8 @@ from django.contrib.auth.models import Group, User
 from django.urls import reverse
 
 from app.models import (
-    Building, MietbedingungenDocument, Room, Tenant, TenantRoomAssignment, WG,
+    Building, Room, Tenant, TenantRoomAssignment, WG,
+    WohnungsgeberbescheinigungDocument,
 )
 
 
@@ -31,12 +32,12 @@ def scene(db):
     return {"tenant": tenant, "assignment": a}
 
 
-def test_mv_sees_upload_form_for_each_type(client, scene):
+def test_mv_sees_assignment_upload_form(client, scene):
+    # Mietvertrag/Mietbedingungen moved to the per-tenant Rechtsdokumente section;
+    # the per-assignment section now offers only the Wohnungsgeberbescheinigung.
     client.login(username="mv_tda", password="x")
     resp = client.get(reverse("tenant_detail", args=[scene["tenant"].pk]))
     body = resp.content.decode()
-    assert 'value="mietvertrag"' in body
-    assert 'value="mietbedingungen"' in body
     assert 'value="wohnungsgeberbescheinigung"' in body
     assert reverse("assignment_document_upload", args=[scene["assignment"].pk]) in body
 
@@ -70,13 +71,13 @@ def test_assignment_field_associates_with_per_assignment_form(client, scene):
 
 def test_existing_document_shows_download_link(client, scene):
     from django.utils.timezone import now
-    MietbedingungenDocument.objects.create(
+    WohnungsgeberbescheinigungDocument.objects.create(
         assignment=scene["assignment"], file_name="m.pdf", file_data=b"x",
         uploaded_at=now(), uploaded_by=scene["tenant"],
-        signed_at=datetime.date(2026, 8, 1),
+        signed_at=datetime.date(2026, 8, 1), company_signed_by=scene["tenant"],
     )
     client.login(username="mv_tda", password="x")
     resp = client.get(reverse("tenant_detail", args=[scene["tenant"].pk]))
-    doc = MietbedingungenDocument.objects.get()
+    doc = WohnungsgeberbescheinigungDocument.objects.get()
     assert reverse("assignment_document_download",
-                   args=[scene["assignment"].pk, "mietbedingungen", doc.pk]) in resp.content.decode()
+                   args=[scene["assignment"].pk, "wohnungsgeberbescheinigung", doc.pk]) in resp.content.decode()
