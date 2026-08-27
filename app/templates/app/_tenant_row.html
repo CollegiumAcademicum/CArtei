@@ -1,9 +1,8 @@
+{% load tenant_extras %}
 {# One tenant row. Expects `row` (+ show_* flags from parent context). #}
 <tr>
   <td data-col="name" data-sort="{{ row.tenant.last_name|lower }} {{ row.tenant.first_name|lower }}">
-    <a href="{% url 'tenant_detail' row.tenant.pk %}" class="ca-tl-name">
-      {% if row.tenant.preferred_name %}{{ row.tenant.preferred_name }}{% else %}{{ row.tenant.first_name }} {{ row.tenant.last_name }}{% endif %}
-    </a>
+    {% tenant_link row.tenant %}
     {% if show_realname and row.tenant.preferred_name %}<span class="ca-tl-muted">({{ row.tenant.first_name }} {{ row.tenant.last_name }})</span>{% endif %}
   </td>
   {% if show_room %}

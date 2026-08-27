@@ -1,4 +1,5 @@
 {% extends "app/base.html" %}
+{% load tenant_extras %}
 {% block title %}Dashboard — CArtei{% endblock %}
 {% block content %}
 <div style="display:flex;gap:1.5rem;align-items:flex-start;">
@@ -9,7 +10,7 @@
     </h2>
     <p style="font-weight:600;">
       {% if tenant %}
-        <a href="{% url 'tenant_detail' tenant.pk %}" style="color:var(--ca-teal);">{{ tenant.preferred_name|default:tenant.first_name }} {{ tenant.last_name }}</a>
+        {% tenant_link tenant %}
       {% else %}
         {{ request.user.username }}
       {% endif %}

@@ -1,4 +1,5 @@
 {% extends "app/base.html" %}
+{% load tenant_extras %}
 {% block title %}Dokumente — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
@@ -34,16 +35,14 @@
       <tbody>
       {% for r in rows %}
         <tr {% if r.detail or r.revoked %}class="has-detail" style="cursor:pointer;"{% endif %}>
-          <td data-col="name" data-sort="{{ r.tenant.last_name|lower }} {{ r.tenant.first_name|lower }}">
-            <a href="{% url 'tenant_detail' r.tenant.pk %}" class="ca-tl-name">{% if r.tenant.preferred_name %}{{ r.tenant.preferred_name }}{% else %}{{ r.tenant.first_name }} {{ r.tenant.last_name }}{% endif %}</a>
-          </td>
+          <td data-col="name" data-sort="{{ r.tenant.last_name|lower }} {{ r.tenant.first_name|lower }}">{% tenant_link r.tenant %}</td>
           <td data-col="type" data-value="{{ r.type_key }}" data-sort="{{ r.type_label|lower }}">{{ r.type_label }}</td>
           <td data-col="file" data-sort="{{ r.file_name|lower }}"><a href="{{ r.download_url }}" style="color:var(--ca-teal);">{{ r.file_name }}</a></td>
           <td data-col="signed" data-sort="{{ r.uploaded_at|date:'Y-m-d' }}">{{ r.signed }}</td>
           <td data-col="uploaded" data-value="{{ r.uploaded_at|date:'Y-m-d' }}" data-sort="{{ r.uploaded_at|date:'Y-m-d H:i:s' }}">{{ r.uploaded_at|date:"d.m.Y" }}</td>
-          <td data-col="uploader" data-sort="{{ r.uploaded_by|lower }}">{{ r.uploaded_by }}</td>
+          <td data-col="uploader" data-sort="{{ r.uploaded_by|display|lower }}">{% tenant_link r.uploaded_by %}</td>
           <td data-col="status" data-value="{% if r.revoked %}revoked{% else %}active{% endif %}" data-sort="{{ r.revoked|yesno:'1,0' }}">
-            {% if r.revoked %}<span class="ca-pill ca-pill-red" title="Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {{ r.revoked_by }}{% endif %}{% if r.revoked_note %}: {{ r.revoked_note }}{% endif %}">Widerrufen</span>{% else %}<span class="ca-pill ca-pill-green">Aktiv</span>{% endif %}
+            {% if r.revoked %}<span class="ca-pill ca-pill-red" title="Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {{ r.revoked_by|display }}{% endif %}{% if r.revoked_note %}: {{ r.revoked_note }}{% endif %}">Widerrufen</span>{% else %}<span class="ca-pill ca-pill-green">Aktiv</span>{% endif %}
           </td>
           <td>{% if r.detail or r.revoked %}<span class="detail-caret" style="color:var(--ca-teal);white-space:nowrap;">▸ Details</span>{% endif %}</td>
         </tr>
@@ -51,8 +50,8 @@
         <tr class="detail-row" hidden>
           <td colspan="8" style="background:#faf8f2;font-size:.85rem;">
             <div style="display:flex;flex-wrap:wrap;gap:.4rem 1.5rem;padding:.3rem .2rem;">
-              {% for label, value in r.detail %}<span><span style="color:#7a7a7a;">{{ label }}:</span> {{ value }}</span>{% endfor %}
-              {% if r.revoked %}<span style="color:#a00;">Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {{ r.revoked_by }}{% endif %}{% if r.revoked_note %} — {{ r.revoked_note }}{% endif %}</span>{% endif %}
+              {% for label, value in r.detail %}<span><span style="color:#7a7a7a;">{{ label }}:</span> {% if value.pk %}{% tenant_link value %}{% else %}{{ value }}{% endif %}</span>{% endfor %}
+              {% if r.revoked %}<span style="color:#a00;">Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {% tenant_link r.revoked_by %}{% endif %}{% if r.revoked_note %} — {{ r.revoked_note }}{% endif %}</span>{% endif %}
             </div>
           </td>
         </tr>

@@ -1,3 +1,4 @@
+{% load tenant_extras %}
 {% comment %}One room assignment. Editable when `aform` is set (MV/admin, or Belegium
 in-window), read-only otherwise. Needs: assignment; optional aform,
 can_see_assignment_docs, show_assignment_notes, show_damages_here (renders the
@@ -20,7 +21,7 @@ onto the assignment and provides the choice lists + can_fix_damages).{% endcomme
       <span class="ca-room-meta">
         <span>Eingezogen {{ assignment.moved_in }}</span>
         <span>{% if assignment.moved_out %}Ausgezogen {{ assignment.moved_out }}{% else %}aktuell{% endif %}</span>
-        {% if assignment.is_sublet %}<span class="ca-room-badge ca-room-badge--sublet">Untermiete{% if assignment.sublet_of_tenant %} von <a href="{% url 'tenant_detail' assignment.sublet_of_tenant.pk %}">{{ assignment.sublet_of_tenant.first_name }} {{ assignment.sublet_of_tenant.last_name }}</a>{% endif %}</span>{% endif %}
+        {% if assignment.is_sublet %}<span class="ca-room-badge ca-room-badge--sublet">Untermiete{% if assignment.sublet_of_tenant %} von {% tenant_link assignment.sublet_of_tenant %}{% endif %}</span>{% endif %}
         {% if assignment.mailbox_key_received %}<span class="ca-room-badge">Briefkastenschlüssel erhalten {{ assignment.mailbox_key_received }}</span>{% endif %}
         {% if assignment.mailbox_key_returned %}<span class="ca-room-badge">Briefkastenschlüssel abgegeben {{ assignment.mailbox_key_returned }}</span>{% endif %}
         {% if assignment.key_received %}<span class="ca-room-badge">Schlüssel erhalten {{ assignment.key_received }}</span>{% endif %}
