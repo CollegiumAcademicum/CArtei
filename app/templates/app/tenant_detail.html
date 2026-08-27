@@ -330,7 +330,10 @@
 
   {% if can_see_documents %}
   <details id="section-documents" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="cursor:pointer;font-weight:600;">Rechtsdokumente (Datenschutz, Fotoerlaubnis, Vertraulichkeitserklärung, Mietvertrag, Allgemeine Mietbedingungen, SEPA-Lastschriftmandat, Bescheid für Ausbildungsstellen &amp; Selbstverpflichtung Engagement)</summary>
+    <summary style="cursor:pointer;font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;">
+      <span>Rechtsdokumente</span>
+      {% for g in document_groups %}<span class="ca-pill {% if g.has_active %}ca-pill-green{% else %}ca-pill-red{% endif %}" title="{{ g.label }}{% if not g.has_active %} – noch nicht unterschrieben{% endif %}">{{ g.short }}</span>{% endfor %}
+    </summary>
 
     {% for g in document_groups %}
     <div class="ca-doc-card" style="margin-top:.75rem;border:1px solid #e2e2e2;border-radius:6px;padding:.5rem .75rem;">

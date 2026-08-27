@@ -66,6 +66,26 @@ def test_detail_shows_missing_type_when_no_active_doc(client, owner):
     assert "Noch nicht unterschrieben" in resp.content.decode()
 
 
+def test_header_renders_a_pill_per_document_group(client, owner):
+    # The Rechtsdokumente header uses short pills (like the tenants list); every
+    # document group must carry a short code and render a pill.
+    DatenschutzDocument.objects.create(
+        tenant=owner, file_name="d.pdf", file_data=b"x", signed_at=datetime.date(2026, 8, 1),
+        uploaded_at=datetime.datetime(2026, 8, 2, 9, 0, tzinfo=datetime.timezone.utc),
+        uploaded_by=owner,
+    )
+    client.login(username="owner_dd", password="x")
+    resp = client.get(reverse("tenant_detail", args=[owner.pk]))
+    groups = resp.context["document_groups"]
+    assert all(g.get("short") for g in groups)
+    html = resp.content.decode()
+    for g in groups:
+        assert f">{g['short']}</span>" in html
+    # Datenschutz present -> green pill; a not-yet-signed type -> red pill.
+    assert "ca-pill-green" in html
+    assert "ca-pill-red" in html
+
+
 def test_finanzierung_sees_only_sepa_group(client, owner):
     # AG Finanzierung may read SEPA and nothing else — the documents section
     # renders only the SEPA group, no consent/Mietvertrag documents.
