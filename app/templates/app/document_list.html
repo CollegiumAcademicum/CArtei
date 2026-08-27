@@ -47,9 +47,9 @@
           <td>{% if r.detail or r.revoked %}<span class="detail-caret" style="color:var(--ca-teal);white-space:nowrap;">▸ Details</span>{% endif %}</td>
         </tr>
         {% if r.detail or r.revoked %}
-        <tr class="detail-row" hidden>
-          <td colspan="8" style="background:#faf8f2;font-size:.85rem;">
-            <div style="display:flex;flex-wrap:wrap;gap:.4rem 1.5rem;padding:.3rem .2rem;">
+        <tr class="detail-row">
+          <td colspan="8" style="padding:0;background:#faf8f2;font-size:.85rem;">
+            <div class="detail-body" style="display:flex;flex-wrap:wrap;gap:.4rem 1.5rem;">
               {% for label, value in r.detail %}<span><span style="color:#7a7a7a;">{{ label }}:</span> {% if value.pk %}{% tenant_link value %}{% else %}{{ value }}{% endif %}</span>{% endfor %}
               {% if r.revoked %}<span style="color:#a00;">Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {% tenant_link r.revoked_by %}{% endif %}{% if r.revoked_note %} — {{ r.revoked_note }}{% endif %}</span>{% endif %}
             </div>
@@ -87,8 +87,8 @@
     const caret = main.querySelector(".detail-caret");
     main.addEventListener("click", (e) => {
       if (e.target.closest("a")) return;  // let the name/file links navigate
-      detail.hidden = !detail.hidden;
-      if (caret) caret.textContent = detail.hidden ? "▸ Details" : "▾ Details";
+      const open = detail.classList.toggle("open");
+      if (caret) caret.textContent = open ? "▾ Details" : "▸ Details";
     });
   });
 
@@ -125,10 +125,13 @@
       const ok = rowMatches(r);
       r.style.display = ok ? "" : "none";
       const d = detailOf.get(r);
-      if (d && !ok) {  // hidden row: collapse its detail
-        d.hidden = true;
-        const caret = r.querySelector(".detail-caret");
-        if (caret) caret.textContent = "▸ Details";
+      if (d) {
+        d.style.display = ok ? "" : "none";
+        if (!ok) {  // filtered-out row: collapse its detail
+          d.classList.remove("open");
+          const caret = r.querySelector(".detail-caret");
+          if (caret) caret.textContent = "▸ Details";
+        }
       }
       if (ok) shown++;
     });
