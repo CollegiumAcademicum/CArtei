@@ -109,7 +109,7 @@
               {% if show_realname %}
               <th data-col="mailbox"><div class="select is-small"><select class="col-filter" data-col="mailbox" data-ftype="select"><option value="">Alle</option><option value="true">Ja</option><option value="false">Nein</option></select></div></th>
               <th data-col="proof"><div class="select is-small"><select class="col-filter" data-col="proof" data-ftype="select"><option value="">Alle</option><option value="gueltig">gültig</option><option value="pruefung">Prüfung</option><option value="fehlt">fehlt</option></select></div></th>
-              <th data-col="documents"><div class="select is-small"><select class="col-filter" data-col="documents" data-ftype="select"><option value="">Alle</option><option value="complete">vollständig</option><option value="incomplete">unvollständig</option></select></div></th>
+              <th data-col="documents"><div class="select is-small"><select class="col-filter" data-col="documents" data-ftype="select"><option value="">Alle</option><option value="complete">vollständig</option><option value="incomplete">unvollständig</option><option value="fehlt-ds">DS fehlt</option><option value="fehlt-foe">FoE fehlt</option><option value="fehlt-ve">VE fehlt</option><option value="fehlt-mvt">MVt fehlt</option><option value="fehlt-amb">AMB fehlt</option><option value="fehlt-sepa">SEPA fehlt</option><option value="fehlt-bes">Bes fehlt</option><option value="fehlt-sve">SVE fehlt</option></select></div></th>
               <th data-col="flinta"><div class="select is-small"><select class="col-filter" data-col="flinta" data-ftype="select"><option value="">Alle</option><option value="true">Ja</option><option value="false">Nein</option></select></div></th>
               <th data-col="barrier"><div class="select is-small"><select class="col-filter" data-col="barrier" data-ftype="select"><option value="">Alle</option><option value="true">Ja</option><option value="false">Nein</option></select></div></th>
               <th data-col="email"><input type="text" class="col-filter input is-small" data-col="email" data-ftype="text" placeholder="Filter…"></th>
@@ -188,7 +188,7 @@
         if (v && !c.textContent.toLowerCase().includes(v)) return false;
       } else if (ftype === "select") {
         const v = group[0].value;
-        if (v && c.getAttribute("data-value") !== v) return false;
+        if (v && !c.getAttribute("data-value").split(" ").includes(v)) return false;
       } else if (ftype === "date") {
         const cv = c.getAttribute("data-value") || "";
         const from = group.find(g => g.dataset.bound === "from").value;

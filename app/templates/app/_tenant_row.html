@@ -28,7 +28,7 @@
     {% elif row.proof.state == "pruefung" %}<span class="ca-pill ca-pill-amber">Prüfung ({{ row.proof.count }})</span>
     {% else %}<span class="ca-pill ca-pill-red">fehlt</span>{% endif %}
   </td>
-  <td data-col="documents" data-value="{% if row.documents_missing %}incomplete{% else %}complete{% endif %}" data-sort="{{ row.documents_missing }}">
+  <td data-col="documents" data-value="{% if row.documents_missing %}incomplete{% for d in row.documents %}{% if not d.present %} fehlt-{{ d.short|lower }}{% endif %}{% endfor %}{% else %}complete{% endif %}" data-sort="{{ row.documents_missing }}">
     {% for d in row.documents %}<span class="ca-pill {% if d.present %}ca-pill-green{% else %}ca-pill-red{% endif %}" title="{{ d.label }}{% if not d.present %} fehlt{% endif %}">{{ d.short }}</span>{% if not forloop.last %} {% endif %}{% endfor %}
   </td>
   <td data-col="flinta" data-value="{{ row.tenant.is_flinta|yesno:'true,false' }}" data-sort="{{ row.tenant.is_flinta|yesno:'1,0' }}">{% if row.tenant.is_flinta %}<span class="ca-pill ca-pill-flinta">Ja</span>{% else %}—{% endif %}</td>
