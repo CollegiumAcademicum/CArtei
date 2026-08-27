@@ -17,11 +17,71 @@ from app.models import (
 )
 from app.tenant_access import global_roles
 from app.uploads import upload_error
-from app.views._shared import inline_file_response
+from app.views._shared import display, inline_file_response
 
 
 def _caller(user):
     return Tenant.objects.filter(intranet_username=user.username).first()
+
+
+def _fmt(d):
+    return d.strftime("%d.%m.%Y") if d else "—"
+
+
+def _signed_display(doc, dtype):
+    """The signing date for the main column; Mietvertrag has no single one so
+    show the renter's (both dates go into the detail block)."""
+    if dtype == DocumentType.MIETVERTRAG.value:
+        return _fmt(doc.renter_signed_at)
+    return _fmt(doc.signed_at)
+
+
+def _detail(doc, dtype):
+    """Type-specific fields as (label, value) pairs for the expandable row."""
+    if dtype == DocumentType.MIETVERTRAG.value:
+        return [
+            ("Mieter*in unterschrieben", _fmt(doc.renter_signed_at)),
+            ("GmbH unterschrieben", _fmt(doc.company_signed_at)),
+            ("GmbH-Unterzeichner*in", display(doc.company_signed_by)),
+        ]
+    if dtype == DocumentType.SEPA_LASTSCHRIFTMANDAT.value:
+        return [
+            ("Mandatsreferenz", doc.mandatsreferenz),
+            ("Kontoinhaber*in", doc.kontoinhaber),
+            ("Bank", doc.bank_name),
+            ("IBAN", doc.iban),
+            ("BIC", doc.bic),
+        ]
+    if dtype == DocumentType.BESCHEID_AUSBILDUNGSSTELLE.value:
+        return [("Unterzeichnet von", display(doc.signed_by))]
+    if dtype == AssignmentDocumentType.WOHNUNGSGEBERBESCHEINIGUNG.value:
+        return [("GmbH-Unterzeichner*in", display(doc.company_signed_by))]
+    return []
+
+
+def _row(doc, dtype, label, tenant, download_url):
+    return {
+        "tenant": tenant,
+        "type_key": dtype,
+        "type_label": label,
+        "file_name": doc.file_name,
+        "signed": _signed_display(doc, dtype),
+        "uploaded_at": doc.uploaded_at,
+        "uploaded_by": display(doc.uploaded_by),
+        "revoked": doc.revoked_at is not None,
+        "revoked_at": _fmt(doc.revoked_at),
+        "revoked_by": display(doc.revoked_by) if doc.revoked_by_id else "",
+        "revoked_note": doc.revoked_note or "",
+        "detail": _detail(doc, dtype),
+        "download_url": download_url,
+    }
+
+
+# Extra FKs to select_related per per-tenant type (avoids N+1 on the signer).
+_TENANT_DOC_SIGNER_REL = {
+    DocumentType.MIETVERTRAG.value: "company_signed_by",
+    DocumentType.BESCHEID_AUSBILDUNGSSTELLE.value: "signed_by",
+}
 
 
 @login_required
@@ -39,31 +99,24 @@ def list_documents(request):
             continue
         label = DocumentType(dtype).label
         types_seen[dtype] = label
-        for doc in model.objects.select_related("tenant"):
-            rows.append({
-                "tenant": doc.tenant,
-                "type_key": dtype,
-                "type_label": label,
-                "uploaded_at": doc.uploaded_at,
-                "revoked": doc.revoked_at is not None,
-                "download_url": reverse("document_download", kwargs={
-                    "pk": doc.tenant_id, "document_type": dtype, "doc_pk": doc.pk}),
-            })
+        rel = ["tenant", "uploaded_by", "revoked_by"]
+        if dtype in _TENANT_DOC_SIGNER_REL:
+            rel.append(_TENANT_DOC_SIGNER_REL[dtype])
+        for doc in model.objects.select_related(*rel):
+            rows.append(_row(doc, dtype, label, doc.tenant, reverse(
+                "document_download",
+                kwargs={"pk": doc.tenant_id, "document_type": dtype, "doc_pk": doc.pk})))
 
     if {"mietverwaltung", "admin"} & roles:
         for dtype, model in ASSIGNMENT_DOCUMENT_MODELS.items():
             label = AssignmentDocumentType(dtype).label
             types_seen[dtype] = label
-            for doc in model.objects.select_related("assignment__tenant"):
-                rows.append({
-                    "tenant": doc.assignment.tenant,
-                    "type_key": dtype,
-                    "type_label": label,
-                    "uploaded_at": doc.uploaded_at,
-                    "revoked": doc.revoked_at is not None,
-                    "download_url": reverse("assignment_document_download", kwargs={
-                        "assignment_pk": doc.assignment_id, "document_type": dtype, "doc_pk": doc.pk}),
-                })
+            for doc in model.objects.select_related(
+                "assignment__tenant", "uploaded_by", "revoked_by", "company_signed_by",
+            ):
+                rows.append(_row(doc, dtype, label, doc.assignment.tenant, reverse(
+                    "assignment_document_download",
+                    kwargs={"assignment_pk": doc.assignment_id, "document_type": dtype, "doc_pk": doc.pk})))
 
     rows.sort(key=lambda r: r["uploaded_at"], reverse=True)
     # ponytail: loads every readable row unpaginated, like tenant_list; add
