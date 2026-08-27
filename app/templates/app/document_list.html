@@ -18,7 +18,7 @@
           <th data-col="uploaded" data-sort-type="text" class="ca-sortable">Hochgeladen <span class="sort-ind"></span></th>
           <th data-col="uploader" data-sort-type="text" class="ca-sortable">von <span class="sort-ind"></span></th>
           <th data-col="status" data-sort-type="text" class="ca-sortable">Status <span class="sort-ind"></span></th>
-          <th></th>
+          <th>Details</th>
         </tr>
         <tr class="ca-filter-row">
           <th data-col="name"><input type="text" class="col-filter input is-small" data-col="name" data-ftype="text" placeholder="Filter…"></th>
@@ -45,7 +45,7 @@
           <td data-col="status" data-value="{% if r.revoked %}revoked{% else %}active{% endif %}" data-sort="{{ r.revoked|yesno:'1,0' }}">
             {% if r.revoked %}<span class="ca-pill ca-pill-red" title="Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {{ r.revoked_by }}{% endif %}{% if r.revoked_note %}: {{ r.revoked_note }}{% endif %}">Widerrufen</span>{% else %}<span class="ca-pill ca-pill-green">Aktiv</span>{% endif %}
           </td>
-          <td>{% if r.detail or r.revoked %}<span class="detail-caret" style="color:#7a7a7a;">▸</span>{% endif %}</td>
+          <td>{% if r.detail or r.revoked %}<span class="detail-caret" style="color:var(--ca-teal);white-space:nowrap;">▸ Details</span>{% endif %}</td>
         </tr>
         {% if r.detail or r.revoked %}
         <tr class="detail-row" hidden>
@@ -89,7 +89,7 @@
     main.addEventListener("click", (e) => {
       if (e.target.closest("a")) return;  // let the name/file links navigate
       detail.hidden = !detail.hidden;
-      if (caret) caret.textContent = detail.hidden ? "▸" : "▾";
+      if (caret) caret.textContent = detail.hidden ? "▸ Details" : "▾ Details";
     });
   });
 
@@ -129,7 +129,7 @@
       if (d && !ok) {  // hidden row: collapse its detail
         d.hidden = true;
         const caret = r.querySelector(".detail-caret");
-        if (caret) caret.textContent = "▸";
+        if (caret) caret.textContent = "▸ Details";
       }
       if (ok) shown++;
     });
