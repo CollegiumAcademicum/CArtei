@@ -5,14 +5,15 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
 from app.models import (
-    ASSIGNMENT_DOCUMENT_MODELS, DOCUMENT_MODELS, DocumentType,
-    Tenant, TenantRoomAssignment, document_readers,
+    ASSIGNMENT_DOCUMENT_MODELS, AssignmentDocumentType, DOCUMENT_MODELS,
+    DocumentType, Tenant, TenantRoomAssignment, document_readers,
 )
 from app.tenant_access import global_roles
 from app.uploads import upload_error
@@ -21,6 +22,57 @@ from app.views._shared import inline_file_response
 
 def _caller(user):
     return Tenant.objects.filter(intranet_username=user.username).first()
+
+
+@login_required
+def list_documents(request):
+    """Cross-tenant overview of every document the caller may read. Per-tenant
+    types use the same per-type reader gate as the download view; assignment
+    types have no reader set, so (like their download) they show to MV/admin
+    only. Rendered as one client-side-filtered table, same UX as tenant_list."""
+    roles = set(global_roles(request.user))
+    rows = []
+    types_seen = {}  # type_key -> label, for the Typ filter dropdown
+
+    for dtype, model in DOCUMENT_MODELS.items():
+        if not (document_readers(dtype) & roles):
+            continue
+        label = DocumentType(dtype).label
+        types_seen[dtype] = label
+        for doc in model.objects.select_related("tenant"):
+            rows.append({
+                "tenant": doc.tenant,
+                "type_key": dtype,
+                "type_label": label,
+                "uploaded_at": doc.uploaded_at,
+                "revoked": doc.revoked_at is not None,
+                "download_url": reverse("document_download", kwargs={
+                    "pk": doc.tenant_id, "document_type": dtype, "doc_pk": doc.pk}),
+            })
+
+    if {"mietverwaltung", "admin"} & roles:
+        for dtype, model in ASSIGNMENT_DOCUMENT_MODELS.items():
+            label = AssignmentDocumentType(dtype).label
+            types_seen[dtype] = label
+            for doc in model.objects.select_related("assignment__tenant"):
+                rows.append({
+                    "tenant": doc.assignment.tenant,
+                    "type_key": dtype,
+                    "type_label": label,
+                    "uploaded_at": doc.uploaded_at,
+                    "revoked": doc.revoked_at is not None,
+                    "download_url": reverse("assignment_document_download", kwargs={
+                        "assignment_pk": doc.assignment_id, "document_type": dtype, "doc_pk": doc.pk}),
+                })
+
+    rows.sort(key=lambda r: r["uploaded_at"], reverse=True)
+    # ponytail: loads every readable row unpaginated, like tenant_list; add
+    # Django's Paginator if cross-tenant volume gets slow.
+    return render(request, "app/document_list.html", {
+        "rows": rows,
+        "doc_types": sorted(types_seen.items(), key=lambda kv: kv[1]),
+        "total": len(rows),
+    })
 
 
 def _assignment_redirect(request, assignment):

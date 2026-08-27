@@ -1,0 +1,119 @@
+{% extends "app/base.html" %}
+{% block title %}Dokumente — CArtei{% endblock %}
+{% block content %}
+<div class="ca-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <h1 style="font-size:1.4rem;font-weight:700;">Dokumente</h1>
+    <span style="color:#7a7a7a;font-size:0.9rem;"><span id="visible-count">{{ total }}</span> / {{ total }} Dokument{{ total|pluralize:"e" }}</span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table id="doc-table" class="table is-fullwidth is-hoverable" style="font-size:0.9rem;">
+      <thead>
+        <tr>
+          <th data-col="name" data-sort-type="text" class="ca-sortable">Bewohner*in <span class="sort-ind"></span></th>
+          <th data-col="type" data-sort-type="text" class="ca-sortable">Typ <span class="sort-ind"></span></th>
+          <th data-col="status" data-sort-type="text" class="ca-sortable">Status <span class="sort-ind"></span></th>
+          <th data-col="uploaded" data-sort-type="text" class="ca-sortable">Hochgeladen <span class="sort-ind"></span></th>
+          <th>Datei</th>
+        </tr>
+        <tr class="ca-filter-row">
+          <th data-col="name"><input type="text" class="col-filter input is-small" data-col="name" data-ftype="text" placeholder="Filter…"></th>
+          <th data-col="type"><div class="select is-small"><select class="col-filter" data-col="type" data-ftype="select"><option value="">Alle</option>{% for key, label in doc_types %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div></th>
+          <th data-col="status"><div class="select is-small"><select class="col-filter" data-col="status" data-ftype="select"><option value="active" selected>Aktiv</option><option value="revoked">Widerrufen</option><option value="">Alle</option></select></div></th>
+          <th data-col="uploaded"><input type="date" class="col-filter input is-small" data-col="uploaded" data-ftype="date" data-bound="from"><input type="date" class="col-filter input is-small" data-col="uploaded" data-ftype="date" data-bound="to"></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td data-col="name" data-sort="{{ r.tenant.last_name|lower }} {{ r.tenant.first_name|lower }}">
+            <a href="{% url 'tenant_detail' r.tenant.pk %}" class="ca-tl-name">{% if r.tenant.preferred_name %}{{ r.tenant.preferred_name }}{% else %}{{ r.tenant.first_name }} {{ r.tenant.last_name }}{% endif %}</a>
+          </td>
+          <td data-col="type" data-value="{{ r.type_key }}" data-sort="{{ r.type_label|lower }}">{{ r.type_label }}</td>
+          <td data-col="status" data-value="{% if r.revoked %}revoked{% else %}active{% endif %}" data-sort="{{ r.revoked|yesno:'1,0' }}">
+            {% if r.revoked %}<span class="ca-pill ca-pill-red">Widerrufen</span>{% else %}<span class="ca-pill ca-pill-green">Aktiv</span>{% endif %}
+          </td>
+          <td data-col="uploaded" data-value="{{ r.uploaded_at|date:'Y-m-d' }}" data-sort="{{ r.uploaded_at|date:'Y-m-d H:i:s' }}">{{ r.uploaded_at|date:"d.m.Y" }}</td>
+          <td><a href="{{ r.download_url }}" style="color:var(--ca-teal);">Öffnen</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">Keine Dokumente.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p id="no-match" style="display:none;color:#7a7a7a;">Keine Treffer für die aktuellen Filter.</p>
+</div>
+
+<script>
+{# Trimmed copy of the tenant_list filter/sort logic (no column chooser). #}
+(function () {
+  const table = document.getElementById("doc-table");
+  if (!table || !table.tBodies.length) return;
+  const tbody = table.tBodies[0];
+  const rows = Array.from(tbody.rows).filter(r => r.querySelector("[data-col]"));
+  const cell = (row, col) => row.querySelector('[data-col="' + col + '"]');
+
+  const filters = Array.from(table.querySelectorAll(".col-filter"));
+  const byCol = {};
+  filters.forEach(f => (byCol[f.dataset.col] = byCol[f.dataset.col] || []).push(f));
+
+  function rowMatches(row) {
+    for (const col in byCol) {
+      const group = byCol[col], c = cell(row, col);
+      if (!c) continue;
+      const ftype = group[0].dataset.ftype;
+      if (ftype === "text") {
+        const v = group[0].value.trim().toLowerCase();
+        if (v && !c.textContent.toLowerCase().includes(v)) return false;
+      } else if (ftype === "select") {
+        const v = group[0].value;
+        if (v && (c.getAttribute("data-value") || "") !== v) return false;
+      } else if (ftype === "date") {
+        const cv = c.getAttribute("data-value") || "";
+        const from = group.find(g => g.dataset.bound === "from").value;
+        const to = group.find(g => g.dataset.bound === "to").value;
+        if (from && (!cv || cv < from)) return false;
+        if (to && (!cv || cv > to)) return false;
+      }
+    }
+    return true;
+  }
+  const counter = document.getElementById("visible-count");
+  const noMatch = document.getElementById("no-match");
+  function applyFilters() {
+    let shown = 0;
+    rows.forEach(r => {
+      const ok = rowMatches(r);
+      r.style.display = ok ? "" : "none";
+      if (ok) shown++;
+    });
+    if (counter) counter.textContent = shown;
+    if (noMatch) noMatch.style.display = shown ? "none" : "";
+  }
+  filters.forEach(f => f.addEventListener("input", applyFilters));
+
+  let sortCol = null, dir = 1;
+  table.querySelectorAll("th[data-sort-type]").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.col;
+      dir = sortCol === col ? -dir : 1;
+      sortCol = col;
+      rows.sort((a, b) => {
+        const av = cell(a, col) ? cell(a, col).getAttribute("data-sort") || "" : "";
+        const bv = cell(b, col) ? cell(b, col).getAttribute("data-sort") || "" : "";
+        return av < bv ? -dir : av > bv ? dir : 0;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+      table.querySelectorAll(".sort-ind").forEach(s => (s.textContent = ""));
+      const ind = th.querySelector(".sort-ind");
+      if (ind) ind.textContent = dir > 0 ? "↑" : "↓";
+    });
+  });
+
+  applyFilters();  // status defaults to "Aktiv" — apply once on load
+})();
+</script>
+{% endblock %}

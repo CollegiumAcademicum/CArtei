@@ -22,6 +22,7 @@ urlpatterns = [
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/reject/", enrollment_proof.reject_proof, name="enrollment_proof_reject"),
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/edit/", enrollment_proof.edit_proof, name="enrollment_proof_edit"),
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/download/", enrollment_proof.download_proof, name="enrollment_proof_download"),
+    path("documents/", document.list_documents, name="document_list"),
     path("tenants/<int:pk>/documents/upload/", document.upload_document, name="document_upload"),
     path("tenants/<int:pk>/documents/<str:document_type>/<int:doc_pk>/revoke/", document.revoke_document, name="document_revoke"),
     path("tenants/<int:pk>/documents/<str:document_type>/<int:doc_pk>/download/", document.download_document, name="document_download"),
