@@ -88,6 +88,32 @@ def test_revoked_row_included_and_flagged(client, data):
     assert {r["revoked"] for r in rows} == {True, False}
 
 
+def test_common_metadata_present(client, data):
+    row = {r["type_key"]: r for r in _rows(client, "mv_dl")}["sepa_lastschriftmandat"]
+    assert row["file_name"] == "sepa.pdf"
+    assert row["uploaded_by"] == "F1 L1"   # display() of the subject tenant
+    assert row["signed"] == "01.08.2026"
+
+
+def test_sepa_detail_lists_structured_fields(client, data):
+    row = {r["type_key"]: r for r in _rows(client, "fin_dl")}["sepa_lastschriftmandat"]
+    assert ("IBAN", "DE1") in row["detail"]
+    assert ("Mandatsreferenz", "M1") in row["detail"]
+
+
+def test_assignment_detail_has_signer(client, data):
+    row = {r["type_key"]: r for r in _rows(client, "mv_dl")}["wohnungsgeberbescheinigung"]
+    assert ("GmbH-Unterzeichner*in", "F1 L1") in row["detail"]
+
+
+def test_revoked_row_carries_revocation_fields(client, data):
+    revoked = [r for r in _rows(client, "mv_dl")
+               if r["type_key"] == "datenschutz" and r["revoked"]][0]
+    assert revoked["revoked_note"] == "alt"
+    assert revoked["revoked_by"] == "F1 L1"
+    assert revoked["revoked_at"] == "01.08.2026"
+
+
 def test_download_url_points_to_download_view(client, data):
     rows = {r["type_key"]: r for r in _rows(client, "mv_dl")}
     assert rows["sepa_lastschriftmandat"]["download_url"] == reverse(

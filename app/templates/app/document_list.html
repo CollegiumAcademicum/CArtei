@@ -13,15 +13,21 @@
         <tr>
           <th data-col="name" data-sort-type="text" class="ca-sortable">Bewohner*in <span class="sort-ind"></span></th>
           <th data-col="type" data-sort-type="text" class="ca-sortable">Typ <span class="sort-ind"></span></th>
-          <th data-col="status" data-sort-type="text" class="ca-sortable">Status <span class="sort-ind"></span></th>
+          <th data-col="file" data-sort-type="text" class="ca-sortable">Datei <span class="sort-ind"></span></th>
+          <th data-col="signed" data-sort-type="text" class="ca-sortable">Unterschrieben <span class="sort-ind"></span></th>
           <th data-col="uploaded" data-sort-type="text" class="ca-sortable">Hochgeladen <span class="sort-ind"></span></th>
-          <th>Datei</th>
+          <th data-col="uploader" data-sort-type="text" class="ca-sortable">von <span class="sort-ind"></span></th>
+          <th data-col="status" data-sort-type="text" class="ca-sortable">Status <span class="sort-ind"></span></th>
+          <th></th>
         </tr>
         <tr class="ca-filter-row">
           <th data-col="name"><input type="text" class="col-filter input is-small" data-col="name" data-ftype="text" placeholder="Filter…"></th>
           <th data-col="type"><div class="select is-small"><select class="col-filter" data-col="type" data-ftype="select"><option value="">Alle</option>{% for key, label in doc_types %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div></th>
-          <th data-col="status"><div class="select is-small"><select class="col-filter" data-col="status" data-ftype="select"><option value="active" selected>Aktiv</option><option value="revoked">Widerrufen</option><option value="">Alle</option></select></div></th>
+          <th data-col="file"><input type="text" class="col-filter input is-small" data-col="file" data-ftype="text" placeholder="Filter…"></th>
+          <th></th>
           <th data-col="uploaded"><input type="date" class="col-filter input is-small" data-col="uploaded" data-ftype="date" data-bound="from"><input type="date" class="col-filter input is-small" data-col="uploaded" data-ftype="date" data-bound="to"></th>
+          <th data-col="uploader"><input type="text" class="col-filter input is-small" data-col="uploader" data-ftype="text" placeholder="Filter…"></th>
+          <th data-col="status"><div class="select is-small"><select class="col-filter" data-col="status" data-ftype="select"><option value="active" selected>Aktiv</option><option value="revoked">Widerrufen</option><option value="">Alle</option></select></div></th>
           <th></th>
         </tr>
       </thead>
@@ -32,14 +38,27 @@
             <a href="{% url 'tenant_detail' r.tenant.pk %}" class="ca-tl-name">{% if r.tenant.preferred_name %}{{ r.tenant.preferred_name }}{% else %}{{ r.tenant.first_name }} {{ r.tenant.last_name }}{% endif %}</a>
           </td>
           <td data-col="type" data-value="{{ r.type_key }}" data-sort="{{ r.type_label|lower }}">{{ r.type_label }}</td>
-          <td data-col="status" data-value="{% if r.revoked %}revoked{% else %}active{% endif %}" data-sort="{{ r.revoked|yesno:'1,0' }}">
-            {% if r.revoked %}<span class="ca-pill ca-pill-red">Widerrufen</span>{% else %}<span class="ca-pill ca-pill-green">Aktiv</span>{% endif %}
-          </td>
+          <td data-col="file" data-sort="{{ r.file_name|lower }}"><a href="{{ r.download_url }}" style="color:var(--ca-teal);">{{ r.file_name }}</a></td>
+          <td data-col="signed" data-sort="{{ r.uploaded_at|date:'Y-m-d' }}">{{ r.signed }}</td>
           <td data-col="uploaded" data-value="{{ r.uploaded_at|date:'Y-m-d' }}" data-sort="{{ r.uploaded_at|date:'Y-m-d H:i:s' }}">{{ r.uploaded_at|date:"d.m.Y" }}</td>
-          <td><a href="{{ r.download_url }}" style="color:var(--ca-teal);">Öffnen</a></td>
+          <td data-col="uploader" data-sort="{{ r.uploaded_by|lower }}">{{ r.uploaded_by }}</td>
+          <td data-col="status" data-value="{% if r.revoked %}revoked{% else %}active{% endif %}" data-sort="{{ r.revoked|yesno:'1,0' }}">
+            {% if r.revoked %}<span class="ca-pill ca-pill-red" title="Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {{ r.revoked_by }}{% endif %}{% if r.revoked_note %}: {{ r.revoked_note }}{% endif %}">Widerrufen</span>{% else %}<span class="ca-pill ca-pill-green">Aktiv</span>{% endif %}
+          </td>
+          <td>{% if r.detail or r.revoked %}<button type="button" class="detail-toggle" style="background:none;border:none;cursor:pointer;color:#7a7a7a;font-size:.9rem;">▸</button>{% endif %}</td>
         </tr>
+        {% if r.detail or r.revoked %}
+        <tr class="detail-row" hidden>
+          <td colspan="8" style="background:#faf8f2;font-size:.85rem;">
+            <div style="display:flex;flex-wrap:wrap;gap:.4rem 1.5rem;padding:.3rem .2rem;">
+              {% for label, value in r.detail %}<span><span style="color:#7a7a7a;">{{ label }}:</span> {{ value }}</span>{% endfor %}
+              {% if r.revoked %}<span style="color:#a00;">Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {{ r.revoked_by }}{% endif %}{% if r.revoked_note %} — {{ r.revoked_note }}{% endif %}</span>{% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endif %}
       {% empty %}
-        <tr><td colspan="5">Keine Dokumente.</td></tr>
+        <tr><td colspan="8">Keine Dokumente.</td></tr>
       {% endfor %}
       </tbody>
     </table>
@@ -48,13 +67,29 @@
 </div>
 
 <script>
-{# Trimmed copy of the tenant_list filter/sort logic (no column chooser). #}
+{# Trimmed copy of the tenant_list filter/sort logic, plus expandable detail rows. #}
 (function () {
   const table = document.getElementById("doc-table");
   if (!table || !table.tBodies.length) return;
   const tbody = table.tBodies[0];
-  const rows = Array.from(tbody.rows).filter(r => r.querySelector("[data-col]"));
   const cell = (row, col) => row.querySelector('[data-col="' + col + '"]');
+
+  // Pair each main row with its (optional) detail row, which follows it.
+  const rows = [], detailOf = new Map();
+  let lastMain = null;
+  Array.from(tbody.rows).forEach(r => {
+    if (r.querySelector("[data-col]")) { rows.push(r); lastMain = r; }
+    else if (r.classList.contains("detail-row") && lastMain) detailOf.set(lastMain, r);
+  });
+
+  rows.forEach(main => {
+    const btn = main.querySelector(".detail-toggle"), detail = detailOf.get(main);
+    if (!btn || !detail) return;
+    btn.addEventListener("click", () => {
+      detail.hidden = !detail.hidden;
+      btn.textContent = detail.hidden ? "▸" : "▾";
+    });
+  });
 
   const filters = Array.from(table.querySelectorAll(".col-filter"));
   const byCol = {};
@@ -88,6 +123,12 @@
     rows.forEach(r => {
       const ok = rowMatches(r);
       r.style.display = ok ? "" : "none";
+      const d = detailOf.get(r);
+      if (d && !ok) {  // hidden row: collapse its detail
+        d.hidden = true;
+        const btn = r.querySelector(".detail-toggle");
+        if (btn) btn.textContent = "▸";
+      }
       if (ok) shown++;
     });
     if (counter) counter.textContent = shown;
@@ -106,7 +147,11 @@
         const bv = cell(b, col) ? cell(b, col).getAttribute("data-sort") || "" : "";
         return av < bv ? -dir : av > bv ? dir : 0;
       });
-      rows.forEach(r => tbody.appendChild(r));
+      rows.forEach(r => {  // keep each detail row directly after its main row
+        tbody.appendChild(r);
+        const d = detailOf.get(r);
+        if (d) tbody.appendChild(d);
+      });
       table.querySelectorAll(".sort-ind").forEach(s => (s.textContent = ""));
       const ind = th.querySelector(".sort-ind");
       if (ind) ind.textContent = dir > 0 ? "↑" : "↓";
