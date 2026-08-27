@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from app.forms import TenantForm, TenantRoomAssignmentForm
 from app.models import (
     AGAbfrage, AGAbfrageResult, AGStatus,
-    DOCUMENT_MODELS, DocumentType,
+    DOCUMENT_MODELS, DocumentType, document_readers,
     EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
     RoomDamage, WGDamage, RoomDamageLine, WGDamageLine, DamageSize,
 )
@@ -27,7 +27,11 @@ from app.views._shared import (
 ProofStatus = namedtuple("ProofStatus", "state count")
 
 
-_DOC_SHORT = {"datenschutz": "DS", "photoerlaubnis": "FoE", "vertraulichkeitserklaerung": "VE"}
+_DOC_SHORT = {
+    "datenschutz": "DS", "photoerlaubnis": "FoE", "vertraulichkeitserklaerung": "VE",
+    "sepa_lastschriftmandat": "SEPA", "bescheid_ausbildungsstelle": "Bes",
+    "selbstverpflichtung_engagement": "SVE",
+}
 
 
 def _proof_status(proofs, today):
@@ -411,10 +415,14 @@ def tenant_detail(request: HttpRequest, pk: int):
     ctx["mv_notes"] = list(_note_qs.filter(source_group="mietverwaltung")) if can_write_mv else []
     ctx["cluster_notes"] = list(_note_qs.filter(source_group="clustersprechende")) if can_write_cluster else []
 
-    ctx["can_see_documents"] = bool({"owner", "mietverwaltung", "admin"} & roles)
+    # Per-type read gating: a viewer sees only the document types their roles may
+    # read (e.g. AG Finanzierung sees SEPA and nothing else). Section shows if any.
+    readable_types = [dt for dt in DOCUMENT_MODELS if document_readers(dt) & roles]
+    ctx["can_see_documents"] = bool(readable_types)
     if ctx["can_see_documents"]:
         groups = []
-        for dtype, model in DOCUMENT_MODELS.items():
+        for dtype in readable_types:
+            model = DOCUMENT_MODELS[dtype]
             docs = []
             for d in model.objects.filter(tenant=tenant).order_by("-uploaded_at"):
                 d.doc_type = dtype

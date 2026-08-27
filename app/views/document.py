@@ -10,7 +10,11 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
-from app.models import ASSIGNMENT_DOCUMENT_MODELS, DOCUMENT_MODELS, DocumentType, Tenant, TenantRoomAssignment
+from app.models import (
+    ASSIGNMENT_DOCUMENT_MODELS, DOCUMENT_MODELS, DocumentType,
+    Tenant, TenantRoomAssignment, document_readers,
+)
+from app.tenant_access import global_roles
 from app.uploads import upload_error
 from app.views._shared import inline_file_response
 
@@ -36,12 +40,20 @@ def _is_mv(user):
     return bool(group_names.intersection(mv_cns))
 
 
-# Extra POST fields per per-tenant document type. Most carry a single signed_at;
-# Mietvertrag has two-party signing (Mieter*in + GmbH) plus a GmbH signer.
+# Extra POST fields per per-tenant document type. Most carry a single signed_at.
+#   dates  -> date columns (required ISO dates)
+#   text   -> required non-empty text columns (e.g. SEPA mandate fields)
+#   signer -> a model FK field whose POST value is a tenant id (Mietvertrag GmbH
+#             signer, Bescheid CA-side signer). The POST field name == model field.
 _TENANT_DOC_FIELDS = {
-    "mietvertrag": {"dates": ("renter_signed_at", "company_signed_at"), "company_signer": True},
+    "mietvertrag": {"dates": ("renter_signed_at", "company_signed_at"), "signer": "company_signed_by"},
+    "sepa_lastschriftmandat": {
+        "dates": ("signed_at",),
+        "text": ("mandatsreferenz", "kontoinhaber", "bank_name", "iban", "bic"),
+    },
+    "bescheid_ausbildungsstelle": {"dates": ("signed_at",), "signer": "signed_by"},
 }
-_DEFAULT_TENANT_DOC_FIELDS = {"dates": ("signed_at",), "company_signer": False}
+_DEFAULT_TENANT_DOC_FIELDS = {"dates": ("signed_at",)}
 
 
 @login_required
@@ -72,13 +84,19 @@ def upload_document(request, pk):
         if parsed is None:
             return HttpResponseBadRequest()
         values[field] = parsed
-    if spec["company_signer"]:
-        signer = Tenant.objects.filter(pk=request.POST.get("company_signed_by") or 0).first()
+    for field in spec.get("text", ()):
+        val = (request.POST.get(field) or "").strip()
+        if not val:
+            return HttpResponseBadRequest()
+        values[field] = val
+    signer_field = spec.get("signer")
+    if signer_field:
+        signer = Tenant.objects.filter(pk=request.POST.get(signer_field) or 0).first()
         if signer is None:
             return HttpResponseBadRequest()
-        values["company_signed_by"] = signer
+        values[signer_field] = signer
 
-    # The signer is always the tenant themselves — no co-signers. The
+    # The tenant's own signature isn't modelled here (no co-signers); the
     # document_signer table is left unlinked from the document tables.
     model.objects.create(
         tenant=tenant,
@@ -116,11 +134,17 @@ def revoke_document(request, pk, document_type, doc_pk):
 @login_required
 def download_document(request, pk, document_type, doc_pk):
     caller = _caller(request.user)
-    if caller is None or (caller.pk != pk and not _is_mv(request.user)):
-        raise PermissionDenied
     model = DOCUMENT_MODELS.get(document_type)
     if model is None:
         return HttpResponseBadRequest()
+    if caller is None:
+        raise PermissionDenied
+    # Per-type read gating (owner + the type's reader roles, e.g. Finanzierung for SEPA).
+    roles = set(global_roles(request.user))
+    if caller.pk == pk:
+        roles.add("owner")
+    if not (document_readers(document_type) & roles):
+        raise PermissionDenied
     doc = get_object_or_404(model, pk=doc_pk, tenant_id=pk)
     return inline_file_response(doc)
 

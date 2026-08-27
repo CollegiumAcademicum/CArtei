@@ -137,6 +137,129 @@ def test_upload_mietvertrag_requires_company_signer(client, owner):
     assert not MietvertragDocument.objects.filter(tenant=owner).exists()
 
 
+def _sepa_data(**overrides):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    data = {
+        "document_type": DocumentType.SEPA_LASTSCHRIFTMANDAT,
+        "signed_at": "2026-08-01",
+        "mandatsreferenz": "CA-2026-0001",
+        "kontoinhaber": "Owner Self",
+        "bank_name": "Sparkasse Heidelberg",
+        "iban": "DE89370400440532013000",
+        "bic": "COBADEFFXXX",
+        "document_file": SimpleUploadedFile("s.pdf", b"%PDF-1.4 s", content_type="application/pdf"),
+    }
+    data.update(overrides)
+    return data
+
+
+def test_upload_sepa_stores_structured_fields(client, owner):
+    from app.models import SepaLastschriftmandatDocument
+    _login(client)
+    client.post(reverse("document_upload", args=[owner.pk]), _sepa_data())
+    doc = SepaLastschriftmandatDocument.objects.get(tenant=owner)
+    assert doc.mandatsreferenz == "CA-2026-0001"
+    assert doc.iban == "DE89370400440532013000"
+    assert doc.bic == "COBADEFFXXX"
+    assert doc.signed_at == datetime.date(2026, 8, 1)
+
+
+def test_upload_sepa_requires_all_mandate_fields(client, owner):
+    from app.models import SepaLastschriftmandatDocument
+    _login(client)
+    resp = client.post(reverse("document_upload", args=[owner.pk]), _sepa_data(iban="  "))
+    assert resp.status_code == 400
+    assert not SepaLastschriftmandatDocument.objects.filter(tenant=owner).exists()
+
+
+def test_upload_bescheid_with_signer(client, owner):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from app.models import BescheidAusbildungsstelleDocument
+    _login(client)
+    client.post(reverse("document_upload", args=[owner.pk]), {
+        "document_type": DocumentType.BESCHEID_AUSBILDUNGSSTELLE,
+        "signed_at": "2026-08-01",
+        "signed_by": str(owner.pk),
+        "document_file": SimpleUploadedFile("b.pdf", b"%PDF-1.4 b", content_type="application/pdf"),
+    })
+    doc = BescheidAusbildungsstelleDocument.objects.get(tenant=owner)
+    assert doc.signed_at == datetime.date(2026, 8, 1)
+    assert doc.signed_by_id == owner.pk
+
+
+def test_upload_bescheid_requires_signer(client, owner):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from app.models import BescheidAusbildungsstelleDocument
+    _login(client)
+    resp = client.post(reverse("document_upload", args=[owner.pk]), {
+        "document_type": DocumentType.BESCHEID_AUSBILDUNGSSTELLE,
+        "signed_at": "2026-08-01",
+        # signed_by omitted
+        "document_file": SimpleUploadedFile("b.pdf", b"%PDF-1.4 b", content_type="application/pdf"),
+    })
+    assert resp.status_code == 400
+    assert not BescheidAusbildungsstelleDocument.objects.filter(tenant=owner).exists()
+
+
+def test_upload_selbstverpflichtung(client, owner):
+    from app.models import SelbstverpflichtungEngagementDocument
+    _login(client)
+    _upload(client, owner, document_type=DocumentType.SELBSTVERPFLICHTUNG_ENGAGEMENT)
+    doc = SelbstverpflichtungEngagementDocument.objects.get(tenant=owner)
+    assert doc.signed_at == datetime.date(2026, 8, 1)
+    assert doc.uploaded_by_id == owner.pk
+
+
+def _make_sepa(tenant):
+    from app.models import SepaLastschriftmandatDocument
+    return SepaLastschriftmandatDocument.objects.create(
+        tenant=tenant, file_name="s.pdf", file_data=b"%PDF-1.4 s",
+        signed_at=datetime.date(2026, 8, 1),
+        uploaded_at=datetime.datetime(2026, 8, 2, tzinfo=datetime.timezone.utc),
+        uploaded_by=tenant, mandatsreferenz="R1", kontoinhaber="Owner Self",
+        bank_name="Bank", iban="DE00", bic="BICX",
+    )
+
+
+@pytest.fixture
+def finanzierung_user(db):
+    """A tenant in AG Finanzierung only — not MV, not the document's owner."""
+    Tenant.objects.create(
+        first_name="Fin", last_name="Anz", email="fin@example.com",
+        intranet_username="fin_user", intranet_uuid="00000000-0000-0000-0000-000000000030",
+    )
+    User.objects.create_user(username="fin_user", password="x").groups.add(
+        Group.objects.get_or_create(name="ag.finanzierung")[0]
+    )
+    return "fin_user"
+
+
+def test_finanzierung_can_download_sepa(client, owner, finanzierung_user):
+    doc = _make_sepa(owner)
+    client.login(username=finanzierung_user, password="x")
+    resp = client.get(reverse("document_download", args=[owner.pk, "sepa_lastschriftmandat", doc.pk]))
+    assert resp.status_code == 200
+    assert resp.content == b"%PDF-1.4 s"
+
+
+def test_finanzierung_cannot_download_other_document_types(client, owner, finanzierung_user):
+    doc = DatenschutzDocument.objects.create(
+        tenant=owner, file_name="d.pdf", file_data=b"x", signed_at=datetime.date(2026, 8, 1),
+        uploaded_at=datetime.datetime(2026, 8, 2, tzinfo=datetime.timezone.utc), uploaded_by=owner,
+    )
+    client.login(username=finanzierung_user, password="x")
+    resp = client.get(reverse("document_download", args=[owner.pk, "datenschutz", doc.pk]))
+    assert resp.status_code == 403
+
+
+def test_finanzierung_cannot_upload_sepa(client, owner, finanzierung_user):
+    from app.models import SepaLastschriftmandatDocument
+    client.login(username=finanzierung_user, password="x")
+    resp = client.post(reverse("document_upload", args=[owner.pk]), _sepa_data())
+    assert resp.status_code == 403
+    assert not SepaLastschriftmandatDocument.objects.filter(tenant=owner).exists()
+
+
 def test_tenant_cannot_upload_own_document(client, db):
     # A plain tenant (not Mietverwaltung) may not add documents to their own record.
     t = Tenant.objects.create(

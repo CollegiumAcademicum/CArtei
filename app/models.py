@@ -229,6 +229,9 @@ class DocumentType(models.TextChoices):
     VERTRAULICHKEITSERKLAERUNG = "vertraulichkeitserklaerung", "Vertraulichkeitserklärung"
     MIETVERTRAG = "mietvertrag", "Mietvertrag"
     MIETBEDINGUNGEN = "mietbedingungen", "Allgemeine Mietbedingungen"
+    SEPA_LASTSCHRIFTMANDAT = "sepa_lastschriftmandat", "SEPA-Lastschriftmandat"
+    BESCHEID_AUSBILDUNGSSTELLE = "bescheid_ausbildungsstelle", "Bescheid für Ausbildungsstellen"
+    SELBSTVERPFLICHTUNG_ENGAGEMENT = "selbstverpflichtung_engagement", "Selbstverpflichtung Engagement"
 
 
 class TenantDocumentBase(models.Model):
@@ -334,6 +337,37 @@ class MietbedingungenDocument(DocumentBase):
         db_table = "mietbedingungen_document"
 
 
+class SepaLastschriftmandatDocument(DocumentBase):
+    """SEPA-Lastschriftmandat: signed mandate plus its structured fields."""
+    mandatsreferenz = models.CharField(max_length=255)
+    kontoinhaber = models.CharField(max_length=255)
+    bank_name = models.CharField(max_length=255)
+    iban = models.CharField(max_length=34)
+    bic = models.CharField(max_length=11)
+
+    class Meta:
+        managed = False
+        db_table = "sepa_lastschriftmandat_document"
+
+
+class BescheidAusbildungsstelleDocument(DocumentBase):
+    """signed_at plus the CA-side signer (who signed the Bescheid)."""
+    signed_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="+", db_column="signed_by_id",
+    )
+
+    class Meta:
+        managed = False
+        db_table = "bescheid_ausbildungsstelle_document"
+
+
+class SelbstverpflichtungEngagementDocument(DocumentBase):
+    class Meta:
+        managed = False
+        db_table = "selbstverpflichtung_engagement_document"
+
+
 class WohnungsgeberbescheinigungDocument(RoomAssignmentDocumentBase):
     signed_at = models.DateField()
     company_signed_by = models.ForeignKey(
@@ -355,7 +389,23 @@ DOCUMENT_MODELS = {
     DocumentType.VERTRAULICHKEITSERKLAERUNG.value: VertraulichkeitserklaerungDocument,
     DocumentType.MIETVERTRAG.value: MietvertragDocument,
     DocumentType.MIETBEDINGUNGEN.value: MietbedingungenDocument,
+    DocumentType.SEPA_LASTSCHRIFTMANDAT.value: SepaLastschriftmandatDocument,
+    DocumentType.BESCHEID_AUSBILDUNGSSTELLE.value: BescheidAusbildungsstelleDocument,
+    DocumentType.SELBSTVERPFLICHTUNG_ENGAGEMENT.value: SelbstverpflichtungEngagementDocument,
 }
+
+# Who may *read* a document type. Write (upload/revoke) is always Mietverwaltung
+# /admin. Default readers are owner/MV/admin; only SEPA widens to AG Finanzierung,
+# which sees that type and nothing else.
+DEFAULT_DOCUMENT_READERS = frozenset({"owner", "mietverwaltung", "admin"})
+DOCUMENT_READERS = {
+    DocumentType.SEPA_LASTSCHRIFTMANDAT.value:
+        frozenset({"owner", "mietverwaltung", "admin", "finanzierung"}),
+}
+
+
+def document_readers(document_type: str) -> frozenset:
+    return DOCUMENT_READERS.get(document_type, DEFAULT_DOCUMENT_READERS)
 
 
 ASSIGNMENT_DOCUMENT_MODELS = {

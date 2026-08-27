@@ -176,7 +176,7 @@ TENANT_ROLE_GROUPS = {
     "mietverwaltung_helfer": _group_list("TENANT_GROUP_MIETVERWALTUNG_HELFER", "cartei_helfer_mietverwaltung"),
     # AG Werkstatt: may edit room furniture (Ausstattung) only, nothing else.
     "werkstatt": _group_list("TENANT_GROUP_WERKSTATT", "cartei_werkstatt"),
-    "finanzierung": _group_list("TENANT_GROUP_FINANZIERUNG", "ag.finanzierung"),
+    "finanzierung": _group_list("TENANT_GROUP_FINANZIERUNG", "cartei_finanzierung"),
 }
 
 USE_X_FORWARDED_HOST = True
