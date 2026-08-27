@@ -1,7 +1,7 @@
 import datetime
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.urls import reverse
 
 from app.models import DatenschutzDocument, MietvertragDocument, Tenant
@@ -64,3 +64,18 @@ def test_detail_shows_missing_type_when_no_active_doc(client, owner):
     assert groups["datenschutz"]["has_active"] is True
     assert groups["photoerlaubnis"]["has_active"] is False
     assert "Noch nicht unterschrieben" in resp.content.decode()
+
+
+def test_finanzierung_sees_only_sepa_group(client, owner):
+    # AG Finanzierung may read SEPA and nothing else — the documents section
+    # renders only the SEPA group, no consent/Mietvertrag documents.
+    User.objects.create_user(username="fin_dd", password="x").groups.add(
+        Group.objects.get_or_create(name="ag.finanzierung")[0]
+    )
+    client.login(username="fin_dd", password="x")
+    resp = client.get(reverse("tenant_detail", args=[owner.pk]))
+    assert resp.context["can_see_documents"] is True
+    types = {g["type"] for g in resp.context["document_groups"]}
+    assert types == {"sepa_lastschriftmandat"}
+    # No upload/revoke controls for a read-only reader.
+    assert resp.context.get("can_manage_documents") is False

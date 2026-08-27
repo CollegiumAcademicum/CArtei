@@ -330,7 +330,7 @@
 
   {% if can_see_documents %}
   <details id="section-documents" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="cursor:pointer;font-weight:600;">Rechtsdokumente (Datenschutz, Fotoerlaubnis, Vertraulichkeitserklärung, Mietvertrag &amp; Allgemeine Mietbedingungen)</summary>
+    <summary style="cursor:pointer;font-weight:600;">Rechtsdokumente (Datenschutz, Fotoerlaubnis, Vertraulichkeitserklärung, Mietvertrag, Allgemeine Mietbedingungen, SEPA-Lastschriftmandat, Bescheid für Ausbildungsstellen &amp; Selbstverpflichtung Engagement)</summary>
 
     {% for g in document_groups %}
     <div class="ca-doc-card" style="margin-top:.75rem;border:1px solid #e2e2e2;border-radius:6px;padding:.5rem .75rem;">
@@ -349,6 +349,13 @@
         {% if d.doc_type == "mietvertrag" %}
         <span>· Mieter*in {{ d.renter_signed_at|date:"d.m.Y" }}</span>
         <span>· GmbH {{ d.company_signed_at|date:"d.m.Y" }} ({{ d.company_signed_by.first_name }} {{ d.company_signed_by.last_name }})</span>
+        {% elif d.doc_type == "bescheid_ausbildungsstelle" %}
+        <span>· {{ d.signed_at|date:"d.m.Y" }} ({{ d.signed_by.first_name }} {{ d.signed_by.last_name }})</span>
+        {% elif d.doc_type == "sepa_lastschriftmandat" %}
+        <span>· {{ d.signed_at|date:"d.m.Y" }}</span>
+        <span>· Mandat {{ d.mandatsreferenz }}</span>
+        <span>· {{ d.kontoinhaber }}, {{ d.bank_name }}</span>
+        <span>· {{ d.iban }} / {{ d.bic }}</span>
         {% else %}
         <span>· {{ d.signed_at|date:"d.m.Y" }}</span>
         {% endif %}
@@ -377,6 +384,21 @@
             {% for t in all_tenants %}<option value="{{ t.pk }}">{{ t.last_name }}, {{ t.first_name }}</option>{% endfor %}
           </select>
         </label>
+        {% elif g.type == "bescheid_ausbildungsstelle" %}
+        <label style="font-size:.85rem;">Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">Unterschrieben von
+          <select name="signed_by" required style="padding:.3rem;">
+            <option value="">—</option>
+            {% for t in all_tenants %}<option value="{{ t.pk }}">{{ t.last_name }}, {{ t.first_name }}</option>{% endfor %}
+          </select>
+        </label>
+        {% elif g.type == "sepa_lastschriftmandat" %}
+        <label style="font-size:.85rem;">Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">Mandatsreferenz <input name="mandatsreferenz" type="text" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">Kontoinhaber*in <input name="kontoinhaber" type="text" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">Name der Bank <input name="bank_name" type="text" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">IBAN <input name="iban" type="text" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">BIC <input name="bic" type="text" required style="padding:.3rem;"></label>
         {% else %}
         <label style="font-size:.85rem;">Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
         {% endif %}
