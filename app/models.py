@@ -227,20 +227,30 @@ class DocumentType(models.TextChoices):
     DATENSCHUTZ = "datenschutz", "Datenschutz"
     PHOTOERLAUBNIS = "photoerlaubnis", "Fotoerlaubnis"
     VERTRAULICHKEITSERKLAERUNG = "vertraulichkeitserklaerung", "Vertraulichkeitserklärung"
+    MIETVERTRAG = "mietvertrag", "Mietvertrag"
+    MIETBEDINGUNGEN = "mietbedingungen", "Allgemeine Mietbedingungen"
 
 
-class DocumentBase(models.Model):
-    """Shared columns for every per-type document mirror. Abstract — each
-    concrete subclass maps its own managed=False table."""
+class TenantDocumentBase(models.Model):
+    """Shared columns for every per-type per-tenant document mirror, keyed on the
+    person. Abstract, no signed_at — DocumentBase adds the common single signed_at;
+    Mietvertrag carries its own two-party signing dates instead."""
     tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="%(class)ss")
     file_name = models.CharField(max_length=255)
     file_data = models.BinaryField()
-    signed_at = models.DateField()
     uploaded_at = models.DateTimeField()
     uploaded_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="%(class)s_uploaded", db_column="uploaded_by_id")
     revoked_at = models.DateTimeField(null=True, blank=True)
     revoked_by = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True, related_name="%(class)s_revoked", db_column="revoked_by_id")
     revoked_note = models.TextField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class DocumentBase(TenantDocumentBase):
+    """TenantDocumentBase plus the common single signed_at date."""
+    signed_at = models.DateField()
 
     class Meta:
         abstract = True
@@ -264,14 +274,6 @@ class VertraulichkeitserklaerungDocument(DocumentBase):
         db_table = "vertraulichkeitserklaerung_document"
 
 
-# document_type value -> mirror model. Single source for views/templates.
-DOCUMENT_MODELS = {
-    DocumentType.DATENSCHUTZ.value: DatenschutzDocument,
-    DocumentType.PHOTOERLAUBNIS.value: PhotoerlaubnisDocument,
-    DocumentType.VERTRAULICHKEITSERKLAERUNG.value: VertraulichkeitserklaerungDocument,
-}
-
-
 class DocumentSigner(models.Model):
     """Polymorphic signer shared across the per-type document tables
     (mirrors cartei_db: document_type + document_id, no FK)."""
@@ -285,8 +287,6 @@ class DocumentSigner(models.Model):
 
 
 class AssignmentDocumentType(models.TextChoices):
-    MIETVERTRAG = "mietvertrag", "Mietvertrag"
-    MIETBEDINGUNGEN = "mietbedingungen", "Allgemeine Mietbedingungen"
     WOHNUNGSGEBERBESCHEINIGUNG = "wohnungsgeberbescheinigung", "Wohnungsgeberbescheinigung"
 
 
@@ -315,7 +315,7 @@ class RoomAssignmentDocumentBase(models.Model):
         abstract = True
 
 
-class MietvertragDocument(RoomAssignmentDocumentBase):
+class MietvertragDocument(TenantDocumentBase):
     renter_signed_at = models.DateField()
     company_signed_at = models.DateField()
     company_signed_by = models.ForeignKey(
@@ -328,9 +328,7 @@ class MietvertragDocument(RoomAssignmentDocumentBase):
         db_table = "mietvertrag_document"
 
 
-class MietbedingungenDocument(RoomAssignmentDocumentBase):
-    signed_at = models.DateField()
-
+class MietbedingungenDocument(DocumentBase):
     class Meta:
         managed = False
         db_table = "mietbedingungen_document"
@@ -348,9 +346,19 @@ class WohnungsgeberbescheinigungDocument(RoomAssignmentDocumentBase):
         db_table = "wohnungsgeberbescheinigung_document"
 
 
+# document_type value -> mirror model. Single source for views/templates.
+# Mietvertrag/Mietbedingungen are per-tenant documents; Mietvertrag carries its
+# own two-party signing fields (renter_signed_at / company_signed_at).
+DOCUMENT_MODELS = {
+    DocumentType.DATENSCHUTZ.value: DatenschutzDocument,
+    DocumentType.PHOTOERLAUBNIS.value: PhotoerlaubnisDocument,
+    DocumentType.VERTRAULICHKEITSERKLAERUNG.value: VertraulichkeitserklaerungDocument,
+    DocumentType.MIETVERTRAG.value: MietvertragDocument,
+    DocumentType.MIETBEDINGUNGEN.value: MietbedingungenDocument,
+}
+
+
 ASSIGNMENT_DOCUMENT_MODELS = {
-    AssignmentDocumentType.MIETVERTRAG.value: MietvertragDocument,
-    AssignmentDocumentType.MIETBEDINGUNGEN.value: MietbedingungenDocument,
     AssignmentDocumentType.WOHNUNGSGEBERBESCHEINIGUNG.value: WohnungsgeberbescheinigungDocument,
 }
 

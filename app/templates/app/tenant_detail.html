@@ -330,7 +330,7 @@
 
   {% if can_see_documents %}
   <details id="section-documents" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="cursor:pointer;font-weight:600;">Rechtsdokumente (Datenschutz, Fotoerlaubnis &amp; Vertraulichkeitserklärung)</summary>
+    <summary style="cursor:pointer;font-weight:600;">Rechtsdokumente (Datenschutz, Fotoerlaubnis, Vertraulichkeitserklärung, Mietvertrag &amp; Allgemeine Mietbedingungen)</summary>
 
     {% for g in document_groups %}
     <div class="ca-doc-card" style="margin-top:.75rem;border:1px solid #e2e2e2;border-radius:6px;padding:.5rem .75rem;">
@@ -346,7 +346,12 @@
       {% for d in g.docs %}
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.4rem;font-size:.9rem;{% if d.revoked_at %}opacity:.6;{% endif %}">
         <a href="{% url 'document_download' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="color:var(--ca-teal);">{{ d.file_name }}</a>
+        {% if d.doc_type == "mietvertrag" %}
+        <span>· Mieter*in {{ d.renter_signed_at|date:"d.m.Y" }}</span>
+        <span>· GmbH {{ d.company_signed_at|date:"d.m.Y" }} ({{ d.company_signed_by.first_name }} {{ d.company_signed_by.last_name }})</span>
+        {% else %}
         <span>· {{ d.signed_at|date:"d.m.Y" }}</span>
+        {% endif %}
         {% if d.revoked_at %}
         <span style="color:#a00;">· Widerrufen ({{ d.revoked_at|date:"d.m.Y" }}{% if d.revoked_note %}: {{ d.revoked_note }}{% endif %})</span>
         {% elif can_manage_documents %}
@@ -363,7 +368,18 @@
       <form method="post" action="{% url 'document_upload' pk=tenant.pk %}" enctype="multipart/form-data" class="ca-doc-upload" style="margin-top:.6rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
         {% csrf_token %}
         <input type="hidden" name="document_type" value="{{ g.type }}">
+        {% if g.type == "mietvertrag" %}
+        <label style="font-size:.85rem;">Mieter*in unterschrieben <input type="date" name="renter_signed_at" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">GmbH unterschrieben <input type="date" name="company_signed_at" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">Für die GmbH
+          <select name="company_signed_by" required style="padding:.3rem;">
+            <option value="">—</option>
+            {% for t in all_tenants %}<option value="{{ t.pk }}">{{ t.last_name }}, {{ t.first_name }}</option>{% endfor %}
+          </select>
+        </label>
+        {% else %}
         <label style="font-size:.85rem;">Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
+        {% endif %}
         <input name="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:160px;">
         <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Hochladen</button>
       </form>

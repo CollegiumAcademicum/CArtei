@@ -6,8 +6,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from app.models import (
-    Building, MietbedingungenDocument, MietvertragDocument, Room, Tenant,
-    TenantRoomAssignment, WG,
+    Building, Room, Tenant, TenantRoomAssignment, WG,
+    WohnungsgeberbescheinigungDocument,
 )
 
 
@@ -41,51 +41,39 @@ def setup(db):
     return {"mv": mv, "tenant": tenant, "other": other, "assignment": a}
 
 
-def _upload_mietbedingungen(client, assignment):
+def _upload_wgb(client, setup, **overrides):
     data = {
-        "document_type": "mietbedingungen",
+        "document_type": "wohnungsgeberbescheinigung",
         "signed_at": "2026-08-01",
+        "company_signed_by": str(setup["mv"].pk),
         "document_file": SimpleUploadedFile("m.pdf", b"%PDF-1.4 m", content_type="application/pdf"),
     }
-    return client.post(reverse("assignment_document_upload", args=[assignment.pk]), data)
+    data.update(overrides)
+    return client.post(reverse("assignment_document_upload", args=[setup["assignment"].pk]), data)
 
 
-def test_mv_upload_mietbedingungen(client, setup):
+def test_mv_upload_wohnungsgeberbescheinigung(client, setup):
     client.login(username="mv_adoc", password="x")
-    _upload_mietbedingungen(client, setup["assignment"])
-    doc = MietbedingungenDocument.objects.get(assignment=setup["assignment"])
+    _upload_wgb(client, setup)
+    doc = WohnungsgeberbescheinigungDocument.objects.get(assignment=setup["assignment"])
     assert doc.signed_at == datetime.date(2026, 8, 1)
-    assert doc.uploaded_by_id == setup["mv"].pk
-
-
-def test_mv_upload_mietvertrag_with_company_signer(client, setup):
-    client.login(username="mv_adoc", password="x")
-    data = {
-        "document_type": "mietvertrag",
-        "renter_signed_at": "2026-08-01",
-        "company_signed_at": "2026-08-03",
-        "company_signed_by": str(setup["mv"].pk),
-        "document_file": SimpleUploadedFile("v.pdf", b"%PDF-1.4 v", content_type="application/pdf"),
-    }
-    client.post(reverse("assignment_document_upload", args=[setup["assignment"].pk]), data)
-    doc = MietvertragDocument.objects.get(assignment=setup["assignment"])
     assert doc.company_signed_by_id == setup["mv"].pk
-    assert doc.renter_signed_at == datetime.date(2026, 8, 1)
+    assert doc.uploaded_by_id == setup["mv"].pk
 
 
 def test_tenant_cannot_upload(client, setup):
     client.login(username="ten_adoc", password="x")
-    resp = _upload_mietbedingungen(client, setup["assignment"])
+    resp = _upload_wgb(client, setup)
     assert resp.status_code == 403
-    assert not MietbedingungenDocument.objects.exists()
+    assert not WohnungsgeberbescheinigungDocument.objects.exists()
 
 
 def test_owner_can_download_other_cannot(client, setup):
     client.login(username="mv_adoc", password="x")
-    _upload_mietbedingungen(client, setup["assignment"])
-    doc = MietbedingungenDocument.objects.get(assignment=setup["assignment"])
+    _upload_wgb(client, setup)
+    doc = WohnungsgeberbescheinigungDocument.objects.get(assignment=setup["assignment"])
     url = reverse("assignment_document_download",
-                  args=[setup["assignment"].pk, "mietbedingungen", doc.pk])
+                  args=[setup["assignment"].pk, "wohnungsgeberbescheinigung", doc.pk])
 
     client.login(username="ten_adoc", password="x")
     resp = client.get(url)
@@ -98,10 +86,10 @@ def test_owner_can_download_other_cannot(client, setup):
 
 def test_revoke_sets_fields_and_blocks_second(client, setup):
     client.login(username="mv_adoc", password="x")
-    _upload_mietbedingungen(client, setup["assignment"])
-    doc = MietbedingungenDocument.objects.get(assignment=setup["assignment"])
+    _upload_wgb(client, setup)
+    doc = WohnungsgeberbescheinigungDocument.objects.get(assignment=setup["assignment"])
     url = reverse("assignment_document_revoke",
-                  args=[setup["assignment"].pk, "mietbedingungen", doc.pk])
+                  args=[setup["assignment"].pk, "wohnungsgeberbescheinigung", doc.pk])
     client.post(url, {"revoked_note": "Widerruf"})
     doc.refresh_from_db()
     assert doc.revoked_at is not None
@@ -114,11 +102,11 @@ def test_revoke_sets_fields_and_blocks_second(client, setup):
 
 def test_revoke_without_note_rejected(client, setup):
     client.login(username="mv_adoc", password="x")
-    _upload_mietbedingungen(client, setup["assignment"])
-    doc = MietbedingungenDocument.objects.get(assignment=setup["assignment"])
+    _upload_wgb(client, setup)
+    doc = WohnungsgeberbescheinigungDocument.objects.get(assignment=setup["assignment"])
     resp = client.post(
         reverse("assignment_document_revoke",
-                args=[setup["assignment"].pk, "mietbedingungen", doc.pk]),
+                args=[setup["assignment"].pk, "wohnungsgeberbescheinigung", doc.pk]),
         {"revoked_note": "  "},
     )
     assert resp.status_code == 400
@@ -129,25 +117,13 @@ def test_revoke_without_note_rejected(client, setup):
 def test_upload_honors_safe_next(client, setup):
     client.login(username="mv_adoc", password="x")
     wg_path = reverse("wg_detail", args=[setup["assignment"].room.wg_id])
-    data = {
-        "document_type": "mietbedingungen",
-        "signed_at": "2026-08-01",
-        "next": wg_path,
-        "document_file": SimpleUploadedFile("m.pdf", b"%PDF-1.4 m", content_type="application/pdf"),
-    }
-    resp = client.post(reverse("assignment_document_upload", args=[setup["assignment"].pk]), data)
+    resp = _upload_wgb(client, setup, next=wg_path)
     assert resp.status_code == 302
     assert resp["Location"] == wg_path
 
 
 def test_upload_rejects_offsite_next(client, setup):
     client.login(username="mv_adoc", password="x")
-    data = {
-        "document_type": "mietbedingungen",
-        "signed_at": "2026-08-01",
-        "next": "https://evil.example.com/",
-        "document_file": SimpleUploadedFile("m.pdf", b"%PDF-1.4 m", content_type="application/pdf"),
-    }
-    resp = client.post(reverse("assignment_document_upload", args=[setup["assignment"].pk]), data)
+    resp = _upload_wgb(client, setup, next="https://evil.example.com/")
     assert resp.status_code == 302
     assert resp["Location"] == reverse("tenant_detail", args=[setup["tenant"].pk])

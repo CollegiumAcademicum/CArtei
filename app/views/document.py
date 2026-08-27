@@ -36,6 +36,14 @@ def _is_mv(user):
     return bool(group_names.intersection(mv_cns))
 
 
+# Extra POST fields per per-tenant document type. Most carry a single signed_at;
+# Mietvertrag has two-party signing (Mieter*in + GmbH) plus a GmbH signer.
+_TENANT_DOC_FIELDS = {
+    "mietvertrag": {"dates": ("renter_signed_at", "company_signed_at"), "company_signer": True},
+}
+_DEFAULT_TENANT_DOC_FIELDS = {"dates": ("signed_at",), "company_signer": False}
+
+
 @login_required
 @require_POST
 def upload_document(request, pk):
@@ -48,6 +56,7 @@ def upload_document(request, pk):
     model = DOCUMENT_MODELS.get(document_type)
     if model is None:
         return HttpResponseBadRequest()
+    spec = _TENANT_DOC_FIELDS.get(document_type, _DEFAULT_TENANT_DOC_FIELDS)
 
     f = request.FILES.get("document_file")
     if not f:
@@ -57,10 +66,17 @@ def upload_document(request, pk):
         messages.error(request, err)
         return redirect("tenant_detail", pk=pk)
 
-    try:
-        signed_at = datetime.date.fromisoformat(request.POST.get("signed_at", ""))
-    except ValueError:
-        return HttpResponseBadRequest()
+    values = {}
+    for field in spec["dates"]:
+        parsed = _parse_date(request.POST.get(field, ""))
+        if parsed is None:
+            return HttpResponseBadRequest()
+        values[field] = parsed
+    if spec["company_signer"]:
+        signer = Tenant.objects.filter(pk=request.POST.get("company_signed_by") or 0).first()
+        if signer is None:
+            return HttpResponseBadRequest()
+        values["company_signed_by"] = signer
 
     # The signer is always the tenant themselves — no co-signers. The
     # document_signer table is left unlinked from the document tables.
@@ -68,9 +84,9 @@ def upload_document(request, pk):
         tenant=tenant,
         file_name=f.name,
         file_data=f.read(),
-        signed_at=signed_at,
         uploaded_at=now(),
         uploaded_by=caller,
+        **values,
     )
     return redirect("tenant_detail", pk=pk)
 
@@ -120,8 +136,6 @@ def _parse_date(value):
 # Per-type extra POST fields for a room-assignment document.
 #   date fields -> model date columns; "company_signed_by" -> FK tenant id.
 _ASSIGNMENT_DOC_FIELDS = {
-    "mietvertrag": {"dates": ("renter_signed_at", "company_signed_at"), "company_signer": True},
-    "mietbedingungen": {"dates": ("signed_at",), "company_signer": False},
     "wohnungsgeberbescheinigung": {"dates": ("signed_at",), "company_signer": True},
 }
 

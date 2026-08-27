@@ -4,7 +4,7 @@ import pytest
 from django.contrib.auth.models import User
 from django.urls import reverse
 
-from app.models import DatenschutzDocument, Tenant
+from app.models import DatenschutzDocument, MietvertragDocument, Tenant
 
 
 @pytest.fixture
@@ -28,6 +28,26 @@ def test_detail_lists_document(client, owner):
     html = client.get(reverse("tenant_detail", args=[owner.pk])).content.decode()
     assert "Datenschutz" in html
     assert "d.pdf" in html
+
+
+def test_detail_lists_mietvertrag_in_rechtsdokumente(client, owner):
+    # Mietvertrag now lives in the per-tenant Rechtsdokumente section, keyed on
+    # the person, and renders its two-party signing info (not a single signed_at).
+    MietvertragDocument.objects.create(
+        tenant=owner, file_name="v.pdf", file_data=b"x",
+        renter_signed_at=datetime.date(2026, 8, 1),
+        company_signed_at=datetime.date(2026, 8, 3), company_signed_by=owner,
+        uploaded_at=datetime.datetime(2026, 8, 4, 9, 0, tzinfo=datetime.timezone.utc),
+        uploaded_by=owner,
+    )
+    client.login(username="owner_dd", password="x")
+    resp = client.get(reverse("tenant_detail", args=[owner.pk]))
+    groups = {g["type"]: g for g in resp.context["document_groups"]}
+    assert groups["mietvertrag"]["has_active"] is True
+    assert "mietbedingungen" in groups
+    html = resp.content.decode()
+    assert "v.pdf" in html
+    assert "Mieter*in 01.08.2026" in html
 
 
 def test_detail_shows_missing_type_when_no_active_doc(client, owner):

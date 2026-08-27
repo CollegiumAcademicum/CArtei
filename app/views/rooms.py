@@ -132,8 +132,8 @@ def wg_detail(request: HttpRequest, pk: int):
 
     can_edit_rooms = bool({"mietverwaltung", "admin", "belegium"} & roles)
     can_edit_furniture = bool({"mietverwaltung", "admin", "werkstatt"} & roles)
-    # Assignment documents (Mietvertrag etc.) are MV/admin only — Belegium sees
-    # room data but not contracts, matching the tenant detail view's gating.
+    # Assignment documents (Wohnungsgeberbescheinigung) are MV/admin only —
+    # Belegium sees room data but not contracts, matching the tenant detail gating.
     can_see_assignment_docs = bool({"mietverwaltung", "admin"} & roles)
     can_manage_documents = can_see_assignment_docs
     # The shared Belegung note thread: read+write for MV, Belegium and Admin.

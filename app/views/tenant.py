@@ -130,9 +130,11 @@ def tenant_list(request: HttpRequest):
     active_doc_ids: dict[str, set[int]] = {}
     if show_realname:
         tenant_ids = [t.pk for t in tenants]
-        for dtype, model in DOCUMENT_MODELS.items():
+        # Overview column tracks the consent docs only (_DOC_SHORT), not the full
+        # per-tenant set — Mietvertrag/Mietbedingungen aren't consent completeness.
+        for dtype in _DOC_SHORT:
             active_doc_ids[dtype] = set(
-                model.objects.filter(tenant_id__in=tenant_ids, revoked_at__isnull=True)
+                DOCUMENT_MODELS[dtype].objects.filter(tenant_id__in=tenant_ids, revoked_at__isnull=True)
                 .values_list("tenant_id", flat=True)
             )
 
@@ -164,7 +166,7 @@ def tenant_list(request: HttpRequest):
             row["documents"] = [
                 {"short": _DOC_SHORT[dt], "label": DocumentType(dt).label,
                  "present": t.pk in active_doc_ids[dt]}
-                for dt in DOCUMENT_MODELS
+                for dt in _DOC_SHORT
             ]
             row["documents_missing"] = sum(1 for d in row["documents"] if not d["present"])
         if show_surveys:
