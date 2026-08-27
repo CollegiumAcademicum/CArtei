@@ -524,6 +524,11 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ca-facet h5 { margin: 0 0 0.4rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: #999; }
 .ca-facet-line { display: block; margin: 0.2rem 0; font-size: 0.85rem; color: #444; }
 .ca-tl-name { color: var(--ca-teal); font-weight: 600; }
+/* Document-list expandable detail: animate an inner div (table rows won't animate height). */
+.detail-body { max-height: 0; opacity: 0; overflow: hidden; padding: 0 0.2rem;
+  transition: max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease; }
+.detail-row.open .detail-body { max-height: 400px; opacity: 1; padding: 0.4rem 0.2rem; }
+/* ponytail: fixed max-height cap for the transition; raise if a detail block grows past it. */
 .ca-tl-muted { color: #7a7a7a; }
 .ca-sublet-sub { font-size: 0.78rem; color: #9a5a10; margin-top: 2px; }
 .cluster-group-header td { background: #efeae0; font-weight: 700; padding: 0.35rem 0.6rem; }
