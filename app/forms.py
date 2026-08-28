@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 from django import forms
 from django.db.models import Q
@@ -29,6 +30,40 @@ class TenantForm(forms.ModelForm):
         for name in list(self.fields):
             if name not in allowed:
                 del self.fields[name]
+
+
+class TenantCreateForm(forms.ModelForm):
+    """Mietverwaltung adds a tenant manually, before an LDAP account exists —
+    intranet_username / intranet_uuid stay NULL. Name + email required; the rest
+    live behind a 'Weitere Angaben' <details> in the template."""
+
+    email = forms.EmailField(required=True)
+
+    # Template renders TOP_FIELDS up top; the remaining fields go in <details>.
+    TOP_FIELDS = ["first_name", "last_name", "email", "phone"]
+
+    class Meta:
+        model = Tenant
+        fields = [
+            "first_name", "last_name", "email", "phone",
+            "preferred_name", "pronouns", "date_of_birth", "is_flinta",
+            "barrier_free_needed", "mailbox_list_opt_in", "soli_miete_wunsch", "comments",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # DB default is 0; don't force MV to type it (field sits in the "more" section).
+        self.fields["soli_miete_wunsch"].required = False
+        self.fields["soli_miete_wunsch"].initial = Decimal("0")
+        for field in self.fields.values():
+            if isinstance(field, forms.DateField):
+                field.widget = forms.DateInput(
+                    attrs={"type": "date", "class": "ca-input"}, format="%Y-%m-%d"
+                )
+                field.input_formats = ["%Y-%m-%d"]
+
+    def clean_soli_miete_wunsch(self):
+        return self.cleaned_data.get("soli_miete_wunsch") or Decimal("0")
 
 
 class RoomFurnitureForm(forms.ModelForm):

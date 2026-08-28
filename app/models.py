@@ -37,8 +37,9 @@ class Tenant(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255, default="")
-    intranet_username = models.CharField(max_length=255, unique=True)
-    intranet_uuid = models.UUIDField(unique=True)
+    # NULL for tenants added manually by Mietverwaltung (no LDAP account yet).
+    intranet_username = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    intranet_uuid = models.UUIDField(unique=True, null=True, blank=True)
     preferred_name = models.CharField(max_length=255, null=True, blank=True)
     pronouns = models.CharField(max_length=255, null=True, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
@@ -54,7 +55,7 @@ class Tenant(models.Model):
         db_table = "tenant"
 
     def __str__(self) -> str:
-        return f"{self.first_name} {self.last_name} ({self.intranet_username})"
+        return f"{self.first_name} {self.last_name} ({self.intranet_username or 'kein Account'})"
 
     def get_absolute_url(self) -> str:
         return reverse("tenant_detail", args=[self.pk])

@@ -14,6 +14,7 @@ urlpatterns = [
     path("wgs/", rooms.wg_list, name="wg_list"),
     path("wgs/<int:pk>/", rooms.wg_detail, name="wg_detail"),
     path("tenants/", tenant.tenant_list, name="tenant_list"),
+    path("tenants/neu/", tenant.tenant_create, name="tenant_create"),
     path("tenants/<int:pk>/", tenant.tenant_detail, name="tenant_detail"),
     path("rooms/<int:room_id>/renters/", tenant.room_renters, name="room_renters"),
     path("tenants/<int:pk>/enrollment-proof/upload/", enrollment_proof.upload_proof, name="enrollment_proof_upload"),

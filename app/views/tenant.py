@@ -7,7 +7,9 @@ from django.db.models import Min, Q
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from app.forms import TenantForm, TenantRoomAssignmentForm
+from django.core.exceptions import PermissionDenied
+
+from app.forms import TenantCreateForm, TenantForm, TenantRoomAssignmentForm
 from app.models import (
     AGAbfrage, AGAbfrageResult, AGStatus,
     DOCUMENT_MODELS, DocumentType, document_readers,
@@ -223,6 +225,29 @@ def tenant_list(request: HttpRequest):
         "selected_abfragen": selected_abfragen,
         "summary": _engagement_summary(rows, selected_abfragen) if selected_abfragen else None,
         "residents": residents,
+        "can_create_tenant": bool({"mietverwaltung", "admin"} & roles),
+    })
+
+
+@login_required
+def tenant_create(request: HttpRequest):
+    """Mietverwaltung adds a tenant manually (no LDAP account link yet)."""
+    if not ({"mietverwaltung", "admin"} & global_roles(request.user)):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = TenantCreateForm(request.POST)
+        if form.is_valid():
+            tenant = form.save()  # intranet_username / intranet_uuid stay NULL
+            messages.success(request, "Bewohner:in angelegt.")
+            return redirect("tenant_detail", pk=tenant.pk)
+    else:
+        form = TenantCreateForm()
+
+    return render(request, "app/tenant_create.html", {
+        "form": form,
+        "top_fields": [form[n] for n in TenantCreateForm.TOP_FIELDS],
+        "more_fields": [form[n] for n in form.fields if n not in TenantCreateForm.TOP_FIELDS],
     })
 
 
