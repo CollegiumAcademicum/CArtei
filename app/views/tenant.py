@@ -244,11 +244,7 @@ def tenant_create(request: HttpRequest):
     else:
         form = TenantCreateForm()
 
-    return render(request, "app/tenant_create.html", {
-        "form": form,
-        "top_fields": [form[n] for n in TenantCreateForm.TOP_FIELDS],
-        "more_fields": [form[n] for n in form.fields if n not in TenantCreateForm.TOP_FIELDS],
-    })
+    return render(request, "app/tenant_create.html", {"form": form})
 
 
 def _current_tenant(request):

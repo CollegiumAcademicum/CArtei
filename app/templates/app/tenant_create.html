@@ -7,11 +7,10 @@
     Manuell angelegt, ohne Intranet-Account. Der Account kann später verknüpft werden.
   </p>
 
-  {# Required fields stay outside <details> so HTML5 validation can reach them. #}
   <form method="post">
     {% csrf_token %}
     <div class="ca-field-grid">
-      {% for field in top_fields %}
+      {% for field in form %}
         <div class="ca-field{% if field.errors %} ca-field-error{% endif %}">
           <span class="ca-field-label">{{ field.label }}</span>
           {{ field }}
@@ -19,20 +18,6 @@
         </div>
       {% endfor %}
     </div>
-
-    <details class="ca-collapse" style="margin-top:1rem;"
-             {% for field in more_fields %}{% if field.errors %}open{% endif %}{% endfor %}>
-      <summary>Weitere Angaben</summary>
-      <div class="ca-field-grid" style="margin-top:.5rem;">
-        {% for field in more_fields %}
-          <div class="ca-field{% if field.errors %} ca-field-error{% endif %}">
-            <span class="ca-field-label">{{ field.label }}</span>
-            {{ field }}
-            {% if field.errors %}<div style="color:#b00;font-size:.85rem;">{{ field.errors }}</div>{% endif %}
-          </div>
-        {% endfor %}
-      </div>
-    </details>
 
     <div style="margin-top:1.25rem;display:flex;gap:.75rem;">
       <button type="submit" class="button is-primary">Anlegen</button>
