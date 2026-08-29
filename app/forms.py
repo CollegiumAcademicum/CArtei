@@ -40,6 +40,10 @@ class TenantCreateForm(forms.ModelForm):
     create_ldap_account = forms.BooleanField(
         required=False, initial=False,
         label="Intranet-Account direkt anlegen",
+        widget=forms.CheckboxInput(attrs={
+            "title": "Legt beim Speichern den Intranet-Account an und sendet die "
+                     "Zugangsdaten automatisch per E-Mail an die Bewohner:in.",
+        }),
     )
 
     class Meta:

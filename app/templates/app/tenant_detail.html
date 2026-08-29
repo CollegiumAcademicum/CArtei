@@ -13,7 +13,8 @@
         data-confirm="FreeIPA-Account für {{ display_name }} anlegen?"
         data-busy-label="Wird angelegt…">
     {% csrf_token %}
-    <button type="submit" class="ca-btn">Intranet-Account anlegen</button>
+    <button type="submit" class="ca-btn"
+            title="Legt den Intranet-Account an und sendet die Zugangsdaten automatisch per E-Mail an die Bewohner:in.">Intranet-Account anlegen</button>
   </form>
   {% endif %}
 
