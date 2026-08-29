@@ -42,7 +42,7 @@ def test_mv_creates_account_less_tenant(settings):
 
 
 @pytest.mark.django_db
-def test_optin_provisions_ldap_account(settings):
+def test_optin_provisions_ldap_account(settings, mailoutbox):
     settings.TENANT_ROLE_GROUPS = MV_GROUPS
     c = Client()
     _login(c, "mv3", groups=["ag.mietverwaltung"])
@@ -55,6 +55,7 @@ def test_optin_provisions_ldap_account(settings):
         })
     t = Tenant.objects.get(last_name="Optin")
     prov.assert_called_once_with(t)
+    assert len(mailoutbox) == 1 and mailoutbox[0].to == ["optin@ca.de"]  # welcome mail sent
 
 
 @pytest.mark.django_db

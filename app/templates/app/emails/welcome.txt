@@ -1,0 +1,47 @@
+Hallo {{ name }},
+
+anbei erhältst du deine Zugangsdaten für das Intranet des Collegium Academicum.
+Diese benötigst du, um dich ins CA-WLAN einzuloggen oder z.B. um eine
+Waschmaschine zu buchen. Außerdem findest du im Intranet die Übersicht der AGs
+und Initiativen, mit der Möglichkeit dich dort einzutragen.
+
+Deine Zugangsdaten lauten wie folgt:
+
+  Benutzername: {{ uid }}
+  Passwort:     {{ temp_password }}
+
+Bitte folge der Anleitung auf {{ guide_url }}, um dein Passwort zu ändern und
+das WLAN einzurichten. Das Passwort ist ein Einmal-Passwort und muss bei der
+ersten Anmeldung geändert werden.
+
+Das Intranet erreichst du hier: {{ intranet_url }}
+
+Viele Grüße
+deine AG Mietverwaltung
+
+Diese E-Mail wurde automatisch versendet – bitte antworte nicht darauf.
+
+--------------------------------------------------------------------------------
+
+Hi {{ name }},
+
+enclosed you will find your access data for the intranet of the Collegium
+Academicum. You will need these to log into the CA WLAN or to book a washing
+machine, for example. You will also find an overview of the working groups and
+initiatives on the intranet, where you can register.
+
+Your login details are as follows:
+
+  Username: {{ uid }}
+  Password: {{ temp_password }}
+
+Please follow the instructions at {{ guide_url }} to change your password and
+set up the WLAN. The password is a one-time password and must be changed on
+first login.
+
+You can find the intranet here: {{ intranet_url }}
+
+Best regards,
+your AG Mietverwaltung
+
+This email was sent automatically – please do not reply to it.

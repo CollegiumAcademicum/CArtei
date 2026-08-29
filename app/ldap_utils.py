@@ -79,9 +79,10 @@ _UMLAUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
 
 
 def _uid_base(tenant) -> str:
-    """firstname.lastname, transliterated to ASCII, lowercased."""
-    raw = f"{tenant.first_name}.{tenant.last_name}".translate(_UMLAUT).lower()
-    return "".join(c for c in raw if c.isalnum() or c == ".").strip(".")
+    """firstname_lastname, transliterated to ASCII, lowercased (org convention,
+    e.g. philipp_bartz)."""
+    raw = f"{tenant.first_name}_{tenant.last_name}".translate(_UMLAUT).lower()
+    return "".join(c for c in raw if c.isalnum() or c == "_").strip("_")
 
 
 def _uid_candidates(base: str, limit: int = 50):
