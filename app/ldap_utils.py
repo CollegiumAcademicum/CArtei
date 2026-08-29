@@ -3,9 +3,14 @@
 These functions are only called from views that require cluster/admin access.
 In tests, patch `app.views.admin_views.ldap_utils.get_clearance_members` and `get_ag_members`.
 """
+import logging
+import uuid as uuid_module
+
 import ldap
 import ldap.filter
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def _connect():
@@ -56,3 +61,114 @@ def get_ag_members(ag_name: str) -> list[dict]:
         _ATTRS,
     )
     return [_parse(attrs) for _, attrs in results if attrs]
+
+
+# --- Provisioning (CArtei -> FreeIPA) ------------------------------------
+# The DB (tenant.email) is the source of truth; FreeIPA is a downstream replica
+# CArtei writes. A raw LDAP `add` can NOT create a working FreeIPA user (the DNA
+# plugin must assign uidNumber and the Kerberos principal is built server-side),
+# so provisioning goes through the IPA JSON-RPC API via python-freeipa.
+
+_UMLAUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
+                         "Ä": "ae", "Ö": "oe", "Ü": "ue"})
+
+
+def _uid_base(tenant) -> str:
+    """firstname.lastname, transliterated to ASCII, lowercased."""
+    raw = f"{tenant.first_name}.{tenant.last_name}".translate(_UMLAUT).lower()
+    return "".join(c for c in raw if c.isalnum() or c == ".").strip(".")
+
+
+def _uid_candidates(base: str, limit: int = 50):
+    """base, then base2, base3, … — for collision retry on user_add."""
+    yield base
+    for n in range(2, limit + 1):
+        yield f"{base}{n}"
+
+
+def provision_ldap_account(tenant) -> str:
+    """Create a FreeIPA account from a DB Tenant row and link it back.
+
+    Returns the new uid. Raises if the tenant is already linked, IPA is
+    unconfigured, or user_add fails (e.g. duplicate uid). Credential delivery
+    (welcome mail / password-reset link) is a separate onboarding step — this
+    only creates + links the account.
+    """
+    if tenant.intranet_username:
+        raise ValueError(f"Tenant {tenant.pk} already linked to {tenant.intranet_username!r}")
+    if not settings.IPA_SERVER:
+        raise RuntimeError("IPA_SERVER not configured — cannot provision")
+
+    from python_freeipa import ClientMeta  # lazy: only this path needs the dep
+    from python_freeipa.exceptions import DuplicateEntry
+
+    client = ClientMeta(settings.IPA_SERVER, verify_ssl=settings.IPA_VERIFY_SSL)
+    client.login(settings.IPA_PROVISION_USER, settings.IPA_PROVISION_PASSWORD)
+
+    res = uid = None
+    for candidate in _uid_candidates(_uid_base(tenant)):
+        try:
+            res = client.user_add(
+                a_uid=candidate,
+                o_givenname=tenant.first_name,
+                o_sn=tenant.last_name,
+                o_cn=f"{tenant.first_name} {tenant.last_name}",
+                o_mail=tenant.email,
+            )
+            uid = candidate
+            break
+        except DuplicateEntry:
+            continue
+    if res is None:
+        raise RuntimeError(f"No free uid for tenant {tenant.pk} (base {_uid_base(tenant)!r})")
+    ipa_uuid = res["result"]["ipauniqueid"][0]
+
+    tenant.intranet_username = uid
+    tenant.intranet_uuid = uuid_module.UUID(ipa_uuid)
+    tenant.save(update_fields=["intranet_username", "intranet_uuid"])
+    logger.info("Provisioned FreeIPA account %r for tenant %s", uid, tenant.pk)
+    return uid
+
+
+# --- Drift detection (admin edited mail in FreeIPA, bypassing CArtei) -----
+
+def _email_mismatches(db_by_uid: dict[str, str], ldap_by_uid: dict[str, str]) -> list[dict]:
+    """Pure comparison: linked tenants whose DB email differs from LDAP mail.
+    Missing LDAP entries are reported too (account deleted out-of-band)."""
+    out = []
+    for uid, db_email in db_by_uid.items():
+        ldap_email = ldap_by_uid.get(uid)
+        if ldap_email is None:
+            out.append({"uid": uid, "db_email": db_email, "ldap_email": None})
+        elif (db_email or "").strip().lower() != ldap_email.strip().lower():
+            out.append({"uid": uid, "db_email": db_email, "ldap_email": ldap_email})
+    return out
+
+
+def find_email_drift() -> list[dict]:
+    """Compare tenant.email (SSOT) against FreeIPA mail for all linked tenants.
+    Read-only — reports drift for a human, never auto-corrects (an admin edit
+    might be a legit emergency fix; silently reverting would hide it)."""
+    from app.models import Tenant
+
+    db_by_uid = {
+        t.intranet_username: t.email
+        for t in Tenant.objects.exclude(intranet_username__isnull=True)
+        .exclude(intranet_username="")
+        .only("intranet_username", "email")
+    }
+    if not db_by_uid:
+        return []
+
+    conn = _connect()
+    uid_filter = "".join(
+        f"(uid={ldap.filter.escape_filter_chars(u)})" for u in db_by_uid
+    )
+    results = conn.search_s(
+        settings.LDAP_USER_SEARCH_BASE,
+        ldap.SCOPE_SUBTREE,
+        f"(|{uid_filter})",
+        ["uid", "mail"],
+    )
+    ldap_by_uid = {p["username"]: p["email"] for _, a in results if (p := _parse(a))["username"]}
+    return _email_mismatches(db_by_uid, ldap_by_uid)

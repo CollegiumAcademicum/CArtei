@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth.models import Group, User
 from django.test import Client
@@ -37,6 +39,20 @@ def test_mv_creates_account_less_tenant(settings):
     t = Tenant.objects.get(last_name="Bewohner")
     assert t.intranet_username is None and t.intranet_uuid is None
     assert resp.status_code == 302 and resp.url == f"/tenants/{t.pk}/"
+
+
+@pytest.mark.django_db
+def test_optin_provisions_ldap_account(settings):
+    settings.TENANT_ROLE_GROUPS = MV_GROUPS
+    c = Client()
+    _login(c, "mv3", groups=["ag.mietverwaltung"])
+    with patch("app.views.tenant.provision_ldap_account", return_value="neu.optin") as prov:
+        c.post("/tenants/neu/", {
+            "first_name": "Neu", "last_name": "Optin", "email": "optin@ca.de",
+            "create_ldap_account": "on",
+        })
+    t = Tenant.objects.get(last_name="Optin")
+    prov.assert_called_once_with(t)
 
 
 @pytest.mark.django_db
