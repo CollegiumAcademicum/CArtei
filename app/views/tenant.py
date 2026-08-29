@@ -243,8 +243,8 @@ def tenant_create(request: HttpRequest):
             messages.success(request, "Bewohner:in angelegt.")
             if form.cleaned_data.get("create_ldap_account"):
                 try:
-                    uid = provision_ldap_account(tenant)
-                    messages.success(request, f"Account angelegt: {uid}")
+                    result = provision_ldap_account(tenant)
+                    messages.success(request, f"Account angelegt: {result.uid}")
                 except Exception as exc:
                     messages.error(request, f"Account konnte nicht angelegt werden: {exc}")
             return redirect("tenant_detail", pk=tenant.pk)
@@ -263,8 +263,8 @@ def tenant_provision(request: HttpRequest, pk: int):
         raise PermissionDenied
     tenant = get_object_or_404(Tenant, pk=pk)
     try:
-        uid = provision_ldap_account(tenant)
-        messages.success(request, f"Account angelegt: {uid}")
+        result = provision_ldap_account(tenant)
+        messages.success(request, f"Account angelegt: {result.uid}")
     except Exception as exc:
         messages.error(request, f"Account konnte nicht angelegt werden: {exc}")
     return redirect("tenant_detail", pk=pk)

@@ -36,16 +36,19 @@ def test_provision_retries_uid_on_collision(settings):
     class FakeClient:
         def __init__(self, *a, **k): pass
         def login(self, *a, **k): pass
-        def user_add(self, a_uid, **k):
+        def user_add(self, a_uid, o_random=False, **k):
+            assert o_random is True  # accounts must never be created passwordless
             if a_uid in taken:
                 raise DuplicateEntry(message=f"{a_uid} exists")
             added.append(a_uid)
-            return {"result": {"ipauniqueid": ["550e8400-e29b-41d4-a716-446655440000"]}}
+            return {"result": {"ipauniqueid": ["550e8400-e29b-41d4-a716-446655440000"],
+                               "randompassword": "Tmp-Pw-123"}}
 
     with patch("python_freeipa.ClientMeta", FakeClient):
-        uid = provision_ldap_account(t)
+        result = provision_ldap_account(t)
 
-    assert uid == "ada.byte3" and added == ["ada.byte3"]
+    assert result.uid == "ada.byte3" and result.temp_password == "Tmp-Pw-123"
+    assert added == ["ada.byte3"]
     t.refresh_from_db()
     assert t.intranet_username == "ada.byte3"
 

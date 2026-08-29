@@ -46,7 +46,9 @@ def test_optin_provisions_ldap_account(settings):
     settings.TENANT_ROLE_GROUPS = MV_GROUPS
     c = Client()
     _login(c, "mv3", groups=["ag.mietverwaltung"])
-    with patch("app.views.tenant.provision_ldap_account", return_value="neu.optin") as prov:
+    from app.ldap_utils import ProvisionResult
+    with patch("app.views.tenant.provision_ldap_account",
+               return_value=ProvisionResult("neu.optin", "Tmp-Pw")) as prov:
         c.post("/tenants/neu/", {
             "first_name": "Neu", "last_name": "Optin", "email": "optin@ca.de",
             "create_ldap_account": "on",
