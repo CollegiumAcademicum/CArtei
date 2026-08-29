@@ -4,19 +4,24 @@
 {% block title %}{{ display_name }} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card" style="max-width:1100px;margin:1.5rem auto;">
-  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1rem;">
-    {{ display_name }}
-  </h1>
-
-  {% if can_provision %}
-  <form method="post" action="{% url 'tenant_provision' tenant.pk %}" style="margin-bottom:1rem;"
-        data-confirm="FreeIPA-Account für {{ display_name }} anlegen?"
-        data-busy-label="Wird angelegt…">
-    {% csrf_token %}
-    <button type="submit" class="ca-btn"
-            title="Legt den Intranet-Account an und sendet die Zugangsdaten automatisch per E-Mail an die Bewohner:in.">Intranet-Account anlegen</button>
-  </form>
-  {% endif %}
+  <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
+    <h1 style="font-size:1.4rem;font-weight:700;margin:0;">{{ display_name }}</h1>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:.4rem;">
+      {% if tenant.intranet_username %}
+        <span style="font-size:.85rem;color:#7a7a7a;">Intranet: <strong style="color:#555;">{{ tenant.intranet_username }}</strong></span>
+      {% elif can_provision %}
+        <form method="post" action="{% url 'tenant_provision' tenant.pk %}" style="margin:0;"
+              data-confirm="FreeIPA-Account für {{ display_name }} anlegen?"
+              data-busy-label="Wird angelegt…">
+          {% csrf_token %}
+          <button type="submit" class="ca-button ca-button-sm">Intranet-Account anlegen</button>
+        </form>
+        <span class="ca-hint" tabindex="0" role="button" aria-label="Was passiert beim Anlegen?">i<span class="ca-hint-bubble">Legt den Intranet-Account an und sendet die Zugangsdaten automatisch per E-Mail an die Bewohner:in.</span></span>
+      {% else %}
+        <span style="font-size:.85rem;color:#7a7a7a;">kein Intranet-Account</span>
+      {% endif %}
+    </div>
+  </div>
 
   {% for section in sections %}
   <details id="section-{{ section.key }}" {% if section.key == "personal" %}open {% endif %}class="ca-section ca-collapse" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
