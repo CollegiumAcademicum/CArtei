@@ -164,12 +164,21 @@ LDAP_REQUIRE_GROUP = os.environ.get(
 )
 
 # FreeIPA provisioning (CArtei creates the account; see app/ldap_utils). Needs a
-# service account holding a role with "User Administrators" privilege. Empty
-# IPA_SERVER disables provisioning (dev / no-LDAP).
+# service account holding the "CArtei Provisioner" role. Empty IPA_SERVER
+# disables provisioning (dev / no-LDAP).
 IPA_SERVER = os.environ.get("IPA_SERVER", "")
 IPA_PROVISION_USER = os.environ.get("IPA_PROVISION_USER", "")
 IPA_PROVISION_PASSWORD = os.environ.get("IPA_PROVISION_PASSWORD", "")
-IPA_VERIFY_SSL = os.environ.get("IPA_VERIFY_SSL", "true").lower() != "false"
+# "true"/"false", or a path to a CA bundle. FreeIPA serves HTTPS with its own CA
+# (the same one that signs LDAPS), so if unset, trust the LDAP CA cert — else the
+# API call fails with "self-signed certificate in certificate chain".
+_ipa_verify = os.environ.get("IPA_VERIFY_SSL", "").strip()
+if not _ipa_verify:
+    IPA_VERIFY_SSL = os.environ.get("LDAP_CA_CERT_PATH", "") or True
+elif _ipa_verify.lower() in ("true", "false"):
+    IPA_VERIFY_SSL = _ipa_verify.lower() == "true"
+else:
+    IPA_VERIFY_SSL = _ipa_verify  # path to a CA bundle
 
 # Maps a section role to the LDAP-synced Django group name(s) that grant it.
 # These are the Django group names produced by app/auth.CustomLDAPBackend:
