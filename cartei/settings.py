@@ -188,6 +188,9 @@ EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() != "false"
+# Never let a dead/filtered relay hang a request — fail fast, then the caller
+# links the account anyway and shows an "E-Mail fehlgeschlagen" warning.
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "10"))
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@ca-hd.de")
 # Onboarding email links. INTRANET_URL: where the tenant logs in. GUIDE: the
 # how-to for changing the one-time password + setting up WLAN.
