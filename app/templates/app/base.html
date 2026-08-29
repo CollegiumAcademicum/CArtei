@@ -67,6 +67,15 @@ document.addEventListener('submit', function(e) {
   var f = e.target;
   if (!f.closest('.ca-main') || f.method.toLowerCase() !== 'post') return;
   e.preventDefault();
+  if (f.dataset.confirm && !confirm(f.dataset.confirm)) return;
+  // Busy state: disable the submit button (blocks the double-submit that would
+  // otherwise create duplicate LDAP accounts) and show an optional working
+  // label. The .ca-main swap below discards the button, so no restore on success.
+  var busyBtn = e.submitter || f.querySelector('button[type=submit],input[type=submit]');
+  if (busyBtn) {
+    busyBtn.disabled = true;
+    if (f.dataset.busyLabel) { busyBtn.dataset.orig = busyBtn.textContent; busyBtn.textContent = f.dataset.busyLabel; }
+  }
   var scrollY = window.scrollY; // held across the swap; restored after re-layout
   fetch(f.action || location.href, { method: 'POST', body: new FormData(f) })
     .then(function(r) {
@@ -106,6 +115,12 @@ document.addEventListener('submit', function(e) {
       });
       if (window.caWireDropZones) window.caWireDropZones();
       window.scrollTo(0, scrollY);
+    })
+    .catch(function() {
+      // Network/abort — re-enable so the action can be retried (on success the
+      // .ca-main swap replaces the button, so this only fires on failure).
+      if (busyBtn) { busyBtn.disabled = false; if (busyBtn.dataset.orig) busyBtn.textContent = busyBtn.dataset.orig; }
+      alert('Aktion fehlgeschlagen – bitte erneut versuchen.');
     });
 }, true);
 </script>
