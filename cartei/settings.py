@@ -180,6 +180,20 @@ elif _ipa_verify.lower() in ("true", "false"):
 else:
     IPA_VERIFY_SSL = _ipa_verify  # path to a CA bundle
 
+# Email (SMTP) — tenant onboarding + automated notifications. Sends via the org
+# mail relay (the same one Zammad uses); from a noreply address.
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() != "false"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@ca-hd.de")
+# Onboarding email links. INTRANET_URL: where the tenant logs in. GUIDE: the
+# how-to for changing the one-time password + setting up WLAN.
+INTRANET_URL = os.environ.get("INTRANET_URL", "https://intranet.ca-hd.de/home")
+PASSWORD_GUIDE_URL = os.environ.get("PASSWORD_GUIDE_URL", "https://collegiumacademicum.de/internet/")
+
 # Maps a section role to the LDAP-synced Django group name(s) that grant it.
 # These are the Django group names produced by app/auth.CustomLDAPBackend:
 # the cluster LDAP group is synced as "gr.cluster"; AG groups keep their raw cn.

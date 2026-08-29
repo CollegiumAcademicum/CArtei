@@ -16,8 +16,8 @@ def test_email_mismatches_pure():
 
 
 def test_uid_candidates():
-    it = _uid_candidates("ada.byte")
-    assert [next(it) for _ in range(3)] == ["ada.byte", "ada.byte2", "ada.byte3"]
+    it = _uid_candidates("ada_byte")
+    assert [next(it) for _ in range(3)] == ["ada_byte", "ada_byte2", "ada_byte3"]
 
 
 @pytest.mark.django_db
@@ -30,7 +30,7 @@ def test_provision_retries_uid_on_collision(settings):
     settings.IPA_PROVISION_PASSWORD = "pw"
     t = Tenant.objects.create(first_name="Ada", last_name="Byte", email="ada@x.de")
 
-    taken = {"ada.byte", "ada.byte2"}
+    taken = {"ada_byte", "ada_byte2"}
     added = []
 
     class FakeClient:
@@ -47,10 +47,10 @@ def test_provision_retries_uid_on_collision(settings):
     with patch("python_freeipa.ClientMeta", FakeClient):
         result = provision_ldap_account(t)
 
-    assert result.uid == "ada.byte3" and result.temp_password == "Tmp-Pw-123"
-    assert added == ["ada.byte3"]
+    assert result.uid == "ada_byte3" and result.temp_password == "Tmp-Pw-123"
+    assert added == ["ada_byte3"]
     t.refresh_from_db()
-    assert t.intranet_username == "ada.byte3"
+    assert t.intranet_username == "ada_byte3"
 
 
 @pytest.mark.django_db

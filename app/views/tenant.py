@@ -1,3 +1,4 @@
+import logging
 from collections import namedtuple
 from datetime import date
 
@@ -9,8 +10,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from django.core.exceptions import PermissionDenied
 
+from app.emails import send_welcome_email
 from app.forms import TenantCreateForm, TenantForm, TenantRoomAssignmentForm
 from app.ldap_utils import provision_ldap_account
+
+logger = logging.getLogger(__name__)
 from app.models import (
     AGAbfrage, AGAbfrageResult, AGStatus,
     DOCUMENT_MODELS, DocumentType, document_readers,
@@ -242,11 +246,7 @@ def tenant_create(request: HttpRequest):
             tenant = form.save()  # intranet_username / intranet_uuid stay NULL
             messages.success(request, "Bewohner:in angelegt.")
             if form.cleaned_data.get("create_ldap_account"):
-                try:
-                    result = provision_ldap_account(tenant)
-                    messages.success(request, f"Account angelegt: {result.uid}")
-                except Exception as exc:
-                    messages.error(request, f"Account konnte nicht angelegt werden: {exc}")
+                _provision_and_notify(request, tenant)
             return redirect("tenant_detail", pk=tenant.pk)
     else:
         form = TenantCreateForm()
@@ -262,12 +262,28 @@ def tenant_provision(request: HttpRequest, pk: int):
     if not ({"mietverwaltung", "admin"} & global_roles(request.user)):
         raise PermissionDenied
     tenant = get_object_or_404(Tenant, pk=pk)
+    _provision_and_notify(request, tenant)
+    return redirect("tenant_detail", pk=pk)
+
+
+def _provision_and_notify(request, tenant):
+    """Provision a FreeIPA account and email the tenant their one-time password.
+
+    Provisioning failure is reported and stops here. A later email failure does
+    NOT undo the (already created) account — it degrades to a warning so the
+    Mietverwaltung knows to hand over the credentials another way.
+    """
     try:
         result = provision_ldap_account(tenant)
-        messages.success(request, f"Account angelegt: {result.uid}")
     except Exception as exc:
         messages.error(request, f"Account konnte nicht angelegt werden: {exc}")
-    return redirect("tenant_detail", pk=pk)
+        return
+    try:
+        send_welcome_email(tenant, result.uid, result.temp_password)
+        messages.success(request, f"Account angelegt: {result.uid} — Willkommens-E-Mail an {tenant.email}")
+    except Exception as exc:
+        logger.error("Welcome email failed for tenant %s: %s", tenant.pk, exc)
+        messages.warning(request, f"Account {result.uid} angelegt, aber Willkommens-E-Mail fehlgeschlagen.")
 
 
 def _current_tenant(request):
