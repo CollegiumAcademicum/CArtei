@@ -12,7 +12,8 @@
     <div class="ca-field-grid">
       {% for field in form %}
         <div class="ca-field{% if field.errors %} ca-field-error{% endif %}">
-          <span class="ca-field-label">{{ field.label }}</span>
+          <span class="ca-field-label">{{ field.label }}{% if field.name == "create_ldap_account" %}
+            <span class="ca-hint" tabindex="0" role="button" aria-label="Was passiert beim Anlegen?">i<span class="ca-hint-bubble">Legt beim Speichern den Intranet-Account an und sendet die Zugangsdaten automatisch per E-Mail an die Bewohner:in.</span></span>{% endif %}</span>
           {{ field }}
           {% if field.errors %}<div style="color:#b00;font-size:.85rem;">{{ field.errors }}</div>{% endif %}
         </div>
