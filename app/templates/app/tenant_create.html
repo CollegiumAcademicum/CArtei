@@ -7,7 +7,7 @@
     Manuell angelegt, ohne Intranet-Account. Der Account kann später verknüpft werden.
   </p>
 
-  <form method="post">
+  <form method="post" data-busy-label="Wird angelegt…">
     {% csrf_token %}
     <div class="ca-field-grid">
       {% for field in form %}

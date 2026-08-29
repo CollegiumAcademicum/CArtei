@@ -10,7 +10,8 @@
 
   {% if can_provision %}
   <form method="post" action="{% url 'tenant_provision' tenant.pk %}" style="margin-bottom:1rem;"
-        onsubmit="return confirm('FreeIPA-Account für {{ display_name }} anlegen?');">
+        data-confirm="FreeIPA-Account für {{ display_name }} anlegen?"
+        data-busy-label="Wird angelegt…">
     {% csrf_token %}
     <button type="submit" class="ca-btn">Intranet-Account anlegen</button>
   </form>
