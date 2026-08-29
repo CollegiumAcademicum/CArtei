@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.core.exceptions import PermissionDenied
 
 from app.forms import TenantCreateForm, TenantForm, TenantRoomAssignmentForm
+from app.ldap_utils import provision_ldap_account
 from app.models import (
     AGAbfrage, AGAbfrageResult, AGStatus,
     DOCUMENT_MODELS, DocumentType, document_readers,
@@ -240,11 +241,33 @@ def tenant_create(request: HttpRequest):
         if form.is_valid():
             tenant = form.save()  # intranet_username / intranet_uuid stay NULL
             messages.success(request, "Bewohner:in angelegt.")
+            if form.cleaned_data.get("create_ldap_account"):
+                try:
+                    uid = provision_ldap_account(tenant)
+                    messages.success(request, f"Account angelegt: {uid}")
+                except Exception as exc:
+                    messages.error(request, f"Account konnte nicht angelegt werden: {exc}")
             return redirect("tenant_detail", pk=tenant.pk)
     else:
         form = TenantCreateForm()
 
     return render(request, "app/tenant_create.html", {"form": form})
+
+
+@login_required
+def tenant_provision(request: HttpRequest, pk: int):
+    """Mietverwaltung creates a FreeIPA account for an unlinked tenant."""
+    if request.method != "POST":
+        raise PermissionDenied
+    if not ({"mietverwaltung", "admin"} & global_roles(request.user)):
+        raise PermissionDenied
+    tenant = get_object_or_404(Tenant, pk=pk)
+    try:
+        uid = provision_ldap_account(tenant)
+        messages.success(request, f"Account angelegt: {uid}")
+    except Exception as exc:
+        messages.error(request, f"Account konnte nicht angelegt werden: {exc}")
+    return redirect("tenant_detail", pk=pk)
 
 
 def _current_tenant(request):
@@ -345,6 +368,8 @@ def tenant_detail(request: HttpRequest, pk: int):
         "sections": _build_sections(tenant, form, visible, editable),
         "can_edit": bool(editable),
         "roles": roles,
+        "can_provision": (not tenant.intranet_username
+                          and bool({"mietverwaltung", "admin"} & roles)),
     }
 
     # Room assignments — fetch for owners, mietverwaltung, admins, Belegium and Übergabe helpers.

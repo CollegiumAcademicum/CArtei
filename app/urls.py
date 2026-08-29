@@ -16,6 +16,7 @@ urlpatterns = [
     path("tenants/", tenant.tenant_list, name="tenant_list"),
     path("tenants/neu/", tenant.tenant_create, name="tenant_create"),
     path("tenants/<int:pk>/", tenant.tenant_detail, name="tenant_detail"),
+    path("tenants/<int:pk>/provision/", tenant.tenant_provision, name="tenant_provision"),
     path("rooms/<int:room_id>/renters/", tenant.room_renters, name="room_renters"),
     path("tenants/<int:pk>/enrollment-proof/upload/", enrollment_proof.upload_proof, name="enrollment_proof_upload"),
     path("tenants/<int:pk>/enrollment-proof/<int:proof_pk>/verify/", enrollment_proof.verify_proof, name="enrollment_proof_verify"),

@@ -107,7 +107,10 @@ try:
         ldap.SCOPE_SUBTREE,
         "(objectClass=groupOfNames)",
     )
-    AUTH_LDAP_REQUIRE_GROUP = os.environ.get("LDAP_REQUIRE_GROUP", "")
+    AUTH_LDAP_REQUIRE_GROUP = os.environ.get(
+    "LDAP_REQUIRE_GROUP",
+    "cn=confidentiality_clearance,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
+)
     AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_REFERRALS: 0}
     _ca_cert = os.environ.get("LDAP_CA_CERT_PATH", "")
     if _ca_cert:
@@ -155,7 +158,18 @@ LDAP_GROUPS_BASE = os.environ.get(
     "LDAP_GROUPS_BASE",
     "cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
 )
-LDAP_REQUIRE_GROUP = os.environ.get("LDAP_REQUIRE_GROUP", "")
+LDAP_REQUIRE_GROUP = os.environ.get(
+    "LDAP_REQUIRE_GROUP",
+    "cn=confidentiality_clearance,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
+)
+
+# FreeIPA provisioning (CArtei creates the account; see app/ldap_utils). Needs a
+# service account holding a role with "User Administrators" privilege. Empty
+# IPA_SERVER disables provisioning (dev / no-LDAP).
+IPA_SERVER = os.environ.get("IPA_SERVER", "")
+IPA_PROVISION_USER = os.environ.get("IPA_PROVISION_USER", "")
+IPA_PROVISION_PASSWORD = os.environ.get("IPA_PROVISION_PASSWORD", "")
+IPA_VERIFY_SSL = os.environ.get("IPA_VERIFY_SSL", "true").lower() != "false"
 
 # Maps a section role to the LDAP-synced Django group name(s) that grant it.
 # These are the Django group names produced by app/auth.CustomLDAPBackend:

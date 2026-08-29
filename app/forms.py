@@ -37,6 +37,10 @@ class TenantCreateForm(forms.ModelForm):
     of the profile is filled in later on the detail page (model/DB defaults apply)."""
 
     email = forms.EmailField(required=True)
+    create_ldap_account = forms.BooleanField(
+        required=False, initial=False,
+        label="Intranet-Account direkt anlegen",
+    )
 
     class Meta:
         model = Tenant

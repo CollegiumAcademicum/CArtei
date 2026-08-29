@@ -8,6 +8,14 @@
     {{ display_name }}
   </h1>
 
+  {% if can_provision %}
+  <form method="post" action="{% url 'tenant_provision' tenant.pk %}" style="margin-bottom:1rem;"
+        onsubmit="return confirm('FreeIPA-Account für {{ display_name }} anlegen?');">
+    {% csrf_token %}
+    <button type="submit" class="ca-btn">Intranet-Account anlegen</button>
+  </form>
+  {% endif %}
+
   {% for section in sections %}
   <details id="section-{{ section.key }}" {% if section.key == "personal" %}open {% endif %}class="ca-section ca-collapse" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
