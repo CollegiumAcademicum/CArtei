@@ -5,12 +5,17 @@ In tests, patch `app.views.admin_views.ldap_utils.get_clearance_members` and `ge
 """
 import logging
 import uuid as uuid_module
+from collections import namedtuple
 
 import ldap
 import ldap.filter
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+# uid + the one-time random password IPA generated (must be changed on first use;
+# the onboarding step delivers it to the tenant).
+ProvisionResult = namedtuple("ProvisionResult", ["uid", "temp_password"])
 
 
 def _connect():
@@ -86,13 +91,14 @@ def _uid_candidates(base: str, limit: int = 50):
         yield f"{base}{n}"
 
 
-def provision_ldap_account(tenant) -> str:
+def provision_ldap_account(tenant) -> ProvisionResult:
     """Create a FreeIPA account from a DB Tenant row and link it back.
 
-    Returns the new uid. Raises if the tenant is already linked, IPA is
-    unconfigured, or user_add fails (e.g. duplicate uid). Credential delivery
-    (welcome mail / password-reset link) is a separate onboarding step — this
-    only creates + links the account.
+    Returns ProvisionResult(uid, temp_password). The account is created with
+    `--random`: IPA sets a one-time password (must be changed on first use) as
+    part of the add, so this needs no password-reset privilege. Delivering that
+    temp password to the tenant is a separate onboarding step. Raises if the
+    tenant is already linked, IPA is unconfigured, or user_add fails.
     """
     if tenant.intranet_username:
         raise ValueError(f"Tenant {tenant.pk} already linked to {tenant.intranet_username!r}")
@@ -114,6 +120,7 @@ def provision_ldap_account(tenant) -> str:
                 o_sn=tenant.last_name,
                 o_cn=f"{tenant.first_name} {tenant.last_name}",
                 o_mail=tenant.email,
+                o_random=True,
             )
             uid = candidate
             break
@@ -121,13 +128,17 @@ def provision_ldap_account(tenant) -> str:
             continue
     if res is None:
         raise RuntimeError(f"No free uid for tenant {tenant.pk} (base {_uid_base(tenant)!r})")
-    ipa_uuid = res["result"]["ipauniqueid"][0]
+    result = res["result"]
+    ipa_uuid = result["ipauniqueid"][0]
+    temp_password = result.get("randompassword")
+    if isinstance(temp_password, (list, tuple)):  # IPA may return it wrapped
+        temp_password = temp_password[0]
 
     tenant.intranet_username = uid
     tenant.intranet_uuid = uuid_module.UUID(ipa_uuid)
     tenant.save(update_fields=["intranet_username", "intranet_uuid"])
     logger.info("Provisioned FreeIPA account %r for tenant %s", uid, tenant.pk)
-    return uid
+    return ProvisionResult(uid, temp_password)
 
 
 # --- Drift detection (admin edited mail in FreeIPA, bypassing CArtei) -----
