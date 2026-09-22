@@ -8,6 +8,7 @@ data/
 *.sqlite3
 uv.lock
 .idea/
+.DS_Store
 
 # Superpowers brainstorm companion artifacts
 .superpowers/
