@@ -1,0 +1,28 @@
+{% extends "app/base.html" %}
+{% block title %}Benutzerübernahme — CArtei{% endblock %}
+{% block content %}
+<div class="ca-card">
+  <h1 class="title is-4">Benutzerübernahme</h1>
+  <p class="mb-4">Wähle einen aktiven Account aus. Während der Übernahme gelten dessen Rollen und Berechtigungen.</p>
+  <form method="get" class="mb-4">
+    <label for="impersonation-search" class="label">Benutzer*in suchen</label>
+    <div class="field has-addons">
+      <div class="control is-expanded"><input class="input" id="impersonation-search" name="q" value="{{ query }}" placeholder="Name oder Benutzername"></div>
+      <div class="control"><button class="button" type="submit">Suchen</button></div>
+    </div>
+  </form>
+  {% for user in users %}
+    <div class="level" style="border-top:1px solid #ddd;padding:0.75rem 0;margin-bottom:0;">
+      <div class="level-left"><div><strong>{{ user.username }}</strong>{% if user.get_full_name %}<br>{{ user.get_full_name }}{% endif %}</div></div>
+      <div class="level-right">
+        <form method="post" action="{% url 'impersonation_start' user.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="button is-small">Übernehmen</button>
+        </form>
+      </div>
+    </div>
+  {% empty %}
+    <p>Keine aktiven Benutzer*innen gefunden.</p>
+  {% endfor %}
+</div>
+{% endblock %}

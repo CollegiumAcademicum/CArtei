@@ -16,6 +16,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "app.middleware.ImpersonationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
 ROOT_URLCONF = "cartei.urls"
