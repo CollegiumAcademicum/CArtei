@@ -3,6 +3,7 @@ from datetime import date
 
 import pytest
 from django.contrib.auth.models import User, Group
+from django.utils import timezone as django_timezone
 
 from app.models import Building, WG, Room, Tenant, RoomDamage, RoomDamageLine, TenantRoomAssignment
 
@@ -12,7 +13,7 @@ def _login(client, username, group=None):
     if group:
         g, _ = Group.objects.get_or_create(name=group)
         u.groups.add(g)
-    Tenant.objects.create(first_name=username, last_name="T", intranet_username=username, intranet_uuid=uuid.uuid4())
+    Tenant.objects.create(first_name=username, last_name="T", email=f"{username}@example.invalid", phone="123", profile_setup_completed_at=django_timezone.now(), intranet_username=username, intranet_uuid=uuid.uuid4())
     client.force_login(u)
     return u
 
@@ -71,7 +72,7 @@ from app.models import WGDamage
 
 def _occupant_with_room(world, username="occ"):
     t = Tenant.objects.create(
-        first_name="Occ", last_name="Upant", intranet_username=username, intranet_uuid=uuid.uuid4()
+        first_name="Occ", last_name="Upant", email="occ@example.invalid", phone="123", profile_setup_completed_at=django_timezone.now(), intranet_username=username, intranet_uuid=uuid.uuid4()
     )
     TenantRoomAssignment.objects.create(tenant=t, room=world["room"], moved_in=date(2026, 1, 1))
     return t

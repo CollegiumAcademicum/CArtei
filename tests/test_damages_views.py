@@ -26,7 +26,7 @@ def _login(client, username, group=None):
     if group:
         g, _ = Group.objects.get_or_create(name=group)
         u.groups.add(g)
-    Tenant.objects.create(first_name=username, last_name="T", intranet_username=username, intranet_uuid=uuid.uuid4())
+    Tenant.objects.create(first_name=username, last_name="T", email=f"{username}@example.invalid", phone="123", profile_setup_completed_at=now(), intranet_username=username, intranet_uuid=uuid.uuid4())
     client.force_login(u)
     return u
 

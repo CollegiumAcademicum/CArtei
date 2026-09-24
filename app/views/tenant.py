@@ -210,7 +210,7 @@ def tenant_list(request: HttpRequest):
             if show_realname:
                 if row["proof"].state == "pruefung":
                     g["proofs_due"] += 1
-                if row["tenant"].mailbox_list_opt_in:
+                if row["tenant"].profile_setup_completed_at and row["tenant"].mailbox_list_opt_in:
                     g["mailbox_yes"] += 1
                 if not all(d["present"] for d in row["documents"]):
                     g["docs_incomplete"] += 1

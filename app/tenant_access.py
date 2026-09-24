@@ -28,6 +28,7 @@ SECTIONS = [
         _f("last_name", "Nachname", _OWN_MV | {_HELPER}, _ADMIN),
         _f("email", "E-Mail", _OWN_MV, _OWN_MV),
         _f("phone", "Telefon", _OWN_MV, _OWN_MV),
+        _f("no_phone_number", "Keine Telefonnummer vorhanden", _OWN_MV, _OWN_MV),
         _f("is_flinta", "FLINTA", _OWN_MV, _OWN_MV),
         _f("mailbox_list_opt_in", "Ich möchte, dass mein Name bei den Briefkästen steht", _OWN_MV, _OWN_MV),
         _f("date_of_birth", "Geburtsdatum", _OWN_MV, _MV),

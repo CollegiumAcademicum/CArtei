@@ -47,6 +47,8 @@ class Tenant(models.Model):
     is_flinta = models.BooleanField(default=False)
     barrier_free_needed = models.BooleanField(default=False)
     mailbox_list_opt_in = models.BooleanField(default=False)
+    profile_setup_completed_at = models.DateTimeField(null=True, blank=True)
+    no_phone_number = models.BooleanField(default=False)
     soli_miete_wunsch = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
     comments = models.TextField(null=True, blank=True)
 

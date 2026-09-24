@@ -24,7 +24,8 @@ def _housing():
     wg = WG.objects.create(building=b, name="WG 1", cluster="1A")
     room = Room.objects.create(wg=wg, name="Zimmer 1", size_sqm=15)
     t = Tenant.objects.create(
-        first_name="Mira", last_name="Muster", email="m@x.de",
+        first_name="Mira", last_name="Muster", email="m@x.de", phone="123",
+        profile_setup_completed_at=datetime.datetime.now(datetime.timezone.utc),
         intranet_username="mira", intranet_uuid="00000000-0000-0000-0000-000000000001",
     )
     return b, wg, room, t

@@ -179,6 +179,7 @@
         {% for row in section.rows %}
         <div class="ca-field" data-field="{{ row.name }}">
           <span class="ca-field-label">{{ row.label }}</span>
+          {% if row.name == "mailbox_list_opt_in" and not tenant.profile_setup_completed_at %}<span class="ca-pill ca-pill-amber">Ausstehend</span>{% endif %}
           {% if row.field %}
             {{ row.field }}
             {% if row.field.errors %}<div style="color:#b00;font-size:.85rem;">{{ row.field.errors }}</div>{% endif %}

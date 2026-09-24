@@ -35,7 +35,8 @@ def resident_rows(today):
             continue
         seen.add(key)
         tenant = assignment.tenant
-        if tenant.mailbox_list_opt_in:
+        confirmed_opt_in = bool(tenant.profile_setup_completed_at and tenant.mailbox_list_opt_in)
+        if confirmed_opt_in:
             room_parts = assignment.room.name.split(".")
             if (
                 not tenant.first_name.strip()
@@ -50,7 +51,7 @@ def resident_rows(today):
             "forename": tenant.first_name,
             "surename": tenant.last_name,
             "flatnumber": assignment.room.name,
-            "opt_in": tenant.mailbox_list_opt_in,
+            "opt_in": confirmed_opt_in,
         })
     return rows
 

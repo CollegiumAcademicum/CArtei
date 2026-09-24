@@ -1,10 +1,11 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, damages, dashboard, document, enrollment_proof, impersonation, landing, notes, rooms, tenant
+from app.views import abfragen, admin_views, damages, dashboard, document, enrollment_proof, impersonation, landing, notes, profile_setup, rooms, tenant
 
 urlpatterns = [
     path("info/", landing.landing, name="landing"),
     path("dashboard/", dashboard.dashboard, name="dashboard"),
+    path("profile/setup/", profile_setup.profile_setup, name="profile_setup"),
     path("abfragen/", abfragen.abfragen_list, name="abfragen_list"),
     path("abfragen/new/", abfragen.abfrage_new, name="abfrage_new"),
     path("abfragen/<int:pk>/", abfragen.abfrage_detail, name="abfrage_detail"),

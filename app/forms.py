@@ -30,6 +30,39 @@ class TenantForm(forms.ModelForm):
             if name not in allowed:
                 del self.fields[name]
 
+    def clean(self):
+        cleaned = super().clean()
+        if self.instance.profile_setup_completed_at and {"phone", "no_phone_number"} <= self.fields.keys():
+            has_phone = bool((cleaned.get("phone") or "").strip())
+            no_phone = bool(cleaned.get("no_phone_number"))
+            if has_phone == no_phone:
+                self.add_error("phone", "Bitte Telefonnummer oder „Keine Telefonnummer vorhanden“ wählen.")
+        return cleaned
+
+
+class ProfileSetupForm(forms.Form):
+    email = forms.EmailField(label="E-Mail-Adresse", widget=forms.EmailInput(attrs={
+        "class": "ca-input", "autocomplete": "email",
+    }))
+    phone = forms.CharField(
+        label="Telefonnummer", required=False, max_length=50,
+        widget=forms.TextInput(attrs={"class": "ca-input", "type": "tel", "autocomplete": "tel"}),
+    )
+    no_phone_number = forms.BooleanField(label="Ich habe keine Telefonnummer", required=False)
+    mailbox_list_opt_in = forms.ChoiceField(
+        label="Soll dein Name auf der Briefkastenliste stehen?",
+        choices=(("yes", "Ja"), ("no", "Nein")),
+        widget=forms.RadioSelect,
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        has_phone = bool((cleaned.get("phone") or "").strip())
+        no_phone = bool(cleaned.get("no_phone_number"))
+        if has_phone == no_phone:
+            self.add_error("phone", "Bitte Telefonnummer oder „Ich habe keine Telefonnummer“ wählen.")
+        return cleaned
+
 
 class TenantCreateForm(forms.ModelForm):
     """Mietverwaltung adds a tenant manually, before an LDAP account exists —
