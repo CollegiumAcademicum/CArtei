@@ -56,6 +56,8 @@ class Command(BaseCommand):
             raise CommandError("seed_dev_data requires cartei.settings_dev.")
         if connection.vendor != "postgresql":
             raise CommandError("seed_dev_data requires the migrated PostgreSQL database.")
+        if not settings.DEV_SUPERUSER_PASSWORD:
+            raise CommandError("DEV_SUPERUSER_PASSWORD must not be empty.")
 
         with transaction.atomic():
             if Tenant.objects.filter(intranet_username="dev_admin").exists():
@@ -64,7 +66,7 @@ class Command(BaseCommand):
                 return
             self._seed()
             self._ensure_superuser()
-        self.stdout.write(self.style.SUCCESS("Development data created. Password: cartei-dev"))
+        self.stdout.write(self.style.SUCCESS("Development data created. Other demo accounts use password: cartei-dev"))
 
     def _ensure_superuser(self):
         username = "dev_superuser"
@@ -87,8 +89,8 @@ class Command(BaseCommand):
             },
         )
         fields = []
-        if created:
-            user.set_password(PASSWORD)
+        if created or not user.check_password(settings.DEV_SUPERUSER_PASSWORD):
+            user.set_password(settings.DEV_SUPERUSER_PASSWORD)
             fields.append("password")
         for field in ("is_staff", "is_superuser", "is_active"):
             if not getattr(user, field):
