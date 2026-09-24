@@ -1,0 +1,1 @@
+"""Document generators and adapters."""

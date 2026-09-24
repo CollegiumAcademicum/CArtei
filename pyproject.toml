@@ -11,6 +11,9 @@ dependencies = [
     "python-dotenv>=1.0",
     "whitenoise>=6.0",
     "weasyprint>=69.0",
+    "pandas>=2.2",
+    "matplotlib>=3.9",
+    "pylatex>=1.4",
     "python-freeipa>=1.0",
 ]
 

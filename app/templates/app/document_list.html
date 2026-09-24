@@ -8,6 +8,8 @@
     <span style="color:#7a7a7a;font-size:0.9rem;"><span id="visible-count">{{ total }}</span> / {{ total }} Dokument{{ total|pluralize:"e" }}</span>
   </div>
 
+  {% if can_generate_forms %}{% include "app/_document_generators.html" %}{% endif %}
+
   <div style="overflow-x:auto;">
     <table id="doc-table" class="table is-fullwidth is-hoverable" style="font-size:0.9rem;">
       <thead>
