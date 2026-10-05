@@ -47,9 +47,9 @@ def test_admin_sees_and_edits_all_but_system_ids():
     assert SYSTEM_ID_FIELDS.isdisjoint(edt)
 
 
-def test_owner_edits_exactly_seven():
+def test_owner_edits_exactly_eight():
     edt = editable_fields({"public", "owner"})
-    assert edt == {"email", "phone", "is_flinta", "mailbox_list_opt_in",
+    assert edt == {"email", "phone", "no_phone_number", "is_flinta", "mailbox_list_opt_in",
                    "preferred_name", "pronouns", "soli_miete_wunsch"}
 
 

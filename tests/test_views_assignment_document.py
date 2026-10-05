@@ -21,7 +21,8 @@ def setup(db):
     u.groups.add(Group.objects.get_or_create(name="ag.mietverwaltung")[0])
 
     tenant = Tenant.objects.create(
-        first_name="Ten", last_name="Ant", email="ten@example.com",
+        first_name="Ten", last_name="Ant", email="ten@example.com", phone="123",
+        profile_setup_completed_at=datetime.datetime.now(datetime.timezone.utc),
         intranet_username="ten_adoc", intranet_uuid="00000000-0000-0000-0000-000000000202",
     )
     User.objects.create_user(username="ten_adoc", password="x")

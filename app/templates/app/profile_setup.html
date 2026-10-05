@@ -1,0 +1,37 @@
+{% extends "app/base.html" %}
+{% block title %}Profil vervollständigen — CArtei{% endblock %}
+{% block content %}
+<div class="ca-card" style="max-width:720px;margin:1.5rem auto;">
+  <h1 class="title is-4">Profil vervollständigen</h1>
+  <p class="mb-5">Bitte bestätige diese Angaben, bevor du CArtei nutzen kannst. Für die Briefkastenliste ist auch „Nein“ eine gültige Antwort.</p>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next_path }}">
+
+    <div class="field">
+      <label class="label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+      <p class="help mb-2">Prüfe deine gespeicherte Adresse und korrigiere sie bei Bedarf.</p>
+      {{ form.email }}
+      {% for error in form.email.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="field">
+      <label class="label" for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+      {{ form.phone }}
+      {% for error in form.phone.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+      <label class="checkbox mt-2">{{ form.no_phone_number }} {{ form.no_phone_number.label }}</label>
+    </div>
+
+    <fieldset class="field mt-5">
+      <legend class="label">{{ form.mailbox_list_opt_in.label }}</legend>
+      <p class="help mb-2">Dein Name erscheint nur auf der Briefkastenliste, wenn du „Ja“ wählst.</p>
+      {{ form.mailbox_list_opt_in }}
+      {% for error in form.mailbox_list_opt_in.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+    </fieldset>
+
+    {% for error in form.non_field_errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+    <button type="submit" class="ca-button mt-4">Angaben speichern und fortfahren</button>
+  </form>
+</div>
+{% endblock %}

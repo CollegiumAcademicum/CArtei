@@ -19,6 +19,7 @@ def _tenant(name, opt_in=True):
     return Tenant.objects.create(
         first_name=name, last_name="Muster", email=f"{name}@example.invalid",
         mailbox_list_opt_in=opt_in,
+        profile_setup_completed_at=timezone.now(),
     )
 
 
@@ -168,3 +169,19 @@ def test_script_csv_contract_and_temporary_cleanup(monkeypatch, tool_fails):
     else:
         assert generate_mailbox_list(today) == b"%PDF-1.5"
     assert temporary_paths and not temporary_paths[0].exists()
+
+
+@pytest.mark.django_db
+def test_unconfirmed_existing_yes_is_excluded_from_generated_list():
+    today = timezone.localdate()
+    building = Building.objects.create(name="Neubau")
+    wg = WG.objects.create(building=building, name="1.02")
+    room = Room.objects.create(wg=wg, name="1.02.1", size_sqm="12.00")
+    tenant = _tenant("Ada", opt_in=True)
+    tenant.profile_setup_completed_at = None
+    tenant.save(update_fields=["profile_setup_completed_at"])
+    _assignment(tenant, room, today)
+
+    assert resident_rows(today)[0]["opt_in"] is False
+    with pytest.raises(NoMailboxResidents):
+        generate_mailbox_list(today)

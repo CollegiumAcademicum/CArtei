@@ -1,5 +1,12 @@
+from urllib.parse import urlencode
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import connection, transaction
+from django.shortcuts import redirect
+from django.urls import reverse
+
+from app.profile_setup import profile_setup_required, resident_for_user
 
 
 IMPERSONATED_USER_SESSION_KEY = "cartei_impersonated_user_id"
@@ -36,6 +43,32 @@ class ImpersonationMiddleware:
                 else:
                     request.impersonator = real_user
                     request.user = target
+        return self.get_response(request)
+
+
+class RequiredProfileSetupMiddleware:
+    """Block app actions until a current or future resident confirms their data."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        request.profile_setup_tenant = None
+        request.profile_setup_required = False
+        tenant = resident_for_user(request.user)
+        if tenant is not None:
+            request.profile_setup_tenant = tenant
+            request.profile_setup_required = profile_setup_required(tenant)
+        if request.profile_setup_required:
+            allowed = {
+                reverse("profile_setup"), reverse("login"), reverse("logout"),
+                reverse("landing"), reverse("impersonation_stop"),
+            }
+            path = request.path_info
+            static_prefix = "/" + settings.STATIC_URL.lstrip("/")
+            if path not in allowed and not path.startswith(static_prefix):
+                destination = reverse("profile_setup")
+                return redirect(f"{destination}?{urlencode({'next': request.get_full_path()})}")
         return self.get_response(request)
 
 
