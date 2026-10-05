@@ -1,14 +1,15 @@
 import datetime
+import logging
 
 from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.utils.timezone import now
+from django.utils.timezone import localdate, now
 from django.views.decorators.http import require_POST
 
 from app.models import (
@@ -16,9 +17,14 @@ from app.models import (
     DocumentType, Tenant, TenantRoomAssignment, document_readers,
 )
 from app.tenant_access import global_roles
+from app.document_generation.mailbox_list import (
+    MailboxListGenerationError, NoMailboxResidents, generate_mailbox_list,
+)
 from app.uploads import upload_error
 from app.views._shared import inline_file_response
 
+
+logger = logging.getLogger(__name__)
 
 def _caller(user):
     return Tenant.objects.filter(intranet_username=user.username).first()
@@ -127,6 +133,7 @@ def list_documents(request):
         "rows": rows,
         "doc_types": sorted(types_seen.items(), key=lambda kv: kv[1]),
         "total": len(rows),
+        "can_generate_forms": bool({"mietverwaltung", "admin"} & roles),
     })
 
 
@@ -349,3 +356,25 @@ def download_assignment_document(request, assignment_pk, document_type, doc_pk):
         return HttpResponseBadRequest()
     doc = get_object_or_404(model, pk=doc_pk, assignment_id=assignment_pk)
     return inline_file_response(doc)
+
+
+@login_required
+def download_mailbox_list(request):
+    """Download the current opted-in Neubau list in the original print format."""
+    if not ({"mietverwaltung", "admin"} & global_roles(request.user)):
+        raise PermissionDenied
+    today = localdate()
+    try:
+        pdf = generate_mailbox_list(today)
+    except NoMailboxResidents:
+        messages.info(request, "Aktuell gibt es keine Neubau-Bewohner*innen mit Briefkastenlisten-Zustimmung.")
+        return redirect("document_list")
+    except MailboxListGenerationError:
+        logger.exception("Briefkastenliste generation failed")
+        messages.error(request, "Die Briefkastenliste konnte nicht erstellt werden. Bitte später erneut versuchen.")
+        return redirect("document_list")
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="briefkastenliste-{today.isoformat()}.pdf"'
+    response["Cache-Control"] = "private, no-store"
+    return response

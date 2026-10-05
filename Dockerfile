@@ -13,7 +13,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcairo2 \
     libffi8 \
     fonts-dejavu-core \
+    texlive-latex-base \
+    texlive-latex-recommended \
+    texlive-fonts-extra \
+    texlive-extra-utils \
+    latexmk \
     && rm -rf /var/lib/apt/lists/*
+
+# PyLaTeX adds lastpage.sty from this package.
+RUN apt-get update && apt-get install -y --no-install-recommends texlive-latex-extra && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml .
 RUN uv sync --no-group dev
