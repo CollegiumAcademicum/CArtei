@@ -56,13 +56,51 @@ class Command(BaseCommand):
             raise CommandError("seed_dev_data requires cartei.settings_dev.")
         if connection.vendor != "postgresql":
             raise CommandError("seed_dev_data requires the migrated PostgreSQL database.")
+        if not settings.DEV_SUPERUSER_PASSWORD:
+            raise CommandError("DEV_SUPERUSER_PASSWORD must not be empty.")
 
         with transaction.atomic():
             if Tenant.objects.filter(intranet_username="dev_admin").exists():
-                self.stdout.write("Development data already exists; leaving it unchanged.")
+                self._ensure_superuser()
+                self.stdout.write("Development data already exists; superuser available.")
                 return
             self._seed()
-        self.stdout.write(self.style.SUCCESS("Development data created. Password: cartei-dev"))
+            self._ensure_superuser()
+        self.stdout.write(self.style.SUCCESS("Development data created. Other demo accounts use password: cartei-dev"))
+
+    def _ensure_superuser(self):
+        username = "dev_superuser"
+        tenant, _ = Tenant.objects.get_or_create(
+            intranet_username=username,
+            defaults={
+                "first_name": "Sophie",
+                "last_name": "Superuser",
+                "email": "dev-superuser@example.invalid",
+                "intranet_uuid": UUID(int=25),
+                "mailbox_list_opt_in": False,
+            },
+        )
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={
+                "first_name": tenant.first_name,
+                "last_name": tenant.last_name,
+                "email": tenant.email,
+            },
+        )
+        fields = []
+        if created or not user.check_password(settings.DEV_SUPERUSER_PASSWORD):
+            user.set_password(settings.DEV_SUPERUSER_PASSWORD)
+            fields.append("password")
+        for field in ("is_staff", "is_superuser", "is_active"):
+            if not getattr(user, field):
+                setattr(user, field, True)
+                fields.append(field)
+        if fields:
+            user.save(update_fields=fields)
+        user.groups.add(Group.objects.get_or_create(
+            name=settings.TENANT_ROLE_GROUPS["admin"][0],
+        )[0])
 
     def _seed(self):
         now = timezone.now()

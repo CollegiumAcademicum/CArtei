@@ -1,6 +1,6 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, damages, dashboard, document, enrollment_proof, landing, notes, rooms, tenant
+from app.views import abfragen, admin_views, damages, dashboard, document, enrollment_proof, impersonation, landing, notes, rooms, tenant
 
 urlpatterns = [
     path("info/", landing.landing, name="landing"),
@@ -41,6 +41,9 @@ urlpatterns = [
     path("notes/add/", notes.add_note, name="note_add"),
     path("notes/<int:pk>/delete/", notes.delete_note, name="note_delete"),
     path("admin/", admin_views.admin_portal, name="admin_portal"),
+    path("admin/impersonate/", impersonation.choose_user, name="impersonation_choose"),
+    path("admin/impersonate/stop/", impersonation.stop, name="impersonation_stop"),
+    path("admin/impersonate/<int:user_id>/", impersonation.start, name="impersonation_start"),
     path("admin/sync-from-ldap/", admin_views.sync_from_ldap, name="sync_from_ldap"),
     path("admin/permissions/", admin_views.permission_matrix, name="permission_matrix"),
     path("admin/invalidate-sessions/", admin_views.invalidate_all_sessions, name="invalidate_all_sessions"),

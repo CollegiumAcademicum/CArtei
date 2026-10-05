@@ -44,7 +44,19 @@ def test_middleware_sets_actor_for_authenticated():
     mw = AuditActorMiddleware(get_response)
     request = MagicMock()
     request.user = _User(authed=True, username="pbartz")
+    request.impersonator = None
     with patch("app.middleware._set_audit_actor") as spy:
         assert mw(request) == "resp"
         spy.assert_called_once()
         assert spy.call_args.args[1] == "pbartz"
+
+
+@pytest.mark.django_db
+def test_middleware_records_real_actor_during_impersonation():
+    get_response = MagicMock(return_value="resp")
+    request = MagicMock()
+    request.user = _User(authed=True, username="resident")
+    request.impersonator = _User(authed=True, username="super")
+    with patch("app.middleware._set_audit_actor") as spy:
+        assert AuditActorMiddleware(get_response)(request) == "resp"
+        assert spy.call_args.args[1] == "super (als resident)"

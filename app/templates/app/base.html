@@ -24,6 +24,7 @@
     <a href="{% url 'document_list' %}" class="ca-navbar-admin">Dokumente</a>
     <a href="{% url 'abfragen_list' %}" class="ca-navbar-admin">Abfragen</a>
     <a href="{% url 'admin_portal' %}" class="ca-navbar-admin">Admin</a>
+    {% if request.user.is_superuser and not request.impersonator %}<a href="{% url 'impersonation_choose' %}" class="ca-navbar-admin">Benutzerübernahme</a>{% endif %}
     {% if current_tenant %}<a href="{% url 'tenant_detail' current_tenant.pk %}" class="ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</a>{% else %}<span class="ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</span>{% endif %}
     <form method="post" action="{% url 'logout' %}">
       {% csrf_token %}
@@ -32,6 +33,16 @@
   </div>
   {% endif %}
 </nav>
+
+{% if request.impersonator %}
+<div role="status" style="background:#fff2c7;padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;">
+  <span>Du arbeitest als <strong>{{ request.user.username }}</strong> (Superuser: <strong>{{ request.impersonator.username }}</strong>).</span>
+  <form method="post" action="{% url 'impersonation_stop' %}">
+    {% csrf_token %}
+    <button type="submit" class="button is-small">Übernahme beenden</button>
+  </form>
+</div>
+{% endif %}
 
 <div class="ca-main">
   {% if messages %}
