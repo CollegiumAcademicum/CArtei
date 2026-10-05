@@ -54,9 +54,27 @@ def test_resident_rows_use_current_neubau_tenant_wg_pairs():
     rows = resident_rows(today)
     assert len(rows) == 2
     assert {r["id"]: (r["flatnumber"], r["opt_in"]) for r in rows} == {
-        f"tenant-{current.pk}": ("1.02.2", True),
+        f"tenant-{current.pk}": ("1.02.2 und 1.02.1", True),
         f"tenant-{opt_out.pk}": ("1.02.1", False),
     }
+
+
+@pytest.mark.django_db
+def test_tenant_with_two_current_rooms_lists_both_once():
+    today = timezone.localdate()
+    neubau = Building.objects.create(name="Neubau")
+    wg_a = WG.objects.create(building=neubau, name="3.05")
+    wg_b = WG.objects.create(building=neubau, name="0.06")
+    room_a = Room.objects.create(wg=wg_a, name="3.05.1", size_sqm="12.00")
+    room_b = Room.objects.create(wg=wg_b, name="0.06.2", size_sqm="12.00")
+    tenant = _tenant("Ada")
+    _assignment(tenant, room_a, today - timedelta(days=10))
+    _assignment(tenant, room_b, today - timedelta(days=2))
+
+    rows = resident_rows(today)
+    assert len(rows) == 1
+    assert rows[0]["id"] == f"tenant-{tenant.pk}"
+    assert rows[0]["flatnumber"] == "0.06.2 und 3.05.1"
 
 
 @pytest.mark.django_db
