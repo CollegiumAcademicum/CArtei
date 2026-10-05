@@ -20,23 +20,23 @@ class MailboxListGenerationError(Exception):
 
 
 def resident_rows(today):
-    """One current row per tenant and Neubau WG, including opt-outs for the mask."""
+    """One row per tenant, joining all current Neubau rooms (e.g. "3.05 und 0.06")."""
     assignments = (
         TenantRoomAssignment.objects
         .filter(assignment_active_on(today), room__wg__building__name="Neubau")
         .select_related("tenant", "room__wg")
         .order_by("tenant_id", "-moved_in", "-pk")
     )
-    rows = []
-    seen = set()
+    by_tenant = {}
+    seen_rooms = set()
     for assignment in assignments:
-        key = (assignment.tenant_id, assignment.room.wg_id)
-        if key in seen:
-            continue
-        seen.add(key)
         tenant = assignment.tenant
+        room_name = assignment.room.name
+        if (tenant.pk, room_name) in seen_rooms:
+            continue
+        seen_rooms.add((tenant.pk, room_name))
         if tenant.mailbox_list_opt_in:
-            room_parts = assignment.room.name.split(".")
+            room_parts = room_name.split(".")
             if (
                 not tenant.first_name.strip()
                 or not tenant.last_name.strip()
@@ -45,14 +45,18 @@ def resident_rows(today):
                 or ".".join(room_parts[:2]) != assignment.room.wg.name
             ):
                 raise MailboxListGenerationError("Incomplete resident or room data")
-        rows.append({
-            "id": f"tenant-{tenant.pk}",  # string prefix keeps pandas' .str operations valid
-            "forename": tenant.first_name,
-            "surename": tenant.last_name,
-            "flatnumber": assignment.room.name,
-            "opt_in": tenant.mailbox_list_opt_in,
-        })
-    return rows
+        row = by_tenant.get(tenant.pk)
+        if row is None:
+            by_tenant[tenant.pk] = {
+                "id": f"tenant-{tenant.pk}",  # string prefix keeps pandas' .str operations valid
+                "forename": tenant.first_name,
+                "surename": tenant.last_name,
+                "flatnumber": room_name,
+                "opt_in": tenant.mailbox_list_opt_in,
+            }
+        else:
+            row["flatnumber"] = f"{row['flatnumber']} und {room_name}"
+    return list(by_tenant.values())
 
 
 def generate_mailbox_list(today):
