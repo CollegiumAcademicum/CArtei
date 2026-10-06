@@ -84,8 +84,10 @@ def test_invalid_opted_in_room_is_reported():
     wg = WG.objects.create(building=building, name="1.02")
     room = Room.objects.create(wg=wg, name="wrong", size_sqm="12.00")
     _assignment(_tenant("Ada"), room, today)
-    with pytest.raises(MailboxListGenerationError):
+    with pytest.raises(MailboxListGenerationError) as excinfo:
         resident_rows(today)
+    # The message names the offending resident and room so staff can fix the data.
+    assert "Ada" in str(excinfo.value) and "wrong" in str(excinfo.value)
 
 
 @pytest.mark.django_db

@@ -27,10 +27,11 @@ def profile_setup(request):
                 tenant.phone = form.cleaned_data["phone"] or None
                 tenant.no_phone_number = form.cleaned_data["no_phone_number"]
                 tenant.mailbox_list_opt_in = form.cleaned_data["mailbox_list_opt_in"] == "yes"
+                tenant.is_flinta = form.cleaned_data["is_flinta"] == "yes"
                 tenant.profile_setup_completed_at = timezone.now()
                 tenant.save(update_fields=[
                     "email", "phone", "no_phone_number", "mailbox_list_opt_in",
-                    "profile_setup_completed_at",
+                    "is_flinta", "profile_setup_completed_at",
                 ])
             destination = request.POST.get("next", "")
             if destination.startswith("/") and url_has_allowed_host_and_scheme(

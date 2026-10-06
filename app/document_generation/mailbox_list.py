@@ -45,7 +45,10 @@ def resident_rows(today):
                 or len(room_parts) < 3
                 or ".".join(room_parts[:2]) != assignment.room.wg.name
             ):
-                raise MailboxListGenerationError("Incomplete resident or room data")
+                raise MailboxListGenerationError(
+                    f"Unvollständige Daten für {tenant.first_name} {tenant.last_name} "
+                    f"(Zimmer {room_name!r}) — Name oder Zimmernummer passt nicht zum erwarteten Format."
+                )
         row = by_tenant.get(tenant.pk)
         if row is None:
             by_tenant[tenant.pk] = {
@@ -93,7 +96,15 @@ def generate_mailbox_list(today):
                 capture_output=True, text=True, check=True, timeout=25,
             )
             if not imposed_pdf.is_file() or imposed_pdf.stat().st_size == 0:
-                raise MailboxListGenerationError("No imposed PDF was produced")
+                raise MailboxListGenerationError("Es wurde kein PDF erzeugt (LaTeX/pdfjam lieferte keine Ausgabe).")
             return imposed_pdf.read_bytes()
-        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
-            raise MailboxListGenerationError("Briefkastenliste generation failed") from exc
+        except subprocess.CalledProcessError as exc:
+            detail = (exc.stderr or exc.stdout or "").strip().splitlines()
+            tail = " ".join(detail[-3:]) if detail else "keine Ausgabe"
+            raise MailboxListGenerationError(
+                f"PDF-Werkzeug fehlgeschlagen (Exit {exc.returncode}): {tail}"
+            ) from exc
+        except subprocess.TimeoutExpired as exc:
+            raise MailboxListGenerationError("PDF-Erzeugung hat das Zeitlimit überschritten.") from exc
+        except OSError as exc:
+            raise MailboxListGenerationError(f"PDF-Werkzeug nicht ausführbar: {exc}") from exc

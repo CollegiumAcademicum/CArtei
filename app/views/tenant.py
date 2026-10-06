@@ -266,6 +266,21 @@ def tenant_provision(request: HttpRequest, pk: int):
     return redirect("tenant_detail", pk=pk)
 
 
+@login_required
+def tenant_reset_profile_setup(request: HttpRequest, pk: int):
+    """Clear a tenant's completed profile setup so they are re-prompted at their
+    next request. Keeps their entered data (pre-fills the form again)."""
+    if request.method != "POST":
+        raise PermissionDenied
+    if not ({"mietverwaltung", "admin"} & global_roles(request.user)):
+        raise PermissionDenied
+    tenant = get_object_or_404(Tenant, pk=pk)
+    tenant.profile_setup_completed_at = None
+    tenant.save(update_fields=["profile_setup_completed_at"])
+    messages.success(request, "Profil-Einrichtung zurückgesetzt — wird beim nächsten Login erneut abgefragt.")
+    return redirect("tenant_detail", pk=pk)
+
+
 def _provision_and_notify(request, tenant):
     """Provision a FreeIPA account and email the tenant their one-time password.
 
@@ -386,6 +401,8 @@ def tenant_detail(request: HttpRequest, pk: int):
         "roles": roles,
         "can_provision": (not tenant.intranet_username
                           and bool({"mietverwaltung", "admin"} & roles)),
+        "can_reset_profile_setup": (bool(tenant.profile_setup_completed_at)
+                                    and bool({"mietverwaltung", "admin"} & roles)),
     }
 
     # Room assignments — fetch for owners, mietverwaltung, admins, Belegium and Übergabe helpers.

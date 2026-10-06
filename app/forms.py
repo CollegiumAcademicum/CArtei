@@ -54,6 +54,11 @@ class ProfileSetupForm(forms.Form):
         choices=(("yes", "Ja"), ("no", "Nein")),
         widget=forms.RadioSelect,
     )
+    is_flinta = forms.ChoiceField(
+        label="Bist du FLINTA*? (Frauen, Lesben, inter, nicht-binär, trans, agender)",
+        choices=(("yes", "Ja"), ("no", "Nein")),
+        widget=forms.RadioSelect,
+    )
 
     def clean(self):
         cleaned = super().clean()
