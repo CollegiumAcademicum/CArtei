@@ -146,10 +146,12 @@ def test_sync_groups_revokes_superuser_when_not_member(settings):
 
 
 @pytest.mark.django_db
-def test_sync_groups_leaves_superuser_untouched_when_setting_empty(settings):
+def test_sync_groups_enforces_superuser_with_default_dn(settings):
+    # No CARTEI_SUPERUSER_GROUP override: the standard DN from settings is used
+    # and the binding is still enforced (a non-member is revoked).
     settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
     settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
-    settings.CARTEI_SUPERUSER_GROUP = ""
+    assert settings.CARTEI_SUPERUSER_GROUP  # falls back to the standard DN
 
     from app.auth import CustomLDAPBackend
     user = User.objects.create_user(username="uwe", is_superuser=True)
@@ -158,7 +160,7 @@ def test_sync_groups_leaves_superuser_untouched_when_setting_empty(settings):
     CustomLDAPBackend()._sync_groups(user)
 
     user.refresh_from_db()
-    assert user.is_superuser is True
+    assert user.is_superuser is False
 
 
 @pytest.mark.django_db

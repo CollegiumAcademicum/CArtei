@@ -78,8 +78,9 @@ class CustomLDAPBackend(LDAPBackend):
                 except Group.DoesNotExist:
                     pass
             # is_superuser is bound to CARTEI_SUPERUSER_GROUP (authoritative:
-            # membership grants it, absence revokes it). Skipped when unset.
-            if superuser_dn and user.is_superuser != is_superuser:
+            # membership grants it, absence revokes it). Always enforced — the
+            # setting falls back to the standard DN, so it is never blank.
+            if user.is_superuser != is_superuser:
                 user.is_superuser = is_superuser
                 user.save(update_fields=["is_superuser"])
         except Exception as exc:
