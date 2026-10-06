@@ -60,5 +60,14 @@
     {% csrf_token %}
     <button type="submit" class="ca-button">Alle Sitzungen ungültig machen</button>
   </form>
+
+  {% if can_impersonate and not request.impersonator %}
+  <hr class="ca-divider">
+  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">Benutzerübernahme</h2>
+  <p style="color:#555;margin-bottom:1rem;">
+    Als eine*n andere*n Nutzer*in arbeiten, um ihre Sicht zu sehen. Jede Übernahme wird protokolliert.
+  </p>
+  <a href="{% url 'impersonation_choose' %}" class="ca-button-outline">Benutzer*in übernehmen</a>
+  {% endif %}
 </div>
 {% endblock %}
