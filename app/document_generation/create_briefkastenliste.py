@@ -1,146 +1,115 @@
-#!/usr/bin/python3
+"""Render the Briefkastenliste PDF from in-memory resident rows.
 
-"""This creates the briefkastenliste
+Originally a standalone pandas/matplotlib script by Jakob M. Krieger (2024).
+Rewritten to run in-process from CArtei data: no CSV round-trip, no
+pandas/numpy (numpy's x86-64-v2 baseline broke on the deployment CPU) and no
+matplotlib. Only latexmk (via pylatex) and pdfjam remain as subprocesses.
 
-Written by Jakob M. Krieger, 30.04.2024
-Mattermost: @jakob
-"""
+A row is a dict with "forename", "surename" and "flatnumber" (the caller
+passes only residents who opted in)."""
 
-# imports
-
+import colorsys
+import subprocess
 from collections import Counter
 from pathlib import Path
-import argparse
-import pandas as pd
-from pylatex import Document, Command, LongTable, MultiColumn, MultiRow, LargeText, Package, Command
-from pylatex.utils import bold, italic, NoEscape, dumps_list, verbatim
-from matplotlib import colormaps
-from matplotlib.colors import to_hex
 
-import subprocess
-
-# argument parser
-
-parser = argparse.ArgumentParser(prog="CreateBriefkastenliste")
-parser.add_argument("residents_csv_fp", help="this should include all residents. Columns: forename, surename, flat_number")
-parser.add_argument("--id", dest="id", default="id", help="column name for id")
-parser.add_argument("--forename", dest="forename", default="forename", help="column name for forenames")
-parser.add_argument("--surename", dest="surename", default="surename", help="column name for surenames")
-parser.add_argument("--flatnumber", dest="flatnumber", default="flatnumber", help="column name for flat numbers")
-parser.add_argument("--sort_by", dest="sort_by", default="surename", help="sort by this column name")
-parser.add_argument("--pd_read_csv_kwargs", default="dict()", dest="pd_read_csv_kwargs", help="format as e.g. dict(skiprows=1, engine=\"python\")")
-parser.add_argument("--mask_csv", default="mask.csv")
-parser.add_argument("--mask_val", default="mask", help="column name for boolean mask")
-parser.add_argument("--mask_id", default="id", help="id col on which is will be merged with the residents csv")
-parser.add_argument("-o", default="briefkastenliste", dest="pdf_output_fp", help="output filepath of pdf file (without .pdf suffix)")
-
-# helpers
-
-def str_after_first_capitalized_char(x):
-	return x[x.index([c for c in x if c.isupper()][0]):]
-
-# latex
-
-def build_briefkastenliste(df_residents, sort_by, surename_col, forename_col, flatnumber_col):
-	df_residents[flatnumber_col] = df_residents[flatnumber_col].apply(lambda x: ".".join(x.split(".")[:2]))
-
-	df_residents["sorting_letters"] = df_residents[sort_by].apply(lambda x: str_after_first_capitalized_char(x)[0]) # removes "von", "de", "van" or something like that
-	df_residents["general_sorting"] = df_residents[sort_by].apply(lambda x: str_after_first_capitalized_char(x)) # removes "von", "de", "van" or something like that
-	df_residents.sort_values(by="general_sorting", inplace=True)
-	print("=== Sorting letters ===\n", df_residents.sorting_letters.value_counts())
-
-	doc = Document(default_filepath="briefkastenliste", geometry_options={"paperwidth": "9.9cm", "paperheight": "21cm", "inner": ".5cm", "outer": ".5cm", "top": ".5cm", "bottom": "2cm"}, document_options=["12pt", "twoside", "openleft"])
-	doc.preamble.append(Package("biolinum", options=["sfdefault"]))
-	doc.preamble.append(Package("xcolor", options=["table"]))
-
-	# long table cols: # first surname letter, name, flat number
-	with doc.create(LongTable("||r|ll||", booktabs=False, row_height=1.3)) as table:
-		# header
-		table.add_hline()
-		table.add_row([bold("Sortierung"), bold("Name"), bold("WG")])
-		table.add_hline()
-		table.end_table_header()
-		# footer
-		table.add_row([MultiColumn(3, align="r", data=italic("Fortführung auf nächster Seite..."))])
-		table.end_table_footer()
-		# last footer
-		table.add_row([MultiColumn(3, align="r", data=italic("Auflistung fertig."))])
-		table.add_hline()
-		table.add_hline()
-		table.end_table_last_footer()
-		# data
-		letter_specs = []
-		N_letters = len(df_residents.sorting_letters.value_counts())
-		for i_letter, (letter, n) in enumerate(df_residents.sorting_letters.value_counts().sort_index().items()):
-			# n: number of residents with this letter as first letter in surname
-			letter_specs.extend([(letter, n)] + [(letter, 0)]*(n-1))
-			col_def = ", ".join([str(round(el, 2)) for el in colormaps["rainbow"](i_letter/max(N_letters-1, 1))[:3]])
-			doc.preamble.append(Command("definecolor", [f"rainbow{letter}", "rgb", col_def]))
+from pylatex import Command, Document, LargeText, LongTable, MultiColumn, Package
+from pylatex.utils import bold, dumps_list, italic
 
 
-		for letter_spec, (_, row) in zip(letter_specs, df_residents.iterrows()):
-			if letter_spec[1] != 0:
-				table.add_hline()
-				table.add_row([
-					dumps_list([
-						Command("cellcolor", f"rainbow{letter_spec[0]}!50"),
-						Command("parbox", ["16pt", dumps_list([Command("centering"), LargeText(letter_spec[0])])], ["c"])
-					]),
-					f"{row.get(forename_col)[0]}. {row.get(surename_col)}",
-					row.get(flatnumber_col)])
-			else:
-				table.add_row([Command("cellcolor", f"rainbow{letter_spec[0]}!50"), dumps_list([Command("parbox", ["16pt", f"{row.get(forename_col)[0]}."], "t"), row.get(surename_col).strip()]), row.get(flatnumber_col)])
-
-		table.add_hline()
+def _sort_tail(name):
+    """Name from its first capital letter on, dropping nobiliary prefixes
+    ('von', 'de', 'van') so 'von Humboldt' sorts and groups under 'H'."""
+    for i, ch in enumerate(name):
+        if ch.isupper():
+            return name[i:]
+    return name
 
 
-	doc.append("Letzte Aktualisierung: " + pd.Timestamp.now().strftime("%d.%m.%Y"))
+def _wg(flatnumber):
+    """Room name -> WG label: '1.02.3' -> '1.02'. Combined rooms (two current
+    assignments joined with ' und ') are truncated per segment."""
+    return " und ".join(".".join(seg.split(".")[:2]) for seg in flatnumber.split(" und "))
 
-	return doc
+
+def _rainbow_rgb(fraction):
+    """Blue->red ramp standing in for matplotlib's 'rainbow' colormap; returns
+    an 'r, g, b' string of 0-1 floats for LaTeX \\definecolor."""
+    r, g, b = colorsys.hsv_to_rgb((1.0 - fraction) * 2.0 / 3.0, 1.0, 1.0)
+    return f"{r:.2f}, {g:.2f}, {b:.2f}"
 
 
-# main loop
+def build_document(rows, updated):
+    """Build the Briefkastenliste LaTeX document. `rows` are opt-in residents,
+    `updated` is the date printed as 'Letzte Aktualisierung'."""
+    rows = sorted(rows, key=lambda r: _sort_tail(r["surename"]))
+    letters = [_sort_tail(r["surename"])[0] for r in rows]
+    unique_letters = sorted(set(letters))
 
-if __name__ == "__main__":
-	args = parser.parse_args()
+    doc = Document(
+        default_filepath="briefkastenliste",
+        geometry_options={"paperwidth": "9.9cm", "paperheight": "21cm",
+                          "inner": ".5cm", "outer": ".5cm", "top": ".5cm", "bottom": "2cm"},
+        document_options=["12pt", "twoside", "openleft"],
+    )
+    doc.preamble.append(Package("biolinum", options=["sfdefault"]))
+    doc.preamble.append(Package("xcolor", options=["table"]))
+    for i, letter in enumerate(unique_letters):
+        fraction = i / max(len(unique_letters) - 1, 1)
+        doc.preamble.append(Command("definecolor", [f"rainbow{letter}", "rgb", _rainbow_rgb(fraction)]))
 
-	# load the residents csv
-	df_residents = pd.read_csv(args.residents_csv_fp, **eval(args.pd_read_csv_kwargs))
-	df_residents = df_residents.loc[:, [args.id, args.forename, args.surename, args.flatnumber]].dropna() # people who have no intranet id will be discarded!
+    with doc.create(LongTable("||r|ll||", booktabs=False, row_height=1.3)) as table:
+        table.add_hline()
+        table.add_row([bold("Sortierung"), bold("Name"), bold("WG")])
+        table.add_hline()
+        table.end_table_header()
+        table.add_row([MultiColumn(3, align="r", data=italic("Fortführung auf nächster Seite..."))])
+        table.end_table_footer()
+        table.add_row([MultiColumn(3, align="r", data=italic("Auflistung fertig."))])
+        table.add_hline()
+        table.add_hline()
+        table.end_table_last_footer()
 
-	# load mask csv
-	df_mask = pd.read_csv(args.mask_csv)
-	df_mask = df_mask.loc[:, [args.mask_id, args.mask_val]].dropna()
+        seen = Counter()
+        for row, letter in zip(rows, letters):
+            wg = _wg(row["flatnumber"])
+            initial = row["forename"][0]
+            surname = row["surename"].strip()
+            cell = f"rainbow{letter}!50"
+            if seen[letter] == 0:  # first row of a letter block carries the big letter
+                table.add_hline()
+                table.add_row([
+                    dumps_list([
+                        Command("cellcolor", cell),
+                        Command("parbox", ["16pt", dumps_list([Command("centering"), LargeText(letter)])], ["c"]),
+                    ]),
+                    f"{initial}. {surname}",
+                    wg,
+                ])
+            else:
+                table.add_row([
+                    Command("cellcolor", cell),
+                    dumps_list([Command("parbox", ["16pt", f"{initial}."], "t"), surname]),
+                    wg,
+                ])
+            seen[letter] += 1
+        table.add_hline()
 
-	# lower case all id names
-	df_residents[args.id] = df_residents[args.id].str.lower().str.strip()
-	df_mask[args.mask_id] = df_mask[args.mask_id].str.lower().str.strip()
+    doc.append(f"Letzte Aktualisierung: {updated.strftime('%d.%m.%Y')}")
+    return doc
 
-	# remove duplicates
-	df_mask = df_mask.groupby(args.mask_id).last().reset_index()
 
-	# mask the residents
-	df_residents_inner = pd.merge(left=df_residents, right=df_mask, left_on=args.id, right_on=args.mask_id, how="inner").copy() # inner join because default is not on list and in user preferences also non-residents are listed
-	df_residents_masked = df_residents_inner[df_residents_inner[args.mask_val] == True].copy()
-	df_residents_left = pd.merge(left=df_residents, right=df_mask, left_on=args.id, right_on=args.mask_id, how="left").copy()
-	df_residents_no_pref = df_residents_left[pd.isna(df_residents_left.username)]
-
-	print("=== Preview of masked df_residents_masked ===\n", df_residents_masked)
-
-	doc = build_briefkastenliste(
-		df_residents_masked,
-		sort_by=args.sort_by,
-		surename_col=args.surename,
-		forename_col=args.forename,
-		flatnumber_col=args.flatnumber
-	)
-
-	print("=== These people didn't have a preference set ===")
-	print(df_residents_no_pref.reset_index())
-
-	print("=== These people don't want to be listed ===")
-	print(df_residents_inner[df_residents_inner[args.mask_val] == False].reset_index())
-
-	fp_without_sufix = Path(args.pdf_output_fp).parent / Path(args.pdf_output_fp).stem
-	doc.generate_pdf(filepath=fp_without_sufix, clean_tex=True, compiler_args=["-f"])
-	subprocess.run(["pdfjam", "--landscape", "--nup", "3x1", args.pdf_output_fp, "--outfile", str(fp_without_sufix) + "-pdfjam.pdf"], shell=False, check=True)
+def render_pdf(rows, directory, updated):
+    """Build and impose (3-up landscape) the Briefkastenliste; return the PDF
+    path. Raises subprocess.CalledProcessError / TimeoutExpired / OSError on
+    toolchain failure, for the caller to translate into a user-facing error."""
+    directory = Path(directory)
+    doc = build_document(rows, updated)
+    base = directory / "briefkastenliste"
+    doc.generate_pdf(filepath=str(base), clean_tex=True, compiler_args=["-f"])
+    imposed = directory / "briefkastenliste-pdfjam.pdf"
+    subprocess.run(
+        ["pdfjam", "--landscape", "--nup", "3x1", f"{base}.pdf", "--outfile", str(imposed)],
+        shell=False, check=True, capture_output=True, text=True, timeout=25,
+    )
+    return imposed
