@@ -61,6 +61,7 @@
     <button type="submit" class="ca-button">Alle Sitzungen ungültig machen</button>
   </form>
 
+  {# Link placement only: impersonation needs can_impersonate, not admin — the views aren't admin-gated. #}
   {% if can_impersonate and not request.impersonator %}
   <hr class="ca-divider">
   <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">Benutzerübernahme</h2>
