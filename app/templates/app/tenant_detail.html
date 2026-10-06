@@ -20,6 +20,14 @@
       {% else %}
         <span style="font-size:.85rem;color:#7a7a7a;">kein Intranet-Account</span>
       {% endif %}
+      {% if can_reset_profile_setup %}
+        <form method="post" action="{% url 'tenant_reset_profile_setup' tenant.pk %}" style="margin:0;"
+              data-confirm="Profil-Einrichtung für {{ display_name }} zurücksetzen? Die Daten bleiben erhalten, werden beim nächsten Login aber erneut abgefragt."
+              data-busy-label="Wird zurückgesetzt…">
+          {% csrf_token %}
+          <button type="submit" class="ca-button ca-button-sm">Profil-Einrichtung zurücksetzen</button>
+        </form>
+      {% endif %}
     </div>
   </div>
 

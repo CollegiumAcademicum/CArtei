@@ -369,9 +369,9 @@ def download_mailbox_list(request):
     except NoMailboxResidents:
         messages.info(request, "Aktuell gibt es keine Neubau-Bewohner*innen mit Briefkastenlisten-Zustimmung.")
         return redirect("document_list")
-    except MailboxListGenerationError:
+    except MailboxListGenerationError as exc:
         logger.exception("Briefkastenliste generation failed")
-        messages.error(request, "Die Briefkastenliste konnte nicht erstellt werden. Bitte später erneut versuchen.")
+        messages.error(request, f"Die Briefkastenliste konnte nicht erstellt werden: {exc}")
         return redirect("document_list")
 
     response = HttpResponse(pdf, content_type="application/pdf")

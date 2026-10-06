@@ -101,7 +101,7 @@ def test_no_phone_and_mailbox_no_complete_setup_then_missing_email_regates(room)
     client.force_login(User.objects.create_user("resident", password="pw"))
     response = client.post(reverse("profile_setup"), {
         "email": "corrected@example.invalid", "no_phone_number": "on",
-        "mailbox_list_opt_in": "no", "next": reverse("tenant_list"),
+        "mailbox_list_opt_in": "no", "is_flinta": "no", "next": reverse("tenant_list"),
     })
     assert response.status_code == 302
     assert response["Location"] == reverse("tenant_list")
@@ -110,6 +110,7 @@ def test_no_phone_and_mailbox_no_complete_setup_then_missing_email_regates(room)
     assert tenant.email == "corrected@example.invalid"
     assert tenant.phone is None and tenant.no_phone_number
     assert not tenant.mailbox_list_opt_in
+    assert not tenant.is_flinta
     assert client.get(reverse("dashboard")).status_code == 200
     Tenant.objects.filter(pk=tenant.pk).update(email="")
     assert client.get(reverse("dashboard")).status_code == 302
@@ -122,12 +123,27 @@ def test_phone_and_mailbox_yes_complete_setup_and_external_next_is_ignored(room)
     client.force_login(User.objects.create_user("resident", password="pw"))
     response = client.post(reverse("profile_setup"), {
         "email": "ada@example.invalid", "phone": "12345",
-        "mailbox_list_opt_in": "yes", "next": "https://example.com/",
+        "mailbox_list_opt_in": "yes", "is_flinta": "yes", "next": "https://example.com/",
     })
     assert response["Location"] == reverse("dashboard")
     tenant.refresh_from_db()
     assert tenant.mailbox_list_opt_in and tenant.phone == "12345"
     assert not tenant.no_phone_number
+    assert tenant.is_flinta
+
+
+@pytest.mark.django_db
+def test_flinta_answer_is_required(room):
+    tenant = _tenant("resident", room)
+    client = Client()
+    client.force_login(User.objects.create_user("resident", password="pw"))
+    # Everything valid except the missing FLINTA answer -> form re-renders, no completion.
+    response = client.post(reverse("profile_setup"), {
+        "email": "ada@example.invalid", "phone": "12345", "mailbox_list_opt_in": "yes",
+    })
+    assert response.status_code == 200
+    tenant.refresh_from_db()
+    assert tenant.profile_setup_completed_at is None
 
 
 @pytest.mark.django_db
@@ -196,3 +212,27 @@ def test_public_info_and_logout_remain_available_during_setup(room):
     assert client.get(reverse("landing")).status_code == 200
     assert client.post(reverse("logout")).status_code == 302
     assert client.get(reverse("profile_setup")).status_code == 302
+
+
+@pytest.mark.django_db
+def test_staff_can_reset_profile_setup_keeping_data(room):
+    tenant = _tenant(
+        "resident", room, profile_setup_completed_at=timezone.now(),
+        phone="123", mailbox_list_opt_in=True,
+    )
+    url = reverse("tenant_reset_profile_setup", args=[tenant.pk])
+    client = Client()
+
+    # Non-staff may not reset.
+    client.force_login(User.objects.create_user("other", password="pw"))
+    assert client.post(url).status_code == 403
+
+    admin = User.objects.create_user("admin", password="pw")
+    admin.groups.add(Group.objects.create(name="admins"))
+    client.force_login(admin)
+    assert client.get(url).status_code == 403  # POST-only
+    assert client.post(url).status_code == 302
+    tenant.refresh_from_db()
+    assert tenant.profile_setup_completed_at is None
+    # Entered data is kept.
+    assert tenant.phone == "123" and tenant.mailbox_list_opt_in
