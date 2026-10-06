@@ -114,7 +114,7 @@ def test_sync_groups_admin_group_is_also_an_ag(settings):
 
 
 @pytest.mark.django_db
-def test_sync_groups_grants_superuser(settings):
+def test_sync_groups_grants_impersonation(settings):
     settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
     settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
     settings.CARTEI_IMPERSONATION_GROUP = "cn=cartei_impersonation,dc=test"
@@ -125,42 +125,27 @@ def test_sync_groups_grants_superuser(settings):
 
     CustomLDAPBackend()._sync_groups(user)
 
+    assert user.groups.filter(name="cartei_impersonation").exists()
+    # It is a plain group, not the is_superuser flag.
     user.refresh_from_db()
-    assert user.is_superuser is True
+    assert user.is_superuser is False
 
 
 @pytest.mark.django_db
-def test_sync_groups_revokes_superuser_when_not_member(settings):
+def test_sync_groups_revokes_impersonation_when_not_member(settings):
     settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
     settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
     settings.CARTEI_IMPERSONATION_GROUP = "cn=cartei_impersonation,dc=test"
 
     from app.auth import CustomLDAPBackend
-    user = User.objects.create_user(username="tina", is_superuser=True)
+    from django.contrib.auth.models import Group
+    user = User.objects.create_user(username="tina")
+    user.groups.add(Group.objects.create(name="cartei_impersonation"))
     user.ldap_user = make_ldap_user(["cn=ag.kueche,dc=test"])
 
     CustomLDAPBackend()._sync_groups(user)
 
-    user.refresh_from_db()
-    assert user.is_superuser is False
-
-
-@pytest.mark.django_db
-def test_sync_groups_enforces_superuser_with_default_dn(settings):
-    # No CARTEI_IMPERSONATION_GROUP override: the standard DN from settings is
-    # used and the binding is still enforced (a non-member is revoked).
-    settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
-    settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
-    assert settings.CARTEI_IMPERSONATION_GROUP  # falls back to the standard DN
-
-    from app.auth import CustomLDAPBackend
-    user = User.objects.create_user(username="uwe", is_superuser=True)
-    user.ldap_user = make_ldap_user(["cn=ag.kueche,dc=test"])
-
-    CustomLDAPBackend()._sync_groups(user)
-
-    user.refresh_from_db()
-    assert user.is_superuser is False
+    assert not user.groups.filter(name="cartei_impersonation").exists()
 
 
 @pytest.mark.django_db

@@ -7,6 +7,7 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
+from app.middleware import IMPERSONATION_GROUP
 from app.models import Building, Room, Tenant, TenantRoomAssignment, WG
 
 
@@ -130,10 +131,11 @@ def test_phone_and_mailbox_yes_complete_setup_and_external_next_is_ignored(room)
 
 
 @pytest.mark.django_db
-def test_impersonated_resident_is_gated_but_superuser_can_stop(room):
+def test_impersonated_resident_is_gated_but_impersonator_can_stop(room):
     target = User.objects.create_user("resident", password="pw")
     _tenant("resident", room)
-    original = User.objects.create_superuser("super", "super@example.invalid", "pw")
+    original = User.objects.create_user("super", password="pw")
+    original.groups.add(Group.objects.get_or_create(name=IMPERSONATION_GROUP)[0])
     client = Client()
     client.force_login(original)
     assert client.post(reverse("impersonation_start", args=[target.pk])).status_code == 302

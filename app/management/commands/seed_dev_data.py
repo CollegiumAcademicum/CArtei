@@ -23,6 +23,7 @@ from app.models import (
     UserSession, VertraulichkeitserklaerungDocument, WG, WGDamage,
     WGDamageLine, WohnungsgeberbescheinigungDocument,
 )
+from app.middleware import IMPERSONATION_GROUP
 
 
 PASSWORD = "cartei-dev"
@@ -98,6 +99,10 @@ class Command(BaseCommand):
                 fields.append(field)
         if fields:
             user.save(update_fields=fields)
+        # Impersonation is gated by this group (not is_superuser), so the dev
+        # account needs it to exercise impersonation locally.
+        group, _ = Group.objects.get_or_create(name=IMPERSONATION_GROUP)
+        user.groups.add(group)
         user.groups.add(Group.objects.get_or_create(
             name=settings.TENANT_ROLE_GROUPS["admin"][0],
         )[0])

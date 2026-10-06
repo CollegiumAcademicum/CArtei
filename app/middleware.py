@@ -10,6 +10,18 @@ from app.profile_setup import profile_setup_required, resident_for_user
 
 
 IMPERSONATED_USER_SESSION_KEY = "cartei_impersonated_user_id"
+# Django group (synced from CARTEI_IMPERSONATION_GROUP) whose members may
+# impersonate other users. A plain group, not is_superuser, so it grants
+# exactly this one capability and nothing implicit.
+IMPERSONATION_GROUP = "cartei_impersonation"
+
+
+def can_impersonate(user) -> bool:
+    return (
+        user.is_authenticated
+        and user.is_active
+        and user.groups.filter(name=IMPERSONATION_GROUP).exists()
+    )
 
 
 def _set_audit_actor(conn, username: str, source: str = "HUMAN") -> None:
@@ -32,12 +44,12 @@ class ImpersonationMiddleware:
         real_user = request.user
         target_id = request.session.get(IMPERSONATED_USER_SESSION_KEY)
         if target_id is not None:
-            if not real_user.is_authenticated or not real_user.is_active or not real_user.is_superuser:
+            if not can_impersonate(real_user):
                 request.session.pop(IMPERSONATED_USER_SESSION_KEY, None)
             else:
                 target = get_user_model().objects.filter(
-                    pk=target_id, is_active=True, is_superuser=False,
-                ).first()
+                    pk=target_id, is_active=True,
+                ).exclude(groups__name=IMPERSONATION_GROUP).first()
                 if target is None:
                     request.session.pop(IMPERSONATED_USER_SESSION_KEY, None)
                 else:

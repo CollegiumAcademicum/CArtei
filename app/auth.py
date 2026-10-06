@@ -5,6 +5,8 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django_auth_ldap.backend import LDAPBackend
 
+from app.middleware import IMPERSONATION_GROUP
+
 logger = logging.getLogger(__name__)
 
 # Prefixes of the org working groups (AGs, Gremien, Institute) that a user can
@@ -48,11 +50,10 @@ class CustomLDAPBackend(LDAPBackend):
         try:
             member_of: list[str] = user.ldap_user.attrs.get("memberOf", [])
             desired: set[str] = set()
-            is_superuser = False
             for dn in member_of:
                 dn_l = dn.lower()
                 if dn_l == impersonation_dn:
-                    is_superuser = True
+                    desired.add(IMPERSONATION_GROUP)
                 # Rights groups (cartei_admin/cluster/cartei_mietverwaltung) map to
                 # fixed marker names; they aren't AG-prefixed so they never appear
                 # in the dashboard AG list. A DN could still be a rights group AND
@@ -77,13 +78,6 @@ class CustomLDAPBackend(LDAPBackend):
                     user.groups.remove(Group.objects.get(name=name))
                 except Group.DoesNotExist:
                     pass
-            # is_superuser is bound to CARTEI_IMPERSONATION_GROUP (authoritative:
-            # membership grants it, absence revokes it). It gates only user
-            # impersonation. Always enforced — the setting falls back to the
-            # standard DN, so it is never blank.
-            if user.is_superuser != is_superuser:
-                user.is_superuser = is_superuser
-                user.save(update_fields=["is_superuser"])
         except Exception as exc:
             logger.error(f"Group sync failed for {user.username!r}: {exc}")
 

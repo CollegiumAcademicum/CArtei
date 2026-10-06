@@ -2,14 +2,21 @@ import pytest
 from django.contrib.auth.models import Group, User
 from django.urls import reverse
 
-from app.middleware import IMPERSONATED_USER_SESSION_KEY
+from app.middleware import IMPERSONATED_USER_SESSION_KEY, IMPERSONATION_GROUP
 from app.models import ImpersonationEvent
 
 
+def _make_impersonator(username="super"):
+    """A user who may impersonate: member of the cartei_impersonation group."""
+    user = User.objects.create_user(username, password="pw")
+    user.groups.add(Group.objects.get_or_create(name=IMPERSONATION_GROUP)[0])
+    return user
+
+
 @pytest.mark.django_db
-def test_only_superuser_can_choose_and_start(client):
+def test_only_impersonation_group_can_choose_and_start(client):
     admin = User.objects.create_user("admin", password="pw")
-    admin.groups.add(Group.objects.create(name="admins"))
+    admin.groups.add(Group.objects.create(name="admins"))  # admin role, but NOT impersonation
     target = User.objects.create_user("resident", password="pw")
 
     client.force_login(admin)
@@ -17,7 +24,7 @@ def test_only_superuser_can_choose_and_start(client):
     assert client.post(reverse("impersonation_start", args=[target.pk])).status_code == 403
     assert IMPERSONATED_USER_SESSION_KEY not in client.session
 
-    client.force_login(User.objects.create_superuser("super", "super@example.invalid", "pw"))
+    client.force_login(_make_impersonator())
     assert client.get(reverse("impersonation_choose")).status_code == 200
     assert client.get(reverse("impersonation_start", args=[target.pk])).status_code == 405
     assert client.post(reverse("impersonation_start", args=[target.pk])).status_code == 302
@@ -25,7 +32,7 @@ def test_only_superuser_can_choose_and_start(client):
 
 @pytest.mark.django_db
 def test_impersonation_uses_target_roles_and_can_be_stopped(client):
-    original = User.objects.create_superuser("super", "super@example.invalid", "pw")
+    original = _make_impersonator()
     target = User.objects.create_user("resident", password="pw")
     client.force_login(original)
 
@@ -53,7 +60,7 @@ def test_impersonation_uses_target_roles_and_can_be_stopped(client):
 
 @pytest.mark.django_db
 def test_invalid_or_forged_impersonation_is_cleared(client):
-    regular = User.objects.create_user("regular", password="pw")
+    regular = User.objects.create_user("regular", password="pw")  # not in impersonation group
     target = User.objects.create_user("target", password="pw")
     client.force_login(regular)
     session = client.session
@@ -63,7 +70,7 @@ def test_invalid_or_forged_impersonation_is_cleared(client):
     assert response.wsgi_request.user.pk == regular.pk
     assert IMPERSONATED_USER_SESSION_KEY not in client.session
 
-    original = User.objects.create_superuser("super", "super@example.invalid", "pw")
+    original = _make_impersonator()
     client.force_login(original)
     client.post(reverse("impersonation_start", args=[target.pk]))
     target.is_active = False
@@ -73,12 +80,13 @@ def test_invalid_or_forged_impersonation_is_cleared(client):
     assert response.wsgi_request.user.pk == original.pk
     assert IMPERSONATED_USER_SESSION_KEY not in client.session
     assert client.post(reverse("impersonation_start", args=[target.pk])).status_code == 404
+    # Cannot impersonate another impersonation-group member.
     assert client.post(reverse("impersonation_start", args=[original.pk])).status_code == 404
 
 
 @pytest.mark.django_db
 def test_start_and_stop_are_audited(client):
-    original = User.objects.create_superuser("super", "super@example.invalid", "pw")
+    original = _make_impersonator()
     target = User.objects.create_user("resident", password="pw")
     client.force_login(original)
 
