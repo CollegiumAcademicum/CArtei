@@ -52,6 +52,18 @@ def test_list_asof_occupancy(client):
     assert b"Mira" not in after.content  # frei on that date
 
 
+def test_list_shows_nickname_with_realname(client):
+    _login(client, "ag.mietverwaltung")
+    b, wg, room, t = _housing()
+    t.preferred_name = "Mimi"
+    t.save()
+    TenantRoomAssignment.objects.create(
+        tenant=t, room=room, moved_in=datetime.date(2026, 1, 1), moved_out=None,
+    )
+    resp = client.get(reverse("wg_list"))
+    assert b"Mimi" in resp.content and b"(Mira Muster)" in resp.content
+
+
 def test_list_hides_name_without_permission(client):
     _login(client, "gr.cluster")  # cluster does not grant first_name
     b, wg, room, t = _housing()
