@@ -5,9 +5,20 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from app.middleware import IMPERSONATED_USER_SESSION_KEY
+from app.models import ImpersonationEvent
+
+
+def _log_impersonation(impersonator, target, action):
+    ImpersonationEvent.objects.create(
+        impersonator_username=impersonator.username,
+        target_username=target.username,
+        action=action,
+        created_at=timezone.now(),
+    )
 
 
 def _require_superuser(request):
@@ -41,6 +52,8 @@ def start(request, user_id):
         get_user_model(), pk=user_id, is_active=True, is_superuser=False,
     )
     request.session[IMPERSONATED_USER_SESSION_KEY] = target.pk
+    # request.user is still the real superuser here; the swap happens next request.
+    _log_impersonation(request.user, target, ImpersonationEvent.Action.START)
     return redirect("dashboard")
 
 
@@ -49,5 +62,7 @@ def start(request, user_id):
 def stop(request):
     if request.impersonator is None or not request.impersonator.is_superuser:
         raise PermissionDenied
+    # request.user is the impersonated target; request.impersonator is the real superuser.
+    _log_impersonation(request.impersonator, request.user, ImpersonationEvent.Action.STOP)
     request.session.pop(IMPERSONATED_USER_SESSION_KEY, None)
     return redirect("impersonation_choose")

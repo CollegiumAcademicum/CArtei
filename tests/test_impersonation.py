@@ -3,6 +3,7 @@ from django.contrib.auth.models import Group, User
 from django.urls import reverse
 
 from app.middleware import IMPERSONATED_USER_SESSION_KEY
+from app.models import ImpersonationEvent
 
 
 @pytest.mark.django_db
@@ -73,3 +74,23 @@ def test_invalid_or_forged_impersonation_is_cleared(client):
     assert IMPERSONATED_USER_SESSION_KEY not in client.session
     assert client.post(reverse("impersonation_start", args=[target.pk])).status_code == 404
     assert client.post(reverse("impersonation_start", args=[original.pk])).status_code == 404
+
+
+@pytest.mark.django_db
+def test_start_and_stop_are_audited(client):
+    original = User.objects.create_superuser("super", "super@example.invalid", "pw")
+    target = User.objects.create_user("resident", password="pw")
+    client.force_login(original)
+
+    client.post(reverse("impersonation_start", args=[target.pk]))
+    start = ImpersonationEvent.objects.get(action=ImpersonationEvent.Action.START)
+    assert start.impersonator_username == "super"
+    assert start.target_username == "resident"
+
+    # Establish the impersonated session, then stop.
+    client.get(reverse("dashboard"))
+    client.post(reverse("impersonation_stop"))
+    stop = ImpersonationEvent.objects.get(action=ImpersonationEvent.Action.STOP)
+    assert stop.impersonator_username == "super"
+    assert stop.target_username == "resident"
+    assert ImpersonationEvent.objects.count() == 2
