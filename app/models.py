@@ -528,3 +528,23 @@ class UserSession(models.Model):
     class Meta:
         managed = False
         db_table = "user_session"
+
+
+class ImpersonationEvent(models.Model):
+    """Mirror of cartei_db.impersonation_event — append-only audit log of
+    superuser impersonation (one row per start and per stop). Identity is the
+    LDAP/intranet username. The table is immutable at the DB level; this app
+    only ever inserts."""
+
+    class Action(models.TextChoices):
+        START = "START", "Start"
+        STOP = "STOP", "Stop"
+
+    impersonator_username = models.CharField(max_length=150)
+    target_username = models.CharField(max_length=150)
+    action = models.CharField(max_length=5, choices=Action.choices)
+    created_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "impersonation_event"
