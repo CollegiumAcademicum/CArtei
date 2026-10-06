@@ -5,6 +5,8 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django_auth_ldap.backend import LDAPBackend
 
+from app.middleware import IMPERSONATION_GROUP
+
 logger = logging.getLogger(__name__)
 
 # Prefixes of the org working groups (AGs, Gremien, Institute) that a user can
@@ -44,11 +46,14 @@ class CustomLDAPBackend(LDAPBackend):
         cluster_dn = getattr(settings, "CARTEI_CLUSTER_GROUP", "").lower()
         mietverwaltung_dn = getattr(settings, "CARTEI_MIETVERWALTUNG_GROUP", "").lower()
         helper_dn = getattr(settings, "CARTEI_HELFER_MIETVERWALTUNG_GROUP", "").lower()
+        impersonation_dn = getattr(settings, "CARTEI_IMPERSONATION_GROUP", "").lower()
         try:
             member_of: list[str] = user.ldap_user.attrs.get("memberOf", [])
             desired: set[str] = set()
             for dn in member_of:
                 dn_l = dn.lower()
+                if dn_l == impersonation_dn:
+                    desired.add(IMPERSONATION_GROUP)
                 # Rights groups (cartei_admin/cluster/cartei_mietverwaltung) map to
                 # fixed marker names; they aren't AG-prefixed so they never appear
                 # in the dashboard AG list. A DN could still be a rights group AND

@@ -1,3 +1,4 @@
+from app.middleware import can_impersonate
 from app.models import Tenant
 
 
@@ -6,4 +7,5 @@ def privileged(request):
         return {}
     return {
         "current_tenant": Tenant.objects.filter(intranet_username=request.user.username).first(),
+        "can_impersonate": can_impersonate(request.user),
     }

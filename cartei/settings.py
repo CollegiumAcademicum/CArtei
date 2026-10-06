@@ -152,6 +152,14 @@ CARTEI_HELFER_MIETVERWALTUNG_GROUP = os.environ.get(
     "CARTEI_HELFER_MIETVERWALTUNG_GROUP",
     "cn=cartei_helfer_mietverwaltung,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
 )
+# LDAP group whose members may impersonate other users. _sync_groups maps this
+# DN to the "cartei_impersonation" Django group (granted/revoked by membership
+# on every login, like the other rights groups). A plain group — NOT is_superuser
+# — so it grants only impersonation and nothing implicit. A missing or blank env
+# value falls back to this standard DN.
+CARTEI_IMPERSONATION_GROUP = os.environ.get("CARTEI_IMPERSONATION_GROUP") or (
+    "cn=cartei_impersonation,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
+)
 LDAP_USER_SEARCH_BASE = os.environ.get(
     "LDAP_USER_SEARCH_BASE",
     "cn=users,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
