@@ -117,11 +117,11 @@ def test_sync_groups_admin_group_is_also_an_ag(settings):
 def test_sync_groups_grants_superuser(settings):
     settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
     settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
-    settings.CARTEI_SUPERUSER_GROUP = "cn=cartei_superuser,dc=test"
+    settings.CARTEI_IMPERSONATION_GROUP = "cn=cartei_impersonation,dc=test"
 
     from app.auth import CustomLDAPBackend
     user = User.objects.create_user(username="sam")
-    user.ldap_user = make_ldap_user(["cn=cartei_superuser,dc=test"])
+    user.ldap_user = make_ldap_user(["cn=cartei_impersonation,dc=test"])
 
     CustomLDAPBackend()._sync_groups(user)
 
@@ -133,7 +133,7 @@ def test_sync_groups_grants_superuser(settings):
 def test_sync_groups_revokes_superuser_when_not_member(settings):
     settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
     settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
-    settings.CARTEI_SUPERUSER_GROUP = "cn=cartei_superuser,dc=test"
+    settings.CARTEI_IMPERSONATION_GROUP = "cn=cartei_impersonation,dc=test"
 
     from app.auth import CustomLDAPBackend
     user = User.objects.create_user(username="tina", is_superuser=True)
@@ -147,11 +147,11 @@ def test_sync_groups_revokes_superuser_when_not_member(settings):
 
 @pytest.mark.django_db
 def test_sync_groups_enforces_superuser_with_default_dn(settings):
-    # No CARTEI_SUPERUSER_GROUP override: the standard DN from settings is used
-    # and the binding is still enforced (a non-member is revoked).
+    # No CARTEI_IMPERSONATION_GROUP override: the standard DN from settings is
+    # used and the binding is still enforced (a non-member is revoked).
     settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
     settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
-    assert settings.CARTEI_SUPERUSER_GROUP  # falls back to the standard DN
+    assert settings.CARTEI_IMPERSONATION_GROUP  # falls back to the standard DN
 
     from app.auth import CustomLDAPBackend
     user = User.objects.create_user(username="uwe", is_superuser=True)

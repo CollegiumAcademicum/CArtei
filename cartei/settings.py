@@ -152,12 +152,13 @@ CARTEI_HELFER_MIETVERWALTUNG_GROUP = os.environ.get(
     "CARTEI_HELFER_MIETVERWALTUNG_GROUP",
     "cn=cartei_helfer_mietverwaltung,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
 )
-# Membership grants Django's is_superuser (currently only used to gate
-# impersonation). Authoritative: _sync_groups sets the flag to match membership
-# on every LDAP login. Always enforced — a missing or blank env value falls back
-# to this standard DN rather than disabling the binding.
-CARTEI_SUPERUSER_GROUP = os.environ.get("CARTEI_SUPERUSER_GROUP") or (
-    "cn=cartei_superuser,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
+# Membership grants Django's is_superuser, which in CArtei gates ONLY user
+# impersonation (nothing else — the app has no other superuser checks and does
+# not use Django's permission framework). Authoritative: _sync_groups sets the
+# flag to match membership on every LDAP login. Always enforced — a missing or
+# blank env value falls back to this standard DN rather than disabling it.
+CARTEI_IMPERSONATION_GROUP = os.environ.get("CARTEI_IMPERSONATION_GROUP") or (
+    "cn=cartei_impersonation,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
 )
 LDAP_USER_SEARCH_BASE = os.environ.get(
     "LDAP_USER_SEARCH_BASE",
