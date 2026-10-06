@@ -44,11 +44,15 @@ class CustomLDAPBackend(LDAPBackend):
         cluster_dn = getattr(settings, "CARTEI_CLUSTER_GROUP", "").lower()
         mietverwaltung_dn = getattr(settings, "CARTEI_MIETVERWALTUNG_GROUP", "").lower()
         helper_dn = getattr(settings, "CARTEI_HELFER_MIETVERWALTUNG_GROUP", "").lower()
+        superuser_dn = getattr(settings, "CARTEI_SUPERUSER_GROUP", "").lower()
         try:
             member_of: list[str] = user.ldap_user.attrs.get("memberOf", [])
             desired: set[str] = set()
+            is_superuser = False
             for dn in member_of:
                 dn_l = dn.lower()
+                if dn_l == superuser_dn:
+                    is_superuser = True
                 # Rights groups (cartei_admin/cluster/cartei_mietverwaltung) map to
                 # fixed marker names; they aren't AG-prefixed so they never appear
                 # in the dashboard AG list. A DN could still be a rights group AND
@@ -73,6 +77,11 @@ class CustomLDAPBackend(LDAPBackend):
                     user.groups.remove(Group.objects.get(name=name))
                 except Group.DoesNotExist:
                     pass
+            # is_superuser is bound to CARTEI_SUPERUSER_GROUP (authoritative:
+            # membership grants it, absence revokes it). Skipped when unset.
+            if superuser_dn and user.is_superuser != is_superuser:
+                user.is_superuser = is_superuser
+                user.save(update_fields=["is_superuser"])
         except Exception as exc:
             logger.error(f"Group sync failed for {user.username!r}: {exc}")
 

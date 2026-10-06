@@ -114,6 +114,54 @@ def test_sync_groups_admin_group_is_also_an_ag(settings):
 
 
 @pytest.mark.django_db
+def test_sync_groups_grants_superuser(settings):
+    settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
+    settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
+    settings.CARTEI_SUPERUSER_GROUP = "cn=cartei_superuser,dc=test"
+
+    from app.auth import CustomLDAPBackend
+    user = User.objects.create_user(username="sam")
+    user.ldap_user = make_ldap_user(["cn=cartei_superuser,dc=test"])
+
+    CustomLDAPBackend()._sync_groups(user)
+
+    user.refresh_from_db()
+    assert user.is_superuser is True
+
+
+@pytest.mark.django_db
+def test_sync_groups_revokes_superuser_when_not_member(settings):
+    settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
+    settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
+    settings.CARTEI_SUPERUSER_GROUP = "cn=cartei_superuser,dc=test"
+
+    from app.auth import CustomLDAPBackend
+    user = User.objects.create_user(username="tina", is_superuser=True)
+    user.ldap_user = make_ldap_user(["cn=ag.kueche,dc=test"])
+
+    CustomLDAPBackend()._sync_groups(user)
+
+    user.refresh_from_db()
+    assert user.is_superuser is False
+
+
+@pytest.mark.django_db
+def test_sync_groups_leaves_superuser_untouched_when_setting_empty(settings):
+    settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
+    settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
+    settings.CARTEI_SUPERUSER_GROUP = ""
+
+    from app.auth import CustomLDAPBackend
+    user = User.objects.create_user(username="uwe", is_superuser=True)
+    user.ldap_user = make_ldap_user(["cn=ag.kueche,dc=test"])
+
+    CustomLDAPBackend()._sync_groups(user)
+
+    user.refresh_from_db()
+    assert user.is_superuser is True
+
+
+@pytest.mark.django_db
 def test_sync_groups_removes_stale_groups(settings):
     settings.CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
     settings.CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
