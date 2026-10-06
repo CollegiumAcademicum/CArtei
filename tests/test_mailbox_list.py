@@ -1,5 +1,4 @@
 from datetime import timedelta
-import csv
 from pathlib import Path
 import subprocess
 
@@ -136,41 +135,50 @@ def test_generator_failures_return_to_documents_with_message(client, monkeypatch
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("tool_fails", [False, True])
-def test_script_csv_contract_and_temporary_cleanup(monkeypatch, tool_fails):
+def test_generate_renders_optins_in_process_and_cleans_tempdir(monkeypatch, tool_fails):
     today = timezone.localdate()
     building = Building.objects.create(name="Neubau")
     wg = WG.objects.create(building=building, name="1.02")
     room = Room.objects.create(wg=wg, name="1.02.1", size_sqm="12.00")
-    tenant = _tenant("Ada")
-    _assignment(tenant, room, today)
+    _assignment(_tenant("Ada"), room, today)
+    _assignment(_tenant("Ben", opt_in=False), room, today)
     temporary_paths = []
 
-    def fake_run(command, **kwargs):
-        workdir = Path(kwargs["cwd"])
+    def fake_render(rows, directory, updated):
+        # Only opted-in residents reach the renderer; no CSV, no python subprocess.
+        assert [r["forename"] for r in rows] == ["Ada"]
+        assert updated == today
+        workdir = Path(directory)
         temporary_paths.append(workdir)
-        assert command[0]
-        assert command[-1] == str(workdir / "residents.csv")
-        with (workdir / "residents.csv").open(newline="") as source:
-            assert list(csv.DictReader(source)) == [{
-                "id": f"tenant-{tenant.pk}", "forename": "Ada",
-                "surename": "Muster", "flatnumber": "1.02.1",
-            }]
-        with (workdir / "preferences.csv").open(newline="") as source:
-            assert list(csv.DictReader(source)) == [{
-                "username": f"tenant-{tenant.pk}", "mailbox_name": "True",
-            }]
         if tool_fails:
-            raise subprocess.CalledProcessError(1, command)
-        (workdir / "briefkastenliste-pdfjam.pdf").write_bytes(b"%PDF-1.5")
-        return subprocess.CompletedProcess(command, 0)
+            raise subprocess.CalledProcessError(1, ["pdfjam"], stderr="boom")
+        out = workdir / "briefkastenliste-pdfjam.pdf"
+        out.write_bytes(b"%PDF-1.5")
+        return out
 
-    monkeypatch.setattr("app.document_generation.mailbox_list.subprocess.run", fake_run)
+    monkeypatch.setattr("app.document_generation.mailbox_list.render_pdf", fake_render)
     if tool_fails:
         with pytest.raises(MailboxListGenerationError):
             generate_mailbox_list(today)
     else:
         assert generate_mailbox_list(today) == b"%PDF-1.5"
     assert temporary_paths and not temporary_paths[0].exists()
+
+
+def test_build_document_sorts_drops_prefix_and_truncates_to_wg():
+    from app.document_generation.create_briefkastenliste import build_document
+    from datetime import date
+    rows = [
+        {"forename": "Bea", "surename": "von Humboldt", "flatnumber": "3.05.1"},
+        {"forename": "Ada", "surename": "Albers", "flatnumber": "0.06.2 und 1.02.3"},
+    ]
+    latex = build_document(rows, date(2026, 10, 6)).dumps()
+    # von Humboldt sorts under H, after Albers.
+    assert latex.index("Albers") < latex.index("Humboldt")
+    # Flat numbers are truncated to the WG (per segment for combined rooms).
+    assert "0.06 und 1.02" in latex and "0.06.2" not in latex
+    assert "3.05" in latex and "3.05.1" not in latex
+    assert "06.10.2026" in latex
 
 
 @pytest.mark.django_db

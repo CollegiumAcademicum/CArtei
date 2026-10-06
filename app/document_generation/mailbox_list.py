@@ -1,12 +1,10 @@
-"""Feed current CArtei data to the existing Briefkastenliste script."""
+"""Build the Briefkastenliste PDF from current CArtei data (in-process)."""
 
-import csv
-import os
-from pathlib import Path
 import subprocess
-import sys
 import tempfile
+from pathlib import Path
 
+from app.document_generation.create_briefkastenliste import render_pdf
 from app.models import TenantRoomAssignment
 from app.residency import assignment_active_on
 
@@ -16,7 +14,7 @@ class NoMailboxResidents(Exception):
 
 
 class MailboxListGenerationError(Exception):
-    """The CSV input or the external PDF toolchain failed."""
+    """The resident data or the external PDF toolchain (latexmk/pdfjam) failed."""
 
 
 def resident_rows(today):
@@ -64,37 +62,13 @@ def resident_rows(today):
 
 
 def generate_mailbox_list(today):
-    rows = resident_rows(today)
-    if not any(row["opt_in"] for row in rows):
+    rows = [row for row in resident_rows(today) if row["opt_in"]]
+    if not rows:
         raise NoMailboxResidents
 
     with tempfile.TemporaryDirectory(prefix="cartei-briefkastenliste-") as directory:
-        directory = Path(directory)
-        residents_csv = directory / "residents.csv"
-        mask_csv = directory / "preferences.csv"
-        pdf_file = directory / "briefkastenliste.pdf"
-        imposed_pdf = directory / "briefkastenliste-pdfjam.pdf"
-
-        with residents_csv.open("w", encoding="utf-8", newline="") as output:
-            writer = csv.writer(output)
-            writer.writerow(("id", "forename", "surename", "flatnumber"))
-            writer.writerows((r["id"], r["forename"], r["surename"], r["flatnumber"]) for r in rows)
-        with mask_csv.open("w", encoding="utf-8", newline="") as output:
-            writer = csv.writer(output)
-            writer.writerow(("username", "mailbox_name"))
-            writer.writerows((r["id"], r["opt_in"]) for r in rows)
-
-        command = [
-            sys.executable, str(Path(__file__).with_name("create_briefkastenliste.py")),
-            "--mask_csv", str(mask_csv), "--mask_id", "username",
-            "--mask_val", "mailbox_name", "-o", str(pdf_file),
-            str(residents_csv),
-        ]
         try:
-            subprocess.run(
-                command, cwd=directory, env={**os.environ, "TZ": "Europe/Berlin"},
-                capture_output=True, text=True, check=True, timeout=25,
-            )
+            imposed_pdf = render_pdf(rows, directory, today)
             if not imposed_pdf.is_file() or imposed_pdf.stat().st_size == 0:
                 raise MailboxListGenerationError("Es wurde kein PDF erzeugt (LaTeX/pdfjam lieferte keine Ausgabe).")
             return imposed_pdf.read_bytes()
