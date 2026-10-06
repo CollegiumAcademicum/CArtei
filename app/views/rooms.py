@@ -51,7 +51,10 @@ def _occupants_by_room(as_of, may_see_names):
     )
     for a in qs:
         label = display(a.tenant) if may_see_names else "belegt"
-        out.setdefault(a.room_id, []).append({"pk": a.tenant_id, "label": label})
+        realname = (f"{a.tenant.first_name} {a.tenant.last_name}".strip()
+                    if may_see_names and a.tenant.preferred_name else None)
+        out.setdefault(a.room_id, []).append(
+            {"pk": a.tenant_id, "label": label, "realname": realname})
     return out
 
 

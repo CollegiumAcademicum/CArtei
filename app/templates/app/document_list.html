@@ -37,7 +37,7 @@
       <tbody>
       {% for r in rows %}
         <tr {% if r.detail or r.revoked %}class="has-detail" style="cursor:pointer;"{% endif %}>
-          <td data-col="name" data-sort="{{ r.tenant.last_name|lower }} {{ r.tenant.first_name|lower }}">{% tenant_link r.tenant %}</td>
+          <td data-col="name" data-sort="{{ r.tenant.last_name|lower }} {{ r.tenant.first_name|lower }}">{% tenant_link r.tenant %}{% if r.tenant.preferred_name %} <span class="ca-tl-muted">({{ r.tenant.first_name }} {{ r.tenant.last_name }})</span>{% endif %}</td>
           <td data-col="type" data-value="{{ r.type_key }}" data-sort="{{ r.type_label|lower }}">{{ r.type_label }}</td>
           <td data-col="file" data-sort="{{ r.file_name|lower }}"><a href="{{ r.download_url }}" style="color:var(--ca-teal);">{{ r.file_name }}</a></td>
           <td data-col="signed" data-sort="{{ r.uploaded_at|date:'Y-m-d' }}">{{ r.signed }}</td>
