@@ -1,7 +1,10 @@
 """User impersonation within the existing login session.
 
 Gated by membership in the cartei_impersonation group (not is_superuser): it
-grants only this capability. Members may impersonate any active non-member."""
+grants only this capability. Members may impersonate any active non-member.
+Admin rights are NOT required — these views only check can_impersonate(). The
+link to them lives on the admin-only portal, so a non-admin member won't see it,
+but is not forbidden (hidden, not forbidden)."""
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
