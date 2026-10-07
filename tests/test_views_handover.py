@@ -177,3 +177,19 @@ def test_complete_sets_timestamp(client, world):
     assert r.status_code == 302 and r.url == f"/uebergabe/{u.id}/"
     u.refresh_from_db()
     assert u.completed_at is not None
+
+
+def test_step_lists_existing_open_damages(client, world):
+    _login(client, "mv", "ag.mietverwaltung")
+    t = Tenant.objects.get(intranet_username="mv")
+    kind, line = STEPS[0]            # first room line
+    RoomDamage.objects.create(room=world["room"], line=line,
+                              created_at=tz_now(), created_by=t)           # open
+    RoomDamage.objects.create(room=world["room"], line=line,
+                              created_at=tz_now(), created_by=t,
+                              fixed_at=tz_now(), fixed_by=t)                # fixed
+    _start(client, world)
+    u = Uebergabe.objects.get()
+    r = client.get(f"/uebergabe/{u.id}/step/?step=0")
+    assert r.status_code == 200
+    assert len(r.context["existing"]) == 1     # only the open one

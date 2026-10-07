@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 
 from app.damages import author_for
 from app.forms import StartHandoverForm
-from app.handover import STEPS, can_conduct_handover
+from app.handover import STEPS, can_conduct_handover, existing_open_damages
 from app.models import (
     DamageSize, Room, RoomDamage, RoomDamageLine, TenantRoomAssignment,
     Uebergabe, WGDamage, WGDamageLine,
@@ -77,10 +77,12 @@ def step(request, pk):
         return redirect("uebergabe_recap", pk=u.pk)
     kind, line = STEPS[n]
     labels = dict(RoomDamageLine.choices if kind == "room" else WGDamageLine.choices)
+    existing = existing_open_damages(u, kind, line)
     return render(request, "app/handover/step.html", {
         "u": u, "n": n, "total": len(STEPS), "kind": kind, "line": line,
         "line_label": labels[line], "sizes": DamageSize.choices,
         "area": "Zimmer" if kind == "room" else "Gemeinschaftsfläche",
+        "existing": existing,
     })
 
 
