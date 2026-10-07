@@ -104,10 +104,11 @@ def complete(request, pk):
 
 @login_required
 def recap(request, pk):
-    # Replaced in Task 5 with the real recap. Stub so routing resolves.
     _require_conduct(request)
     u = get_object_or_404(Uebergabe, pk=pk)
-    return render(request, "app/handover/step.html", {
-        "u": u, "n": 0, "total": len(STEPS), "kind": "room",
-        "line": "", "line_label": "", "sizes": DamageSize.choices, "area": "",
+    from app.handover import recap_damages
+    (room_open, room_fixed), (wg_open, wg_fixed) = recap_damages(u)
+    return render(request, "app/handover/recap.html", {
+        "u": u, "room_open": room_open, "room_fixed": room_fixed,
+        "wg_open": wg_open, "wg_fixed": wg_fixed,
     })
