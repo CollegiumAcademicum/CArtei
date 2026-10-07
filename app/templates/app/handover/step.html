@@ -1,0 +1,20 @@
+{# CArtei/app/templates/app/handover/step.html #}
+{% extends "app/base.html" %}
+{% block content %}
+<div class="ca-card" style="max-width:640px;margin:1rem auto;">
+  <p style="color:#888;">Übergabe · {{ area }} · Schritt {{ n|add:1 }} von {{ total }}</p>
+  <h2 style="margin:.2rem 0 1rem;">{{ line_label }}</h2>
+  <form method="post" action="{% url 'uebergabe_damage' u.pk %}?step={{ n }}" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <select name="size">
+      <option value="">– Größe –</option>
+      {% for value, label in sizes %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+    </select>
+    <input type="text" name="note" placeholder="Notiz (optional)" maxlength="500">
+    <input type="file" name="photo" accept="image/jpeg,image/png,application/pdf">
+    <button type="submit" class="ca-button">Schaden erfassen</button>
+  </form>
+  <a class="ca-button-outline" style="margin-top:.6rem;display:inline-block;"
+     href="{% url 'uebergabe_step' u.pk %}?step={{ n|add:1 }}">OK, weiter</a>
+</div>
+{% endblock %}

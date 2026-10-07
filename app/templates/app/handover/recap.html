@@ -1,0 +1,18 @@
+{# CArtei/app/templates/app/handover/recap.html #}
+{% extends "app/base.html" %}
+{% block content %}
+<div class="ca-card" style="max-width:720px;margin:1rem auto;">
+  <h2 style="margin:.2rem 0 1rem;">Übergabe – {{ u.room.wg.name }} {{ u.room.name }}</h2>
+  {% include "app/_damages.html" with title="Schäden am Zimmer" open_damages=room_open fixed_damages=room_fixed kind="room" can_fix=False next=request.path %}
+  <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+  {% include "app/_damages.html" with title="Schäden an Gemeinschaftsflächen" open_damages=wg_open fixed_damages=wg_fixed kind="wg" can_fix=False next=request.path %}
+  {% if u.completed_at %}
+    <p style="color:#6a6a6a;margin-top:1rem;">Abgeschlossen am {{ u.completed_at|date:"Y-m-d H:i" }}.</p>
+  {% else %}
+    <form method="post" action="{% url 'uebergabe_complete' u.pk %}" style="margin-top:1rem;">
+      {% csrf_token %}
+      <button type="submit" class="ca-button">Übergabe abschließen</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}
