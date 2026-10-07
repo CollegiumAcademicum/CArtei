@@ -127,12 +127,12 @@ def test_helper_add_room_damage_through_wizard(client, world):
     _login(client, "helper", "cartei_helfer_mietverwaltung")
     _start(client, world)
     u = Uebergabe.objects.get()
-    # step 0 is the first room line
-    kind, line = STEPS[0]
-    assert kind == "room"
+    # step 0 is the whole Zimmer; the client picks the category line
+    line = RoomDamageLine.values[0]
     r = client.post(f"/uebergabe/{u.id}/damage/?step=0",
-                    {"size": "LT1", "note": "Kratzer"})
-    assert r.status_code == 302 and r.url == f"/uebergabe/{u.id}/step/?step=1"
+                    {"line": line, "size": "LT1", "note": "Kratzer"})
+    # adding stays on the same step so more categories can be recorded
+    assert r.status_code == 302 and r.url == f"/uebergabe/{u.id}/step/?step=0"
     d = RoomDamage.objects.get()
     assert d.line == line and d.room_id == world["room"].id
     assert d.created_by.intranet_username == "helper"
@@ -142,12 +142,24 @@ def test_wizard_add_wg_damage_on_wg_step(client, world):
     _login(client, "mv", "ag.mietverwaltung")
     _start(client, world)
     u = Uebergabe.objects.get()
-    wg_step = len(RoomDamageLine.values)  # first wg step
-    kind, line = STEPS[wg_step]
+    kind, area, lines = STEPS[1]   # first WG area (Bad)
     assert kind == "wg"
-    client.post(f"/uebergabe/{u.id}/damage/?step={wg_step}", {})
+    line = lines[0]
+    r = client.post(f"/uebergabe/{u.id}/damage/?step=1", {"line": line})
+    assert r.status_code == 302 and r.url == f"/uebergabe/{u.id}/step/?step=1"
     d = WGDamage.objects.get()
     assert d.line == line and d.wg_id == world["wg"].id
+
+
+def test_damage_line_outside_step_area_rejected(client, world):
+    _login(client, "mv", "ag.mietverwaltung")
+    _start(client, world)
+    u = Uebergabe.objects.get()
+    # step 0 is the Zimmer; a WG line does not belong here → nothing created
+    r = client.post(f"/uebergabe/{u.id}/damage/?step=0",
+                    {"line": WGDamageLine.values[0]})
+    assert r.status_code == 302 and r.url == f"/uebergabe/{u.id}/step/?step=0"
+    assert RoomDamage.objects.count() == 0 and WGDamage.objects.count() == 0
 
 
 def test_bad_step_redirects_to_recap(client, world):
@@ -164,7 +176,8 @@ def test_bad_photo_no_damage_stays_on_step(client, world):
     _start(client, world)
     u = Uebergabe.objects.get()
     r = client.post(f"/uebergabe/{u.id}/damage/?step=0",
-                    {"photo": SimpleUploadedFile("evil.png", b"<html>", content_type="image/png")})
+                    {"line": RoomDamageLine.values[0],
+                     "photo": SimpleUploadedFile("evil.png", b"<html>", content_type="image/png")})
     assert r.status_code == 302 and r.url == f"/uebergabe/{u.id}/step/?step=0"
     assert RoomDamage.objects.count() == 0
 
@@ -182,7 +195,7 @@ def test_complete_sets_timestamp(client, world):
 def test_step_lists_existing_open_damages(client, world):
     _login(client, "mv", "ag.mietverwaltung")
     t = Tenant.objects.get(intranet_username="mv")
-    kind, line = STEPS[0]            # first room line
+    line = RoomDamageLine.values[0]
     RoomDamage.objects.create(room=world["room"], line=line,
                               created_at=tz_now(), created_by=t)           # open
     RoomDamage.objects.create(room=world["room"], line=line,
@@ -192,4 +205,6 @@ def test_step_lists_existing_open_damages(client, world):
     u = Uebergabe.objects.get()
     r = client.get(f"/uebergabe/{u.id}/step/?step=0")
     assert r.status_code == 200
-    assert len(r.context["existing"]) == 1     # only the open one
+    # categories: list of (line, label, [open damages]) for the step's area
+    open_by_line = {c[0]: c[2] for c in r.context["categories"]}
+    assert len(open_by_line[line]) == 1     # only the open one
