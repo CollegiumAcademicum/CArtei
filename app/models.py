@@ -528,6 +528,10 @@ class Uebergabe(models.Model):
         Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
         related_name="+", db_column="conducted_by_id",
     )
+    incoming_tenant = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
+        null=True, blank=True, related_name="+", db_column="incoming_tenant_id",
+    )
     conducted_at = models.DateTimeField()
     completed_at = models.DateTimeField(null=True, blank=True)
     note = models.TextField(null=True, blank=True)

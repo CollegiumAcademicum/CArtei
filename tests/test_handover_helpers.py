@@ -15,3 +15,10 @@ def test_steps_cover_full_catalog_room_then_wg():
     assert STEPS[0] == ("room", RoomDamageLine.values[0])
     assert STEPS[len(RoomDamageLine.values)] == ("wg", WGDamageLine.values[0])
     assert {k for k, _ in STEPS} == {"room", "wg"}
+
+
+def test_uebergabe_has_incoming_tenant_field():
+    from app.models import Uebergabe
+    f = Uebergabe._meta.get_field("incoming_tenant")
+    assert f.null is True
+    assert f.column == "incoming_tenant_id"
