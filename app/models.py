@@ -516,6 +516,27 @@ class WGDamage(DamageBase):
         db_table = "wg_damage"
 
 
+class Uebergabe(models.Model):
+    """Mirror of cartei_db.uebergabe — one room handover. Thin anchor; damages
+    recorded during it are plain RoomDamage/WGDamage rows."""
+    room = models.ForeignKey(Room, on_delete=models.DO_NOTHING, db_constraint=False)
+    assignment = models.ForeignKey(
+        TenantRoomAssignment, on_delete=models.DO_NOTHING, db_constraint=False,
+        null=True, blank=True, db_column="tenant_room_assignment_id", related_name="+",
+    )
+    conducted_by = models.ForeignKey(
+        Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
+        related_name="+", db_column="conducted_by_id",
+    )
+    conducted_at = models.DateTimeField()
+    completed_at = models.DateTimeField(null=True, blank=True)
+    note = models.TextField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "uebergabe"
+
+
 class UserSession(models.Model):
     """Mirror of cartei_db.user_session — login-time metadata for a Django web
     session. Identity is the LDAP/intranet username, matching Tenant.intranet_username."""
