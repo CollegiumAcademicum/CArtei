@@ -50,7 +50,7 @@ def recap_damages(u):
     """((room_open, room_fixed), (wg_open, wg_fixed)) for the outgoing tenancy.
     Window = [assignment.moved_in, assignment.moved_out or conducted date]; with
     no outgoing assignment there is no lower bound. Scoped on created_at's date."""
-    room, a = u.room, u.assignment
+    room, a = u.room, u.outgoing_assignment
     rq = RoomDamage.objects.filter(room=room)
     wq = WGDamage.objects.filter(wg_id=room.wg_id)
     if a is not None:

@@ -37,35 +37,27 @@ def _step_index(request):
 @login_required
 def start(request):
     author = _require_conduct(request)
+    # A handover is bound to one room; the WG room card passes ?room=. Without a
+    # (valid) room, show a room picker that reloads with ?room=<pk> — no JS.
+    room_pk = request.GET.get("room")
+    room = (Room.objects.filter(pk=room_pk).select_related("wg").first()
+            if room_pk and room_pk.isdigit() else None)
+    if room is None:
+        rooms = Room.objects.select_related("wg").order_by("wg__name", "name")
+        return render(request, "app/handover/start.html", {"rooms": rooms})
     if request.method == "POST":
-        form = StartHandoverForm(request.POST)
+        form = StartHandoverForm(request.POST, room=room)
         if form.is_valid():
-            room = form.cleaned_data["room"]
-            out_ = form.cleaned_data["outgoing_tenant"]
-            assignment = (
-                TenantRoomAssignment.objects.filter(room=room, tenant=out_)
-                .order_by("-moved_in").first()
-                if out_ else None
-            )
             u = Uebergabe.objects.create(
-                room=room, assignment=assignment,
-                incoming_tenant=form.cleaned_data["incoming_tenant"],
+                room=room,
+                outgoing_assignment=form.cleaned_data["outgoing_assignment"],
+                incoming_assignment=form.cleaned_data["incoming_assignment"],
                 conducted_by=author, conducted_at=now(),
             )
             return redirect(f"{reverse('uebergabe_step', args=[u.pk])}?step=0")
     else:
-        initial = {}
-        room_pk = request.GET.get("room")
-        room = (Room.objects.filter(pk=room_pk).first()
-                if room_pk and room_pk.isdigit() else None)
-        if room:
-            initial["room"] = room
-            active = (TenantRoomAssignment.objects.filter(room=room, moved_out__isnull=True)
-                      .order_by("-moved_in").first())
-            if active:
-                initial["outgoing_tenant"] = active.tenant
-        form = StartHandoverForm(initial=initial)
-    return render(request, "app/handover/start.html", {"form": form})
+        form = StartHandoverForm(room=room)
+    return render(request, "app/handover/start.html", {"form": form, "room": room})
 
 
 @login_required

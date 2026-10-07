@@ -23,8 +23,9 @@ def test_steps_group_by_room_then_wg_areas():
     assert wg_lines == list(WGDamageLine.values)  # full WG catalog, split by area
 
 
-def test_uebergabe_has_incoming_tenant_field():
+def test_uebergabe_links_outgoing_and_incoming_assignments():
     from app.models import Uebergabe
-    f = Uebergabe._meta.get_field("incoming_tenant")
-    assert f.null is True
-    assert f.column == "incoming_tenant_id"
+    out_f = Uebergabe._meta.get_field("outgoing_assignment")
+    in_f = Uebergabe._meta.get_field("incoming_assignment")
+    assert out_f.column == "outgoing_assignment_id" and out_f.null is True
+    assert in_f.column == "incoming_assignment_id" and in_f.null is True

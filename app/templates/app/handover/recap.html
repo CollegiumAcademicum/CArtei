@@ -4,8 +4,8 @@
 <div class="ca-card" style="max-width:720px;margin:1rem auto;">
   <h2 style="margin:.2rem 0 1rem;">Übergabe – {{ u.room.wg.name }} {{ u.room.name }}</h2>
   <p style="color:#555;margin:-.5rem 0 1rem;">
-    {% if u.assignment %}Auszug: {{ u.assignment.tenant.first_name }} {{ u.assignment.tenant.last_name }}{% endif %}
-    {% if u.incoming_tenant %}{% if u.assignment %} · {% endif %}Einzug: {{ u.incoming_tenant.first_name }} {{ u.incoming_tenant.last_name }}{% endif %}
+    {% if u.outgoing_assignment %}Auszug: {{ u.outgoing_assignment.tenant.first_name }} {{ u.outgoing_assignment.tenant.last_name }}{% endif %}
+    {% if u.incoming_assignment %}{% if u.outgoing_assignment %} · {% endif %}Einzug: {{ u.incoming_assignment.tenant.first_name }} {{ u.incoming_assignment.tenant.last_name }}{% endif %}
   </p>
   {% include "app/_damages.html" with title="Schäden am Zimmer" open_damages=room_open fixed_damages=room_fixed kind="room" can_fix=False next=request.path %}
   <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
