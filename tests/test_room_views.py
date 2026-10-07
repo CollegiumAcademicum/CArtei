@@ -452,3 +452,44 @@ def test_detail_non_editor_cannot_save_furniture(client):
     })
     room.refresh_from_db()
     assert not room.has_bed  # rejected — no permission
+
+
+# ---- Task 5 (T5): Übergabe entry point on room cards -------------------------
+
+import uuid
+from django.utils.timezone import now as _now
+
+
+def test_wg_detail_shows_uebergabe_start_for_helper(client, db):
+    from django.contrib.auth.models import User, Group
+    from app.models import Building, WG, Room, Tenant
+    b = Building.objects.create(name="HB")
+    wg = WG.objects.create(building=b, name="HW")
+    Room.objects.create(wg=wg, name="9.01", size_sqm=12)
+    u = User.objects.create_user(username="h2", password="x")
+    g, _ = Group.objects.get_or_create(name="cartei_helfer_mietverwaltung")
+    u.groups.add(g)
+    Tenant.objects.create(first_name="h2", last_name="T", intranet_username="h2",
+                          intranet_uuid=uuid.uuid4())
+    client.force_login(u)
+    r = client.get(f"/wgs/{wg.id}/")
+    assert r.status_code == 200
+    assert r.context["can_conduct_handover"] is True
+    assert f"/rooms/" in r.content.decode() and "Übergabe starten" in r.content.decode()
+
+
+def test_wg_detail_no_uebergabe_start_for_belegium(client, db):
+    from django.contrib.auth.models import User, Group
+    from app.models import Building, WG, Room, Tenant
+    b = Building.objects.create(name="HB2")
+    wg = WG.objects.create(building=b, name="HW2")
+    Room.objects.create(wg=wg, name="9.02", size_sqm=12)
+    u = User.objects.create_user(username="bel2", password="x")
+    g, _ = Group.objects.get_or_create(name="gr.belegium")
+    u.groups.add(g)
+    Tenant.objects.create(first_name="bel2", last_name="T", intranet_username="bel2",
+                          intranet_uuid=uuid.uuid4())
+    client.force_login(u)
+    r = client.get(f"/wgs/{wg.id}/")
+    assert r.context["can_conduct_handover"] is False
+    assert "Übergabe starten" not in r.content.decode()

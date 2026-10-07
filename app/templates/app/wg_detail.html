@@ -42,7 +42,7 @@
       {% include "app/_damages.html" with open_damages=wg_damages_open fixed_damages=wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=False kind="wg" next=request.path title="Schäden an Gemeinschaftsflächen (WG)" %}
     {% else %}
       <p style="font-weight:500;margin:.25rem 0 .4rem;">Schäden</p>
-      <p style="color:#888;">Schadenskatalog und Übergabeprotokolle folgen in einem späteren Schritt.</p>
+      <p style="color:#888;">Schadenskatalog folgt in einem späteren Schritt.</p>
     {% endif %}
   </details>
 
@@ -180,7 +180,17 @@
       {% include "app/_damages.html" with open_damages=r.room.damages_open fixed_damages=r.room.damages_fixed add_url=room_add_url lines=room_damage_lines sizes=damage_sizes can_fix=False kind="room" next=request.path title="Schäden am Zimmer" %}
     {% else %}
       <p style="font-weight:500;margin:.25rem 0 .4rem;">Schäden</p>
-      <p style="color:#888;">Schadenskatalog und Übergabeprotokolle folgen in einem späteren Schritt.</p>
+      <p style="color:#888;">Schadenskatalog folgt in einem späteren Schritt.</p>
+    {% endif %}
+    {% if can_conduct_handover %}
+    <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    <form method="post" action="{% url 'uebergabe_start' wg.id r.room.id %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="ca-button ca-button-sm">Übergabe starten</button>
+    </form>
+    {% if r.room.last_uebergabe %}
+      <a href="{% url 'uebergabe_recap' r.room.last_uebergabe.pk %}" style="font-size:.85rem;margin-left:.5rem;">letzte Übergabe ({{ r.room.last_uebergabe.completed_at|date:"Y-m-d" }})</a>
+    {% endif %}
     {% endif %}
   </details>
   {% empty %}

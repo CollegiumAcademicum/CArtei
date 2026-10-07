@@ -7,7 +7,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from app.damages import author_for, can_view_damages, damage_counts, is_room_resident, is_wg_resident, open_and_fixed
 from app.forms import RoomAssignmentCreateForm, RoomFurnitureForm, TenantRoomAssignmentForm
-from app.models import AGAbfrage, AGAbfrageResult, Building, DamageSize, InternalNote, Room, RoomDamage, RoomDamageLine, Tenant, TenantRoomAssignment, WG, WGDamage, WGDamageLine
+from app.handover import can_conduct_handover
+from app.models import AGAbfrage, AGAbfrageResult, Building, DamageSize, InternalNote, Room, RoomDamage, RoomDamageLine, Tenant, TenantRoomAssignment, Uebergabe, WG, WGDamage, WGDamageLine
 from app.residency import assignment_active_on
 from app.tenant_access import global_roles, visible_fields
 from app.views._shared import (
@@ -141,6 +142,7 @@ def wg_detail(request: HttpRequest, pk: int):
     can_manage_documents = can_see_assignment_docs
     # The shared Belegung note thread: read+write for MV, Belegium and Admin.
     show_assignment_notes = bool({"mietverwaltung", "belegium", "admin"} & roles)
+    can_conduct = can_conduct_handover(roles)
     if request.method == "POST" and "furniture_room_id" in request.POST:
         redirect_to = redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
         if not can_edit_furniture:
@@ -250,6 +252,11 @@ def wg_detail(request: HttpRequest, pk: int):
             room.damages_open, room.damages_fixed = open_and_fixed(
                 RoomDamage.objects.filter(room=room)
             )
+        room.last_uebergabe = (
+            Uebergabe.objects.filter(room=room, completed_at__isnull=False)
+            .order_by("-completed_at").first()
+            if can_conduct else None
+        )
         rooms.append({
             "room": room, "cards": cards, "active_count": active_count,
             "active_cards": [c for c in cards if c["assignment"].active_on_asof],
@@ -274,6 +281,7 @@ def wg_detail(request: HttpRequest, pk: int):
         "can_see_assignment_docs": can_see_assignment_docs,
         "can_manage_documents": can_manage_documents,
         "show_assignment_notes": show_assignment_notes,
+        "can_conduct_handover": can_conduct,
         "all_tenants": list(Tenant.objects.order_by("last_name", "first_name")) if can_manage_documents else [],
         "show_damages": show_damages,
         "resident_wg": resident_wg,
