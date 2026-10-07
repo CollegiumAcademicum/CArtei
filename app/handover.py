@@ -9,11 +9,24 @@ from app.models import RoomDamage, RoomDamageLine, WGDamage, WGDamageLine
 # create a damage is inside a handover they conduct.
 CONDUCT_ROLES = {"mietverwaltung", "admin", "mietverwaltung_helfer"}
 
-# The wizard walks every room-damage line, then every WG common-area line.
-STEPS = (
-    [("room", v) for v in RoomDamageLine.values]
-    + [("wg", v) for v in WGDamageLine.values]
-)
+# The wizard walks one step per physical room/area: the whole Zimmer (all its
+# damage categories), then each WG common-area (Bad, Küche, Gemeinschaftsfläche).
+# Each step is (kind, area_label, [lines]). WG areas are derived from the enum —
+# the area label is the part of the choice label before " – ", so a new WG line
+# lands in its area automatically.
+def _wg_area_steps():
+    labels = dict(WGDamageLine.choices)
+    groups, order = {}, []
+    for v in WGDamageLine.values:
+        area = labels[v].split(" – ")[0]
+        if area not in groups:
+            groups[area] = []
+            order.append(area)
+        groups[area].append(v)
+    return [("wg", area, groups[area]) for area in order]
+
+
+STEPS = [("room", "Zimmer", list(RoomDamageLine.values))] + _wg_area_steps()
 
 
 def can_conduct_handover(roles: set[str]) -> bool:

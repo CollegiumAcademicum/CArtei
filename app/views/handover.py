@@ -75,14 +75,13 @@ def step(request, pk):
     n = _step_index(request)
     if n is None:
         return redirect("uebergabe_recap", pk=u.pk)
-    kind, line = STEPS[n]
+    kind, area, lines = STEPS[n]
     labels = dict(RoomDamageLine.choices if kind == "room" else WGDamageLine.choices)
-    existing = existing_open_damages(u, kind, line)
+    categories = [(line, labels[line], existing_open_damages(u, kind, line))
+                  for line in lines]
     return render(request, "app/handover/step.html", {
-        "u": u, "n": n, "total": len(STEPS), "kind": kind, "line": line,
-        "line_label": labels[line], "sizes": DamageSize.choices,
-        "area": "Zimmer" if kind == "room" else "Gemeinschaftsfläche",
-        "existing": existing,
+        "u": u, "n": n, "total": len(STEPS), "kind": kind, "area": area,
+        "categories": categories, "sizes": DamageSize.choices,
     })
 
 
@@ -94,14 +93,21 @@ def add_damage(request, pk):
     n = _step_index(request)
     if n is None:
         return redirect("uebergabe_recap", pk=u.pk)
-    kind, line = STEPS[n]
+    kind, area, lines = STEPS[n]
+    step_url = f"{reverse('uebergabe_step', args=[u.pk])}?step={n}"
+    # The category comes from the client now (the step covers a whole area);
+    # it must be one of this step's lines, or nothing is recorded.
+    line = request.POST.get("line", "")
+    if line not in lines:
+        messages.error(request, "Bitte eine Kategorie dieses Bereichs wählen.")
+        return redirect(step_url)
     f = request.FILES.get("photo")
     if f:
         from app.uploads import upload_error
         err = upload_error(f)
         if err:
             messages.error(request, err)
-            return redirect(f"{reverse('uebergabe_step', args=[u.pk])}?step={n}")
+            return redirect(step_url)
     size = request.POST.get("size", "")
     model = RoomDamage if kind == "room" else WGDamage
     target = {"room_id": u.room_id} if kind == "room" else {"wg_id": u.room.wg_id}
@@ -112,7 +118,8 @@ def add_damage(request, pk):
         created_at=now(), created_by=author,
         photo_name=f.name if f else None, photo_data=f.read() if f else None,
     )
-    return redirect(f"{reverse('uebergabe_step', args=[u.pk])}?step={n + 1}")
+    # Stay on the same step so several categories in this area can be recorded.
+    return redirect(step_url)
 
 
 @login_required

@@ -2,20 +2,29 @@
 {% extends "app/base.html" %}
 {% block content %}
 <div class="ca-card" style="max-width:640px;margin:1rem auto;">
-  <p style="color:#888;">Übergabe · {{ area }} · Schritt {{ n|add:1 }} von {{ total }}</p>
-  <h2 style="margin:.2rem 0 1rem;">{{ line_label }}</h2>
-  {% if existing %}
-    <p style="font-weight:500;margin:.3rem 0 .15rem;">Bereits erfasst:</p>
-    {% for d in existing %}
-      <div style="font-size:.9rem;color:#555;margin:.1rem 0;">
-        {{ d.created_at|date:"Y-m-d" }} · {{ d.get_line_display }}{% if d.size %} ({{ d.get_size_display }}){% endif %}{% if d.note %} — {{ d.note }}{% endif %}
-      </div>
-    {% endfor %}
-  {% else %}
-    <p style="color:#888;font-size:.85rem;margin:.3rem 0;">Keine erfassten Schäden.</p>
-  {% endif %}
+  <p style="color:#888;">Übergabe · Schritt {{ n|add:1 }} von {{ total }}</p>
+  <h2 style="margin:.2rem 0 1rem;">{{ area }}</h2>
+
+  {% for line, label, existing in categories %}
+    <div style="margin:.35rem 0;">
+      <span style="font-weight:500;">{{ label }}</span>
+      {% for d in existing %}
+        <div style="font-size:.9rem;color:#555;margin:.05rem 0 .05rem .8rem;">
+          {{ d.created_at|date:"Y-m-d" }}{% if d.size %} · {{ d.get_size_display }}{% endif %}{% if d.note %} — {{ d.note }}{% endif %} <span style="color:#b00;">· offen</span>
+        </div>
+      {% empty %}
+        <span style="color:#888;font-size:.85rem;"> – keine erfassten Schäden</span>
+      {% endfor %}
+    </div>
+  {% endfor %}
+
+  <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
   <form method="post" action="{% url 'uebergabe_damage' u.pk %}?step={{ n }}" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
+    <select name="line" required>
+      <option value="">– Kategorie –</option>
+      {% for line, label, existing in categories %}<option value="{{ line }}">{{ label }}</option>{% endfor %}
+    </select>
     <select name="size">
       <option value="">– Größe –</option>
       {% for value, label in sizes %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
@@ -25,6 +34,6 @@
     <button type="submit" class="ca-button">Schaden erfassen</button>
   </form>
   <a class="ca-button-outline" style="margin-top:.6rem;display:inline-block;"
-     href="{% url 'uebergabe_step' u.pk %}?step={{ n|add:1 }}">OK, weiter</a>
+     href="{% url 'uebergabe_step' u.pk %}?step={{ n|add:1 }}">Weiter</a>
 </div>
 {% endblock %}
