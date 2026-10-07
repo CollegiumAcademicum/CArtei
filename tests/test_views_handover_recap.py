@@ -54,7 +54,7 @@ def test_recap_windows_and_splits(client, world):
     WGDamage.objects.create(wg=world["wg2"], line=WGDamageLine.KUECHE_FLECK,
                             created_at=_dt(2026, 3, 3), created_by=t)
 
-    u = Uebergabe.objects.create(room=world["room"], assignment=world["assignment"],
+    u = Uebergabe.objects.create(room=world["room"], outgoing_assignment=world["assignment"],
                                  conducted_by=t, conducted_at=_dt(2026, 6, 30))
     r = client.get(f"/uebergabe/{u.id}/")
     assert r.status_code == 200
@@ -69,7 +69,7 @@ def test_recap_no_assignment_no_lower_bound(client, world):
     t = world["tenant"]
     RoomDamage.objects.create(room=world["room"], line=RoomDamageLine.BODEN_FLECKEN,
                               created_at=_dt(2025, 1, 1), created_by=t)
-    u = Uebergabe.objects.create(room=world["room"], assignment=None,
+    u = Uebergabe.objects.create(room=world["room"], outgoing_assignment=None,
                                  conducted_by=t, conducted_at=_dt(2026, 6, 30))
     r = client.get(f"/uebergabe/{u.id}/")
     assert r.status_code == 200
@@ -80,8 +80,10 @@ def test_recap_shows_both_tenants(client, world):
     _login_mv(client)
     incoming = Tenant.objects.create(first_name="New", last_name="Resident",
                                      intranet_username="newres", intranet_uuid=uuid.uuid4())
-    u = Uebergabe.objects.create(room=world["room"], assignment=world["assignment"],
-                                 incoming_tenant=incoming,
+    in_a = TenantRoomAssignment.objects.create(tenant=incoming, room=world["room"],
+                                               moved_in=date(2026, 7, 1))
+    u = Uebergabe.objects.create(room=world["room"], outgoing_assignment=world["assignment"],
+                                 incoming_assignment=in_a,
                                  conducted_by=world["tenant"], conducted_at=_dt(2026, 6, 30))
     r = client.get(f"/uebergabe/{u.id}/")
     body = r.content.decode()
@@ -91,8 +93,8 @@ def test_recap_shows_both_tenants(client, world):
 
 def test_recap_without_incoming_only_shows_outgoing(client, world):
     _login_mv(client)
-    u = Uebergabe.objects.create(room=world["room"], assignment=world["assignment"],
-                                 incoming_tenant=None,
+    u = Uebergabe.objects.create(room=world["room"], outgoing_assignment=world["assignment"],
+                                 incoming_assignment=None,
                                  conducted_by=world["tenant"], conducted_at=_dt(2026, 6, 30))
     r = client.get(f"/uebergabe/{u.id}/")
     assert r.status_code == 200

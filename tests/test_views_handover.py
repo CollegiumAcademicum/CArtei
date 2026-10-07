@@ -14,12 +14,18 @@ from app.handover import STEPS
 PNG = b"\x89PNG\r\n\x1a\n" + b"rest"
 
 
+_DEFAULT = object()
+
+
 @pytest.fixture
 def world(db):
     b = Building.objects.create(name="B")
     wg = WG.objects.create(building=b, name="W")
     room = Room.objects.create(wg=wg, name="1.01", size_sqm=12)
-    return {"wg": wg, "room": room}
+    t = Tenant.objects.create(first_name="Res", last_name="Ident",
+                              intranet_username="res_ident", intranet_uuid=uuid.uuid4())
+    a = TenantRoomAssignment.objects.create(tenant=t, room=room, moved_in=date(2026, 1, 1))
+    return {"wg": wg, "room": room, "tenant": t, "assignment": a}
 
 
 def _login(client, username, group=None):
@@ -35,13 +41,16 @@ def _login(client, username, group=None):
     return u
 
 
-def _start(client, world, outgoing=None, incoming=None):
-    data = {"room": world["room"].id}
-    if outgoing is not None:
-        data["outgoing_tenant"] = outgoing.id
+def _start(client, world, outgoing=_DEFAULT, incoming=None):
+    """POST the start form for world's room. Defaults outgoing to world's
+    assignment so most tests get a valid handover; pass outgoing=None to omit."""
+    out_a = world["assignment"] if outgoing is _DEFAULT else outgoing
+    data = {}
+    if out_a is not None:
+        data["outgoing_assignment"] = out_a.id
     if incoming is not None:
-        data["incoming_tenant"] = incoming.id
-    return client.post("/uebergabe/start/", data)
+        data["incoming_assignment"] = incoming.id
+    return client.post(f"/uebergabe/start/?room={world['room'].id}", data)
 
 
 def test_helper_can_start(client, world):
@@ -50,51 +59,69 @@ def test_helper_can_start(client, world):
     assert r.status_code == 302
     u = Uebergabe.objects.get()
     assert u.room_id == world["room"].id
+    assert u.outgoing_assignment_id == world["assignment"].id
     assert r.url == f"/uebergabe/{u.id}/step/?step=0"
 
 
-def test_start_records_incoming_and_outgoing(client, world):
+def test_start_links_both_assignments(client, world):
     _login(client, "mv", "ag.mietverwaltung")
-    out_t = Tenant.objects.create(first_name="Out", last_name="T",
-                                  intranet_username="out_t", intranet_uuid=uuid.uuid4())
     in_t = Tenant.objects.create(first_name="In", last_name="T",
                                  intranet_username="in_t", intranet_uuid=uuid.uuid4())
-    a = TenantRoomAssignment.objects.create(tenant=out_t, room=world["room"],
-                                             moved_in=date(2026, 1, 1))
-    r = _start(client, world, outgoing=out_t, incoming=in_t)
+    in_a = TenantRoomAssignment.objects.create(tenant=in_t, room=world["room"],
+                                               moved_in=date(2026, 7, 1))
+    r = _start(client, world, outgoing=world["assignment"], incoming=in_a)
     assert r.status_code == 302
     u = Uebergabe.objects.get()
-    assert u.assignment_id == a.id            # outgoing assignment resolved
-    assert u.incoming_tenant_id == in_t.id
-    # record-only: no assignment was created or moved out
-    assert TenantRoomAssignment.objects.count() == 1
-    a.refresh_from_db()
-    assert a.moved_out is None
+    assert u.outgoing_assignment_id == world["assignment"].id
+    assert u.incoming_assignment_id == in_a.id
+    # record-only: no assignment created or moved out
+    assert TenantRoomAssignment.objects.count() == 2
+    world["assignment"].refresh_from_db()
+    assert world["assignment"].moved_out is None
 
 
-def test_start_requires_room(client, world):
+def test_start_incoming_only(client, world):
     _login(client, "mv", "ag.mietverwaltung")
-    r = client.post("/uebergabe/start/", {})
-    assert r.status_code == 200          # form re-rendered
-    assert Uebergabe.objects.count() == 0
+    in_t = Tenant.objects.create(first_name="In", last_name="T",
+                                 intranet_username="in_t", intranet_uuid=uuid.uuid4())
+    in_a = TenantRoomAssignment.objects.create(tenant=in_t, room=world["room"],
+                                               moved_in=date(2026, 7, 1))
+    r = _start(client, world, outgoing=None, incoming=in_a)
+    assert r.status_code == 302
+    u = Uebergabe.objects.get()
+    assert u.outgoing_assignment_id is None and u.incoming_assignment_id == in_a.id
 
 
-def test_start_rejects_same_tenant(client, world):
+def test_start_rejects_neither_side(client, world):
     _login(client, "mv", "ag.mietverwaltung")
-    t = Tenant.objects.create(first_name="Same", last_name="T",
-                              intranet_username="same_t", intranet_uuid=uuid.uuid4())
-    r = _start(client, world, outgoing=t, incoming=t)
+    r = _start(client, world, outgoing=None, incoming=None)
     assert r.status_code == 200
     assert Uebergabe.objects.count() == 0
 
 
-def test_start_outgoing_without_assignment_sets_null(client, world):
+def test_start_rejects_same_assignment_both_sides(client, world):
     _login(client, "mv", "ag.mietverwaltung")
-    out_t = Tenant.objects.create(first_name="No", last_name="Assign",
-                                  intranet_username="noass", intranet_uuid=uuid.uuid4())
-    r = _start(client, world, outgoing=out_t)   # out_t has no assignment on this room
-    assert r.status_code == 302
-    assert Uebergabe.objects.get().assignment_id is None
+    r = _start(client, world, outgoing=world["assignment"], incoming=world["assignment"])
+    assert r.status_code == 200
+    assert Uebergabe.objects.count() == 0
+
+
+def test_start_rejects_foreign_room_assignment(client, world):
+    _login(client, "mv", "ag.mietverwaltung")
+    other_room = Room.objects.create(wg=world["wg"], name="1.02", size_sqm=12)
+    foreign = TenantRoomAssignment.objects.create(
+        tenant=world["tenant"], room=other_room, moved_in=date(2026, 1, 1))
+    # assignment belongs to another room → not in the scoped queryset → invalid
+    r = _start(client, world, outgoing=foreign)
+    assert r.status_code == 200
+    assert Uebergabe.objects.count() == 0
+
+
+def test_start_no_room_shows_picker(client, world):
+    _login(client, "mv", "ag.mietverwaltung")
+    r = client.get("/uebergabe/start/")
+    assert r.status_code == 200
+    assert Uebergabe.objects.count() == 0
 
 
 def test_start_get_ignores_bad_room_param(client, world):
@@ -105,9 +132,7 @@ def test_start_get_ignores_bad_room_param(client, world):
 
 
 def test_resident_cannot_start(client, world):
-    u = _login(client, "resi")
-    t = Tenant.objects.get(intranet_username="resi")
-    TenantRoomAssignment.objects.create(tenant=t, room=world["room"], moved_in=date(2026, 1, 1))
+    _login(client, "resi")
     r = _start(client, world)
     assert r.status_code == 403
     assert Uebergabe.objects.count() == 0

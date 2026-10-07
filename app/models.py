@@ -520,17 +520,17 @@ class Uebergabe(models.Model):
     """Mirror of cartei_db.uebergabe — one room handover. Thin anchor; damages
     recorded during it are plain RoomDamage/WGDamage rows."""
     room = models.ForeignKey(Room, on_delete=models.DO_NOTHING, db_constraint=False)
-    assignment = models.ForeignKey(
+    outgoing_assignment = models.ForeignKey(
         TenantRoomAssignment, on_delete=models.DO_NOTHING, db_constraint=False,
-        null=True, blank=True, db_column="tenant_room_assignment_id", related_name="+",
+        null=True, blank=True, db_column="outgoing_assignment_id", related_name="+",
+    )
+    incoming_assignment = models.ForeignKey(
+        TenantRoomAssignment, on_delete=models.DO_NOTHING, db_constraint=False,
+        null=True, blank=True, db_column="incoming_assignment_id", related_name="+",
     )
     conducted_by = models.ForeignKey(
         Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
         related_name="+", db_column="conducted_by_id",
-    )
-    incoming_tenant = models.ForeignKey(
-        Tenant, on_delete=models.DO_NOTHING, db_constraint=False,
-        null=True, blank=True, related_name="+", db_column="incoming_tenant_id",
     )
     conducted_at = models.DateTimeField()
     completed_at = models.DateTimeField(null=True, blank=True)

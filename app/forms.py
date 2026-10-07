@@ -199,28 +199,32 @@ class RoomAssignmentCreateForm(forms.ModelForm):
 
 
 class StartHandoverForm(forms.Form):
-    """Start a room handover: which room, who moves out, who moves in.
-    Record-only — creating the handover never touches assignments. The outgoing
-    *assignment* (and thus the recap window) is resolved in the view from the
-    chosen room + outgoing tenant."""
-    room = forms.ModelChoiceField(
-        queryset=Room.objects.select_related("wg").order_by("wg__name", "name"),
-        label="Zimmer")
-    outgoing_tenant = forms.ModelChoiceField(
-        queryset=Tenant.objects.order_by("last_name", "first_name"),
-        required=False, label="Zieht aus")
-    incoming_tenant = forms.ModelChoiceField(
-        queryset=Tenant.objects.order_by("last_name", "first_name"),
-        required=False, label="Zieht ein")
+    """Start a room handover: link the outgoing and incoming tenancy of one room.
+    Both are assignments OF THAT ROOM (queryset scoped in __init__, so "belongs
+    to the room" is automatic), both optional, at least one required. Record-only
+    — the handover references existing assignments, never writes them."""
+    outgoing_assignment = forms.ModelChoiceField(
+        queryset=TenantRoomAssignment.objects.none(), required=False, label="Zieht aus")
+    incoming_assignment = forms.ModelChoiceField(
+        queryset=TenantRoomAssignment.objects.none(), required=False, label="Zieht ein")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, room, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["room"].label_from_instance = lambda r: f"{r.wg.name} {r.name}"
+        qs = (TenantRoomAssignment.objects.filter(room=room)
+              .select_related("tenant").order_by("-moved_in"))
+        for name in ("outgoing_assignment", "incoming_assignment"):
+            self.fields[name].queryset = qs
+            self.fields[name].label_from_instance = lambda a: (
+                f"{a.tenant.first_name} {a.tenant.last_name} "
+                f"({a.moved_in}–{a.moved_out or '…'})")
 
     def clean(self):
         cleaned = super().clean()
-        out_, in_ = cleaned.get("outgoing_tenant"), cleaned.get("incoming_tenant")
+        out_, in_ = cleaned.get("outgoing_assignment"), cleaned.get("incoming_assignment")
+        if not out_ and not in_:
+            raise forms.ValidationError(
+                "Mindestens eine Seite (Auszug oder Einzug) muss gewählt sein.")
         if out_ and in_ and out_ == in_:
             raise forms.ValidationError(
-                "Aus- und einziehende Person dürfen nicht identisch sein.")
+                "Aus- und einziehendes Mietverhältnis dürfen nicht identisch sein.")
         return cleaned
