@@ -7,7 +7,8 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
 from app.damages import author_for
-from app.handover import STEPS, can_conduct_handover
+from app.forms import StartHandoverForm
+from app.handover import STEPS, can_conduct_handover, existing_open_damages
 from app.models import (
     DamageSize, Room, RoomDamage, RoomDamageLine, TenantRoomAssignment,
     Uebergabe, WGDamage, WGDamageLine,
@@ -34,17 +35,37 @@ def _step_index(request):
 
 
 @login_required
-@require_POST
-def start(request, wg_pk, room_pk):
+def start(request):
     author = _require_conduct(request)
-    room = get_object_or_404(Room, pk=room_pk, wg_id=wg_pk)
-    assignment = (TenantRoomAssignment.objects.filter(room=room)
-                  .order_by("-moved_in").first())
-    u = Uebergabe.objects.create(
-        room=room, assignment=assignment,
-        conducted_by=author, conducted_at=now(),
-    )
-    return redirect(f"{reverse('uebergabe_step', args=[u.pk])}?step=0")
+    if request.method == "POST":
+        form = StartHandoverForm(request.POST)
+        if form.is_valid():
+            room = form.cleaned_data["room"]
+            out_ = form.cleaned_data["outgoing_tenant"]
+            assignment = (
+                TenantRoomAssignment.objects.filter(room=room, tenant=out_)
+                .order_by("-moved_in").first()
+                if out_ else None
+            )
+            u = Uebergabe.objects.create(
+                room=room, assignment=assignment,
+                incoming_tenant=form.cleaned_data["incoming_tenant"],
+                conducted_by=author, conducted_at=now(),
+            )
+            return redirect(f"{reverse('uebergabe_step', args=[u.pk])}?step=0")
+    else:
+        initial = {}
+        room_pk = request.GET.get("room")
+        room = (Room.objects.filter(pk=room_pk).first()
+                if room_pk and room_pk.isdigit() else None)
+        if room:
+            initial["room"] = room
+            active = (TenantRoomAssignment.objects.filter(room=room, moved_out__isnull=True)
+                      .order_by("-moved_in").first())
+            if active:
+                initial["outgoing_tenant"] = active.tenant
+        form = StartHandoverForm(initial=initial)
+    return render(request, "app/handover/start.html", {"form": form})
 
 
 @login_required
@@ -56,10 +77,12 @@ def step(request, pk):
         return redirect("uebergabe_recap", pk=u.pk)
     kind, line = STEPS[n]
     labels = dict(RoomDamageLine.choices if kind == "room" else WGDamageLine.choices)
+    existing = existing_open_damages(u, kind, line)
     return render(request, "app/handover/step.html", {
         "u": u, "n": n, "total": len(STEPS), "kind": kind, "line": line,
         "line_label": labels[line], "sizes": DamageSize.choices,
         "area": "Zimmer" if kind == "room" else "Gemeinschaftsfläche",
+        "existing": existing,
     })
 
 

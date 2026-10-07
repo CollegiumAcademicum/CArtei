@@ -20,6 +20,19 @@ def can_conduct_handover(roles: set[str]) -> bool:
     return bool(CONDUCT_ROLES & roles)
 
 
+def existing_open_damages(u, kind, line):
+    """Currently-open damages (fixed_at is null) for one catalog line on this
+    handover's room/WG, oldest first — shown so the inspector sees what is already
+    recorded before adding more. Not window-scoped: the incoming tenant inherits
+    the room's present open state. (open == fixed_at NULL, as in
+    app.damages.open_and_fixed.)"""
+    if kind == "room":
+        qs = RoomDamage.objects.filter(room_id=u.room_id, line=line, fixed_at__isnull=True)
+    else:
+        qs = WGDamage.objects.filter(wg_id=u.room.wg_id, line=line, fixed_at__isnull=True)
+    return list(qs.order_by("created_at"))
+
+
 def recap_damages(u):
     """((room_open, room_fixed), (wg_open, wg_fixed)) for the outgoing tenancy.
     Window = [assignment.moved_in, assignment.moved_out or conducted date]; with

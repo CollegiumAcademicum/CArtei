@@ -184,10 +184,7 @@
     {% endif %}
     {% if can_conduct_handover %}
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
-    <form method="post" action="{% url 'uebergabe_start' wg.id r.room.id %}" style="display:inline;">
-      {% csrf_token %}
-      <button type="submit" class="ca-button ca-button-sm">Übergabe starten</button>
-    </form>
+    <a href="{% url 'uebergabe_start' %}?room={{ r.room.id }}" class="ca-button ca-button-sm">Übergabe starten</a>
     {% if r.room.last_uebergabe %}
       <a href="{% url 'uebergabe_recap' r.room.last_uebergabe.pk %}" style="font-size:.85rem;margin-left:.5rem;">letzte Übergabe ({{ r.room.last_uebergabe.completed_at|date:"Y-m-d" }})</a>
     {% endif %}

@@ -74,3 +74,26 @@ def test_recap_no_assignment_no_lower_bound(client, world):
     r = client.get(f"/uebergabe/{u.id}/")
     assert r.status_code == 200
     assert len(r.context["room_open"]) == 1  # no lower bound → included
+
+
+def test_recap_shows_both_tenants(client, world):
+    _login_mv(client)
+    incoming = Tenant.objects.create(first_name="New", last_name="Resident",
+                                     intranet_username="newres", intranet_uuid=uuid.uuid4())
+    u = Uebergabe.objects.create(room=world["room"], assignment=world["assignment"],
+                                 incoming_tenant=incoming,
+                                 conducted_by=world["tenant"], conducted_at=_dt(2026, 6, 30))
+    r = client.get(f"/uebergabe/{u.id}/")
+    body = r.content.decode()
+    assert "Going" in body          # outgoing tenant last name (fixture "Out Going")
+    assert "New Resident" in body   # incoming tenant
+
+
+def test_recap_without_incoming_only_shows_outgoing(client, world):
+    _login_mv(client)
+    u = Uebergabe.objects.create(room=world["room"], assignment=world["assignment"],
+                                 incoming_tenant=None,
+                                 conducted_by=world["tenant"], conducted_at=_dt(2026, 6, 30))
+    r = client.get(f"/uebergabe/{u.id}/")
+    assert r.status_code == 200
+    assert "Einzug:" not in r.content.decode()

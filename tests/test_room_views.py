@@ -475,7 +475,8 @@ def test_wg_detail_shows_uebergabe_start_for_helper(client, db):
     r = client.get(f"/wgs/{wg.id}/")
     assert r.status_code == 200
     assert r.context["can_conduct_handover"] is True
-    assert f"/rooms/" in r.content.decode() and "Übergabe starten" in r.content.decode()
+    body = r.content.decode()
+    assert "/uebergabe/start/?room=" in body and "Übergabe starten" in body
 
 
 def test_wg_detail_no_uebergabe_start_for_belegium(client, db):

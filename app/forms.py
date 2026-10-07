@@ -196,3 +196,31 @@ class RoomAssignmentCreateForm(forms.ModelForm):
                     "Diese Person mietet das ausgewählte Zimmer nicht.",
                 )
         return cleaned
+
+
+class StartHandoverForm(forms.Form):
+    """Start a room handover: which room, who moves out, who moves in.
+    Record-only — creating the handover never touches assignments. The outgoing
+    *assignment* (and thus the recap window) is resolved in the view from the
+    chosen room + outgoing tenant."""
+    room = forms.ModelChoiceField(
+        queryset=Room.objects.select_related("wg").order_by("wg__name", "name"),
+        label="Zimmer")
+    outgoing_tenant = forms.ModelChoiceField(
+        queryset=Tenant.objects.order_by("last_name", "first_name"),
+        required=False, label="Zieht aus")
+    incoming_tenant = forms.ModelChoiceField(
+        queryset=Tenant.objects.order_by("last_name", "first_name"),
+        required=False, label="Zieht ein")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["room"].label_from_instance = lambda r: f"{r.wg.name} {r.name}"
+
+    def clean(self):
+        cleaned = super().clean()
+        out_, in_ = cleaned.get("outgoing_tenant"), cleaned.get("incoming_tenant")
+        if out_ and in_ and out_ == in_:
+            raise forms.ValidationError(
+                "Aus- und einziehende Person dürfen nicht identisch sein.")
+        return cleaned
