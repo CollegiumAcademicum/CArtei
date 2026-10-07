@@ -1,6 +1,6 @@
 from django.urls import path
 
-from app.views import abfragen, admin_views, damages, dashboard, document, enrollment_proof, impersonation, landing, notes, profile_setup, rooms, tenant
+from app.views import abfragen, admin_views, damages, dashboard, document, enrollment_proof, handover, impersonation, landing, notes, profile_setup, rooms, tenant
 
 urlpatterns = [
     path("info/", landing.landing, name="landing"),
@@ -34,6 +34,11 @@ urlpatterns = [
     path("assignments/<int:assignment_pk>/documents/upload/", document.upload_assignment_document, name="assignment_document_upload"),
     path("assignments/<int:assignment_pk>/documents/<str:document_type>/<int:doc_pk>/revoke/", document.revoke_assignment_document, name="assignment_document_revoke"),
     path("assignments/<int:assignment_pk>/documents/<str:document_type>/<int:doc_pk>/download/", document.download_assignment_document, name="assignment_document_download"),
+    path("wgs/<int:wg_pk>/rooms/<int:room_pk>/uebergabe/start/", handover.start, name="uebergabe_start"),
+    path("uebergabe/<int:pk>/", handover.recap, name="uebergabe_recap"),
+    path("uebergabe/<int:pk>/step/", handover.step, name="uebergabe_step"),
+    path("uebergabe/<int:pk>/damage/", handover.add_damage, name="uebergabe_damage"),
+    path("uebergabe/<int:pk>/complete/", handover.complete, name="uebergabe_complete"),
     path("rooms/<int:room_pk>/damages/add/", damages.room_damage_add, name="room_damage_add"),
     path("wgs/<int:wg_pk>/damages/add/", damages.wg_damage_add, name="wg_damage_add"),
     path("damages/room/<int:pk>/fix/", damages.room_damage_fix, name="room_damage_fix"),
