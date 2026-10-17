@@ -22,3 +22,17 @@ def test_send_welcome_email(mailoutbox, settings):
     assert "https://intranet.ca-hd.de/home" in m.body           # login
     assert "https://collegiumacademicum.de/internet/" in m.body  # password/WLAN guide
     assert "Username:" in m.body and "Benutzername:" in m.body    # bilingual
+
+
+@pytest.mark.django_db
+def test_welcome_email_password_not_html_escaped(mailoutbox, settings):
+    """Plaintext email: a random password with & < > " ' must appear verbatim,
+    not HTML-escaped (escaping corrupts the credential so login fails)."""
+    from app.models import Tenant
+    t = Tenant.objects.create(first_name="Mara", last_name="Test", email="mara@x.de")
+
+    pw = "a&b<c>d\"e'f"
+    send_welcome_email(t, "mara_test", pw)
+
+    assert pw in mailoutbox[0].body
+    assert "&amp;" not in mailoutbox[0].body

@@ -1,4 +1,4 @@
-Hallo {{ name }},
+{% autoescape off %}Hallo {{ name }},
 
 anbei erhältst du deine Zugangsdaten für das Intranet des Collegium Academicum.
 Diese benötigst du, um dich ins CA-WLAN einzuloggen oder z.B. um eine
@@ -45,3 +45,4 @@ Best regards,
 your AG Mietverwaltung
 
 This email was sent automatically – please do not reply to it.
+{% endautoescape %}
