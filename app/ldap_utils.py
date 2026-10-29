@@ -55,13 +55,13 @@ def get_clearance_members() -> list[dict]:
     return [_parse(attrs) for _, attrs in results if attrs]
 
 
-def get_clearance_member(uid: str) -> dict | None:
-    """One confidentiality_clearance member by uid, or None."""
+def get_member(uid: str) -> dict | None:
+    """One intranet account by uid, or None — regardless of group membership."""
     conn = _connect()
     results = conn.search_s(
         settings.LDAP_USER_SEARCH_BASE,
         ldap.SCOPE_SUBTREE,
-        f"(&(uid={ldap.filter.escape_filter_chars(uid)})(memberOf={settings.LDAP_REQUIRE_GROUP}))",
+        f"(uid={ldap.filter.escape_filter_chars(uid)})",
         _ATTRS,
     )
     found = [_parse(attrs) for _, attrs in results if attrs]

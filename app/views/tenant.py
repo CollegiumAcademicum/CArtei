@@ -13,7 +13,7 @@ from django.core.exceptions import PermissionDenied
 
 from app.emails import send_welcome_email
 from app.forms import TenantCreateForm, TenantForm, TenantRoomAssignmentForm
-from app.ldap_utils import get_clearance_member, provision_ldap_account
+from app.ldap_utils import get_member, provision_ldap_account
 
 logger = logging.getLogger(__name__)
 from app.models import (
@@ -284,12 +284,12 @@ def tenant_link(request: HttpRequest, pk: int):
         messages.error(request, "Bereits verknüpft — erst die Verknüpfung entfernen.")
         return redirect("tenant_detail", pk=pk)
     try:
-        member = get_clearance_member(uid)
+        member = get_member(uid)
     except Exception as exc:
         messages.error(request, f"LDAP-Abfrage fehlgeschlagen: {exc}")
         return redirect("tenant_detail", pk=pk)
     if not member or not member["uuid"]:
-        messages.error(request, f"Kein Intranet-Account {uid!r} mit Verschwiegenheitserklärung gefunden.")
+        messages.error(request, f"Kein Intranet-Account {uid!r} gefunden.")
         return redirect("tenant_detail", pk=pk)
     tenant.intranet_username = member["username"]
     tenant.intranet_uuid = member["uuid"]

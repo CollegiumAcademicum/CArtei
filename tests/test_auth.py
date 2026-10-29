@@ -195,7 +195,7 @@ def test_admin_links_and_unlinks_account():
     t = _tenant()
     c = _client("adm", ["admins"])
     member = {"username": "neu_b", "uuid": UUID_A, "first_name": "", "last_name": "", "email": ""}
-    with patch("app.views.tenant.get_clearance_member", return_value=member) as get:
+    with patch("app.views.tenant.get_member", return_value=member) as get:
         c.post(f"/tenants/{t.pk}/link/", {"uid": "neu_b"})
     get.assert_called_once_with("neu_b")
     t.refresh_from_db()
@@ -209,7 +209,7 @@ def test_admin_links_and_unlinks_account():
 @pytest.mark.django_db
 def test_link_unknown_uid_changes_nothing():
     t = _tenant()
-    with patch("app.views.tenant.get_clearance_member", return_value=None):
+    with patch("app.views.tenant.get_member", return_value=None):
         _client("adm", ["admins"]).post(f"/tenants/{t.pk}/link/", {"uid": "ghost"})
     t.refresh_from_db()
     assert t.intranet_username is None
