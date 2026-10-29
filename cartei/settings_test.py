@@ -1,4 +1,4 @@
-"""Test settings: no LDAP, SQLite in-memory, domain models temporarily managed."""
+"""Test settings: no LDAP/Keycloak, SQLite in-memory, domain models temporarily managed."""
 AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
 SECRET_KEY = "test-secret-key-not-for-production"
 DEBUG = True
@@ -37,9 +37,21 @@ TEMPLATES = [
 ]
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-LOGIN_URL = "/login/"
+LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "/dashboard/"
-LOGOUT_REDIRECT_URL = "/login/"
+LOGIN_REDIRECT_URL_FAILURE = "/info/?login=failed"
+LOGOUT_REDIRECT_URL = "/"
+_oidc = "https://kc.test/realms/test/protocol/openid-connect"
+OIDC_OP_AUTHORIZATION_ENDPOINT = f"{_oidc}/auth"
+OIDC_OP_TOKEN_ENDPOINT = f"{_oidc}/token"
+OIDC_OP_USER_ENDPOINT = f"{_oidc}/userinfo"
+OIDC_OP_JWKS_ENDPOINT = f"{_oidc}/certs"
+OIDC_OP_LOGOUT_ENDPOINT = f"{_oidc}/logout"
+OIDC_OP_LOGOUT_URL_METHOD = "app.auth.keycloak_logout_url"
+OIDC_RP_CLIENT_ID = "cartei"
+OIDC_RP_CLIENT_SECRET = "test"
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_STORE_ID_TOKEN = True
 STATIC_URL = "static/"
 STATIC_ROOT = "/tmp/cartei-test-static"
 CARTEI_ADMIN_GROUP = "cn=admins,dc=test"

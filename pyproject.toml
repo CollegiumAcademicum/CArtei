@@ -5,7 +5,6 @@ description = "CArtei tenant management system"
 requires-python = ">=3.14"
 dependencies = [
     "django>=5.0",
-    "django-auth-ldap>=4.8",
     "psycopg[binary]>=3.0",
     "gunicorn>=22.0",
     "python-dotenv>=1.0",
@@ -13,6 +12,8 @@ dependencies = [
     "weasyprint>=69.0",
     "pylatex>=1.4",
     "python-freeipa>=1.0",
+    "mozilla-django-oidc>=5.0.2",
+    "python-ldap>=3.4.8",
 ]
 
 [dependency-groups]

@@ -81,58 +81,56 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGIN_URL = "/login/"
+LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "/dashboard/"
-LOGOUT_REDIRECT_URL = "/login/"
+LOGIN_REDIRECT_URL_FAILURE = "/info/?login=failed"
+LOGOUT_REDIRECT_URL = "/"
 
-# LDAP — skipped gracefully if python-ldap not installed
+# Login: Keycloak (OIDC), which federates the FreeIPA directory. Endpoints are
+# the realm's standard Keycloak paths (see /.well-known/openid-configuration).
+KEYCLOAK_REALM_URL = os.environ.get(
+    "KEYCLOAK_REALM_URL", "https://id.ca-hd.de/realms/collegium"
+).rstrip("/")
+_oidc = f"{KEYCLOAK_REALM_URL}/protocol/openid-connect"
+OIDC_OP_AUTHORIZATION_ENDPOINT = f"{_oidc}/auth"
+OIDC_OP_TOKEN_ENDPOINT = f"{_oidc}/token"
+OIDC_OP_USER_ENDPOINT = f"{_oidc}/userinfo"
+OIDC_OP_JWKS_ENDPOINT = f"{_oidc}/certs"
+OIDC_OP_LOGOUT_ENDPOINT = f"{_oidc}/logout"
+OIDC_OP_LOGOUT_URL_METHOD = "app.auth.keycloak_logout_url"
+OIDC_RP_CLIENT_ID = os.environ.get("OIDC_RP_CLIENT_ID", "cartei")
+OIDC_RP_CLIENT_SECRET = os.environ.get("OIDC_RP_CLIENT_SECRET", "")
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_RP_SCOPES = "openid email profile"
+OIDC_USE_PKCE = True
+OIDC_STORE_ID_TOKEN = True  # id_token_hint for Keycloak logout
+
+AUTHENTICATION_BACKENDS = ["app.auth.KeycloakOIDCBackend"]
+if DEBUG:  # /dev-login/ for seed_dev_data's password accounts (cartei/urls.py)
+    AUTHENTICATION_BACKENDS.append("django.contrib.auth.backends.ModelBackend")
+
+# LDAP — read-only lookups (clearance/AG members) by the service bind; login no
+# longer touches it. Skipped gracefully if python-ldap is not installed.
+LDAP_SERVER_URI = os.environ.get("LDAP_SERVER_URI", "ldap://localhost")
+LDAP_BIND_DN = os.environ.get("LDAP_BIND_DN", "")
+LDAP_BIND_PASSWORD = os.environ.get("LDAP_BIND_PASSWORD", "")
+LDAP_GLOBAL_OPTIONS = {}
 try:
     import ldap
-    from django_auth_ldap.config import LDAPSearch, MemberDNGroupType
 
-    AUTH_LDAP_SERVER_URI = os.environ.get("LDAP_SERVER_URI", "ldap://localhost")
-    AUTH_LDAP_BIND_DN = os.environ.get("LDAP_BIND_DN", "")
-    AUTH_LDAP_BIND_PASSWORD = os.environ.get("LDAP_BIND_PASSWORD", "")
-    AUTH_LDAP_USER_SEARCH = LDAPSearch(
-        os.environ.get("LDAP_USER_SEARCH_BASE", "dc=example,dc=com"),
-        ldap.SCOPE_SUBTREE,
-        "(uid=%(user)s)",
-    )
-    AUTH_LDAP_USER_ATTR_MAP = {
-        "first_name": "givenName",
-        "last_name": "sn",
-        "email": "mail",
-    }
-    AUTH_LDAP_GROUP_TYPE = MemberDNGroupType("member")
-    AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
-        os.environ.get("LDAP_GROUPS_BASE", "cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"),
-        ldap.SCOPE_SUBTREE,
-        "(objectClass=groupOfNames)",
-    )
-    AUTH_LDAP_REQUIRE_GROUP = os.environ.get(
-    "LDAP_REQUIRE_GROUP",
-    "cn=confidentiality_clearance,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
-)
-    AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_REFERRALS: 0}
+    LDAP_GLOBAL_OPTIONS[ldap.OPT_REFERRALS] = 0
     _ca_cert = os.environ.get("LDAP_CA_CERT_PATH", "")
     if _ca_cert:
         try:
             ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, _ca_cert)
-            AUTH_LDAP_GLOBAL_OPTIONS[ldap.OPT_X_TLS_CACERTFILE] = _ca_cert
-            AUTH_LDAP_GLOBAL_OPTIONS[ldap.OPT_X_TLS_REQUIRE_CERT] = ldap.OPT_X_TLS_DEMAND
+            LDAP_GLOBAL_OPTIONS[ldap.OPT_X_TLS_CACERTFILE] = _ca_cert
+            LDAP_GLOBAL_OPTIONS[ldap.OPT_X_TLS_REQUIRE_CERT] = ldap.OPT_X_TLS_DEMAND
         except ValueError:
             # macOS Secure Transport does not support OPT_X_TLS_CACERTFILE
-            AUTH_LDAP_GLOBAL_OPTIONS[ldap.OPT_X_TLS_REQUIRE_CERT] = ldap.OPT_X_TLS_NEVER
-            AUTH_LDAP_GLOBAL_OPTIONS[ldap.OPT_X_TLS_NEWCTX] = 0
-
-    AUTHENTICATION_BACKENDS = [
-        "app.auth.CustomLDAPBackend",
-        "django.contrib.auth.backends.ModelBackend",
-    ]
+            LDAP_GLOBAL_OPTIONS[ldap.OPT_X_TLS_REQUIRE_CERT] = ldap.OPT_X_TLS_NEVER
+            LDAP_GLOBAL_OPTIONS[ldap.OPT_X_TLS_NEWCTX] = 0
 except ImportError:
-    AUTHENTICATION_BACKENDS = [
-        "django.contrib.auth.backends.ModelBackend",
-    ]
+    pass
 
 CARTEI_ADMIN_GROUP = os.environ.get(
     "CARTEI_ADMIN_GROUP",
@@ -208,7 +206,7 @@ INTRANET_URL = os.environ.get("INTRANET_URL", "https://intranet.ca-hd.de/home")
 PASSWORD_GUIDE_URL = os.environ.get("PASSWORD_GUIDE_URL", "https://collegiumacademicum.de/internet/")
 
 # Maps a section role to the LDAP-synced Django group name(s) that grant it.
-# These are the Django group names produced by app/auth.CustomLDAPBackend:
+# These are the Django group names produced by app/auth.KeycloakOIDCBackend:
 # the cluster LDAP group is synced as "gr.cluster"; AG groups keep their raw cn.
 # Override per role via env with a comma-separated list, e.g.
 #   TENANT_GROUP_MIETVERWALTUNG=ag.mietverwaltung,ag.hausverwaltung
@@ -218,7 +216,7 @@ def _group_list(env_key: str, default: str) -> list[str]:
 
 TENANT_ROLE_GROUPS = {
     # "admins" is the synced marker name that CARTEI_ADMIN_GROUP maps to (see
-    # app/auth.CustomLDAPBackend); the "admin" role can view/edit all fields.
+    # app/auth.KeycloakOIDCBackend); the "admin" role can view/edit all fields.
     "admin": _group_list("TENANT_GROUP_ADMIN", "admins"),
     "cluster": _group_list("TENANT_GROUP_CLUSTER", "gr.cluster"),
     "belegium": _group_list("TENANT_GROUP_BELEGIUM", "gr.belegium"),

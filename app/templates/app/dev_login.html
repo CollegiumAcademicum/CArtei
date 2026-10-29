@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Anmelden — CArtei</title>
+  <title>Dev-Login — CArtei</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'app/ca.css' %}">
@@ -24,7 +24,7 @@
   </div>
 
   <div class="ca-login-card">
-    <div class="ca-login-title">CArtei</div>
+    <div class="ca-login-title">CArtei · Dev-Login</div>
 
     {% if form.errors %}
       <div class="ca-message error">Benutzername oder Passwort ungültig.</div>
@@ -33,11 +33,11 @@
     <form method="post">
       {% csrf_token %}
       <div class="ca-field">
-        <label class="ca-label" for="id_username">Intranet-Benutzername</label>
+        <label class="ca-label" for="id_username">Benutzername</label>
         <input class="ca-input" type="text" name="username" id="id_username" autofocus required>
       </div>
       <div class="ca-field">
-        <label class="ca-label" for="id_password">Intranet-Passwort</label>
+        <label class="ca-label" for="id_password">Passwort</label>
         <div style="position:relative;">
           <input class="ca-input" type="password" name="password" id="id_password" required style="padding-right:2.5rem;">
           <button type="button" onclick="(function(){var i=document.getElementById('id_password');i.type=i.type==='password'?'text':'password';})()" style="position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;color:#7a7a7a;">
