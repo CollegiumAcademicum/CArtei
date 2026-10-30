@@ -19,6 +19,7 @@ urlpatterns = [
     path("tenants/<int:pk>/", tenant.tenant_detail, name="tenant_detail"),
     path("tenants/<int:pk>/provision/", tenant.tenant_provision, name="tenant_provision"),
     path("tenants/<int:pk>/link/", tenant.tenant_link, name="tenant_link"),
+    path("tenants/link-search/", tenant.tenant_link_search, name="tenant_link_search"),
     path("tenants/<int:pk>/reset-profile-setup/", tenant.tenant_reset_profile_setup, name="tenant_reset_profile_setup"),
     path("rooms/<int:room_id>/renters/", tenant.room_renters, name="room_renters"),
     path("tenants/<int:pk>/enrollment-proof/upload/", enrollment_proof.upload_proof, name="enrollment_proof_upload"),

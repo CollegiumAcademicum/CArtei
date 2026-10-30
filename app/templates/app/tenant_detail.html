@@ -18,9 +18,11 @@
         {% endif %}
       {% else %}
         {% if can_link %}
-          <form method="post" action="{% url 'tenant_link' tenant.pk %}" style="margin:0;display:flex;gap:.4rem;">
+          <form method="post" action="{% url 'tenant_link' tenant.pk %}" style="margin:0;display:flex;align-items:center;gap:.4rem;">
             {% csrf_token %}
-            <input class="ca-input" name="uid" placeholder="Intranet-Benutzername" required style="width:12rem;">
+            <input class="ca-input ca-input-sm" name="uid" placeholder="Intranet-Account suchen" required style="width:13rem;"
+                   list="link-accounts" autocomplete="off" data-search-url="{% url 'tenant_link_search' %}">
+            <datalist id="link-accounts"></datalist>
             <button type="submit" class="ca-button ca-button-sm">Verknüpfen</button>
           </form>
         {% endif %}
@@ -532,6 +534,30 @@
 </div>
 
 <script>
+// Account type-ahead for the link form: query once typing pauses (300 ms).
+(function() {
+  var input = document.querySelector('input[data-search-url]');
+  if (!input) return;
+  var list = document.getElementById('link-accounts'), timer;
+  input.addEventListener('input', function() {
+    clearTimeout(timer);
+    var q = input.value.trim();
+    if (q.length < 2 || Array.from(list.options).some(function(o) { return o.value === q; })) return;
+    timer = setTimeout(function() {
+      fetch(input.dataset.searchUrl + '?q=' + encodeURIComponent(q))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          list.replaceChildren.apply(list, data.results.map(function(a) {
+            var o = document.createElement('option');
+            o.value = a.uid;
+            o.label = a.name ? a.name + ' (' + a.uid + ')' : a.uid;
+            return o;
+          }));
+        });
+    }, 300);
+  });
+})();
+
 document.querySelectorAll('details.ca-section').forEach(function(section) {
   var fields = Array.from(section.querySelectorAll('input, select, textarea')).filter(function(f) { return !f.closest('.ca-note-form') && !f.closest('.ca-room-assignment'); });
   var origValues = {};
