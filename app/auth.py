@@ -3,11 +3,15 @@ import uuid as uuid_module
 from urllib.parse import urlencode
 
 from django.conf import settings
+from django.contrib import auth
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError, transaction
+from django.shortcuts import redirect
+from django.urls import reverse
 from django.utils import timezone
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
+from mozilla_django_oidc.views import OIDCAuthenticationCallbackView
 
 from app.middleware import IMPERSONATION_GROUP
 
@@ -57,6 +61,35 @@ def keycloak_logout_url(request) -> str:
         "post_logout_redirect_uri": request.build_absolute_uri(settings.LOGOUT_REDIRECT_URL),
     }
     return f"{settings.OIDC_OP_LOGOUT_ENDPOINT}?{urlencode(params)}"
+
+
+class KeycloakCallbackView(OIDCAuthenticationCallbackView):
+    """OIDC callback, also hit by SessionRefresh's silent re-check every
+    OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS — which re-runs the backend, so groups,
+    clearance and email are re-synced (CArtei#69)."""
+
+    def get(self, request):
+        if request.GET.get("error") in ("login_required", "interaction_required"):
+            # Silent re-check found no Keycloak session (idle/expired): log in
+            # interactively and come back to the page instead of the error page.
+            next_url = request.session.get("oidc_login_next") or "/"
+            auth.logout(request)
+            return redirect(f"{reverse('login')}?{urlencode({'next': next_url})}")
+        return super().get(request)
+
+    def login_success(self):
+        # While impersonating, request.user is the target; compare against the real
+        # login so a refresh doesn't re-login (and rotate the CSRF token) needlessly.
+        if impersonator := getattr(self.request, "impersonator", None):
+            self.request.user = impersonator
+        return super().login_success()
+
+    def login_failure(self):
+        # A failed re-check (clearance removed, account disabled) must end the
+        # session — the library would leave it alive and bounce on every page load.
+        if self.request.user.is_authenticated:
+            auth.logout(self.request)
+        return super().login_failure()
 
 
 class KeycloakOIDCBackend(OIDCAuthenticationBackend):

@@ -4,6 +4,8 @@ from django.shortcuts import redirect
 from django.urls import include, path
 from mozilla_django_oidc import views as oidc_views
 
+from app.auth import KeycloakCallbackView
+
 
 def _root(request):
     if request.user.is_authenticated:
@@ -14,8 +16,11 @@ def _root(request):
 urlpatterns = [
     path("", _root),
     path("login/", oidc_views.OIDCAuthenticationRequestView.as_view(), name="login"),
-    path("oidc/callback/", oidc_views.OIDCAuthenticationCallbackView.as_view(), name="oidc_authentication_callback"),
+    path("oidc/callback/", KeycloakCallbackView.as_view(), name="oidc_authentication_callback"),
     path("logout/", oidc_views.OIDCLogoutView.as_view(), name="logout"),
+    # Same views under the library's names: SessionRefresh reverses these to exempt them.
+    path("login/", oidc_views.OIDCAuthenticationRequestView.as_view(), name="oidc_authentication_init"),
+    path("logout/", oidc_views.OIDCLogoutView.as_view(), name="oidc_logout"),
     path("", include("app.urls")),
 ]
 
