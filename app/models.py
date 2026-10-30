@@ -36,7 +36,10 @@ class NoteSubjectType(models.TextChoices):
 class Tenant(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
+    # Cache of FreeIPA `mail` for linked tenants (send via emails.current_email);
+    # the only copy for unlinked ones. See cartei_db Tenant.email.
     email = models.CharField(max_length=255, default="")
+    email_refreshed_at = models.DateTimeField(null=True, blank=True)
     # NULL for tenants added manually by Mietverwaltung (no LDAP account yet).
     intranet_username = models.CharField(max_length=255, unique=True, null=True, blank=True)
     intranet_uuid = models.UUIDField(unique=True, null=True, blank=True)

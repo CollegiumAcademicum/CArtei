@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 
 from app.middleware import IMPERSONATION_GROUP
@@ -91,8 +92,11 @@ class KeycloakOIDCBackend(OIDCAuthenticationBackend):
         return user
 
     def _link_tenant(self, intranet_uuid, username, claims) -> None:
-        """Find the tenant by uuid (create on first login); follow uid renames."""
+        """Find the tenant by uuid (create on first login); follow uid renames and
+        refresh the email cache from the claim (FreeIPA mail is the SSOT)."""
         from app.models import Tenant
+        email = claims.get("email", "")
+        refreshed_at = timezone.now() if email else None
         tenant = Tenant.objects.filter(intranet_uuid=intranet_uuid).first()
         if tenant is None:
             if Tenant.objects.filter(intranet_username=username).exists():
@@ -102,18 +106,25 @@ class KeycloakOIDCBackend(OIDCAuthenticationBackend):
             Tenant.objects.create(
                 first_name=claims.get("given_name", ""),
                 last_name=claims.get("family_name", ""),
-                email=claims.get("email", ""),
+                email=email,
+                email_refreshed_at=refreshed_at,
                 intranet_username=username,
                 intranet_uuid=intranet_uuid,
             )
             return
         old = tenant.intranet_username
+        fields = []
         if old != username:
             logger.info(f"Intranet uid renamed {old!r} -> {username!r} ({intranet_uuid})")
             tenant.intranet_username = username
-            tenant.save(update_fields=["intranet_username"])
+            fields.append("intranet_username")
             if old:
                 User.objects.filter(username=old).update(username=username)
+        if email:
+            tenant.email, tenant.email_refreshed_at = email, refreshed_at
+            fields += ["email", "email_refreshed_at"]
+        if fields:
+            tenant.save(update_fields=fields)
 
     def _sync_groups(self, user, group_names: set[str]) -> None:
         markers = {

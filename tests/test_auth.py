@@ -126,6 +126,17 @@ def test_relogin_reuses_tenant():
 
 
 @pytest.mark.django_db
+def test_login_refreshes_email_cache():
+    # FreeIPA mail (via the Keycloak email claim) is the SSOT for linked tenants.
+    login(claims())
+    t = Tenant.objects.get(intranet_uuid=UUID_A)
+    assert t.email == "a@ca.de" and t.email_refreshed_at is not None
+    login(claims(email="changed-in-freeipa@ca.de"))
+    t.refresh_from_db()
+    assert t.email == "changed-in-freeipa@ca.de"
+
+
+@pytest.mark.django_db
 def test_uid_rename_follows_uuid():
     login(claims(username="alice"))
     user = login(claims(username="alice.new"))
