@@ -9,6 +9,7 @@ from django.views.decorators.http import require_http_methods
 
 from app.forms import ProfileSetupForm
 from app.models import Tenant
+from app.views._shared import write_through_email
 
 
 @login_required
@@ -20,9 +21,11 @@ def profile_setup(request):
 
     if request.method == "POST":
         form = ProfileSetupForm(request.POST)
-        if form.is_valid():
+        if form.is_valid() and write_through_email(form, tenant):
             with transaction.atomic():
+                refreshed_at = tenant.email_refreshed_at  # set by write_through_email
                 tenant = Tenant.objects.select_for_update().get(pk=tenant.pk)
+                tenant.email_refreshed_at = refreshed_at
                 tenant.email = form.cleaned_data["email"]
                 tenant.phone = form.cleaned_data["phone"] or None
                 tenant.no_phone_number = form.cleaned_data["no_phone_number"]
@@ -30,7 +33,7 @@ def profile_setup(request):
                 tenant.is_flinta = form.cleaned_data["is_flinta"] == "yes"
                 tenant.profile_setup_completed_at = timezone.now()
                 tenant.save(update_fields=[
-                    "email", "phone", "no_phone_number", "mailbox_list_opt_in",
+                    "email", "email_refreshed_at", "phone", "no_phone_number", "mailbox_list_opt_in",
                     "is_flinta", "profile_setup_completed_at",
                 ])
             destination = request.POST.get("next", "")

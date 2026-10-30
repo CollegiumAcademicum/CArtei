@@ -29,3 +29,12 @@ def django_db_setup(django_test_environment, django_db_blocker):
 
     for m in unmanaged:
         m._meta.managed = False
+
+
+@pytest.fixture(autouse=True)
+def no_freeipa(monkeypatch):
+    """No FreeIPA in tests: email write-through succeeds silently and the
+    read-through cache lookup finds no account (so tenant.email is used).
+    Tests of those paths patch these again explicitly."""
+    monkeypatch.setattr("app.views._shared.set_ldap_mail", lambda uid, email: None)
+    monkeypatch.setattr("app.emails.get_mail_by_uuid", lambda intranet_uuid: None)

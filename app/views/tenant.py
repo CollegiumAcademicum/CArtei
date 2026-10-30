@@ -29,7 +29,7 @@ from app.tenant_access import (
 )
 from app.views._shared import (
     ACTIVE_STATES, BELEGIUM_EDIT_WINDOW, assignment_doc_groups, assignment_editable_by,
-    display, engagement_verdict, submitted_assignment_forms,
+    display, engagement_verdict, submitted_assignment_forms, write_through_email,
 )
 
 ProofStatus = namedtuple("ProofStatus", "state count")
@@ -426,7 +426,8 @@ def tenant_detail(request: HttpRequest, pk: int):
             new_rf.add_error("moved_in", "Belegium darf Zimmer nur ab zwei Wochen vor Einzug zuordnen.")
             new_rf_ok = False
 
-        if form.is_valid() and all(rf.is_valid() for _, rf in a_forms) and new_rf_ok:
+        if (form.is_valid() and all(rf.is_valid() for _, rf in a_forms) and new_rf_ok
+                and ("email" not in form.cleaned_data or write_through_email(form, tenant))):
             form.save()
             for _, rf in a_forms:
                 rf.save()

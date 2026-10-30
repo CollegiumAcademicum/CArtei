@@ -1,13 +1,36 @@
 """Cross-view helpers shared by the tenant and WG views. Extracted from
 tenant.py so rooms.py can reuse them without a circular import."""
+import logging
 import mimetypes
 from datetime import timedelta
 
 from django.http import HttpResponse
+from django.utils import timezone
 from django.utils.http import content_disposition_header
 
 from app.forms import TenantRoomAssignmentForm
-from app.models import ASSIGNMENT_DOCUMENT_MODELS, AssignmentDocumentType, TenantRoomAssignment
+from app.ldap_utils import set_ldap_mail
+from app.models import ASSIGNMENT_DOCUMENT_MODELS, AssignmentDocumentType, Tenant, TenantRoomAssignment
+
+logger = logging.getLogger(__name__)
+
+
+def write_through_email(form, tenant) -> bool:
+    """FreeIPA `mail` is the email SSOT for linked tenants (CArtei#70): push a
+    changed address there BEFORE the DB save. On failure flag the field and
+    return False — the caller must then not save, or the next cache refresh
+    would silently revert the edit. Sets tenant.email_refreshed_at on success."""
+    email = form.cleaned_data["email"]
+    if not tenant.intranet_username or Tenant.objects.filter(pk=tenant.pk, email=email).exists():
+        return True
+    try:
+        set_ldap_mail(tenant.intranet_username, email)
+    except Exception as exc:
+        logger.error("Email write-through failed for tenant %s: %s", tenant.pk, exc)
+        form.add_error("email", "Konnte nicht ins Intranet (FreeIPA) übernommen werden — nicht gespeichert.")
+        return False
+    tenant.email_refreshed_at = timezone.now()
+    return True
 
 
 def inline_file_response(doc):
