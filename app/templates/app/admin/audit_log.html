@@ -1,0 +1,65 @@
+{% extends "app/base.html" %}
+{% block title %}Änderungsprotokoll — CArtei{% endblock %}
+{% block content %}
+<div class="ca-card">
+  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;">Änderungsprotokoll</h1>
+  <p style="color:#555;margin-bottom:1rem;">
+    Jede Änderung und Löschung an protokollierten Tabellen, neueste zuerst. Neu angelegte Einträge erscheinen erst mit ihrer ersten Änderung.
+  </p>
+
+  <form method="get" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1.5rem;">
+    <select name="type" class="ca-input ca-input-sm">
+      <option value="">Alle Tabellen</option>
+      {% for t in entity_types %}<option value="{{ t }}"{% if t == type %} selected{% endif %}>{{ t }}</option>{% endfor %}
+    </select>
+    <input name="id" value="{{ id }}" placeholder="ID" inputmode="numeric" class="ca-input ca-input-sm" style="width:6rem;">
+    <input name="by" value="{{ by }}" placeholder="Geändert von" class="ca-input ca-input-sm">
+    <button type="submit" class="ca-button-outline">Filtern</button>
+    {% if filter_query %}<a href="{% url 'audit_log' %}">zurücksetzen</a>{% endif %}
+  </form>
+
+  <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+    <thead>
+      <tr style="text-align:left;color:#777;">
+        <th style="padding:0.3rem 0.5rem;">Zeit</th>
+        <th style="padding:0.3rem 0.5rem;">Eintrag</th>
+        <th style="padding:0.3rem 0.5rem;">Von</th>
+        <th style="padding:0.3rem 0.5rem;">Änderung</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in entries %}
+      <tr style="border-top:1px solid #eee;vertical-align:top;">
+        <td style="padding:0.4rem 0.5rem;white-space:nowrap;">{{ e.h.changed_at|date:"d.m.Y H:i:s" }}</td>
+        <td style="padding:0.4rem 0.5rem;white-space:nowrap;">
+          {% if e.h.entity_type == "tenant" %}<a href="{% url 'tenant_detail' e.h.entity_id %}">tenant #{{ e.h.entity_id }}</a>
+          {% else %}<a href="?type={{ e.h.entity_type|urlencode }}&id={{ e.h.entity_id }}">{{ e.h.entity_type }} #{{ e.h.entity_id }}</a>{% endif %}
+        </td>
+        <td style="padding:0.4rem 0.5rem;">{{ e.h.changed_by }} <span style="color:#999;">({{ e.h.change_source }})</span></td>
+        <td style="padding:0.4rem 0.5rem;">
+          {% if e.deleted %}
+            <details><summary style="color:#b33;">gelöscht</summary>
+              {% for c in e.changes %}<div><code>{{ c.field }}</code>: {{ c.before|default_if_none:"—" }}</div>{% endfor %}
+            </details>
+          {% else %}
+            {% for c in e.changes %}
+            <div><code>{{ c.field }}</code>: <s style="color:#999;">{{ c.before|default_if_none:"—" }}</s> → {{ c.after|default_if_none:"—" }}</div>
+            {% empty %}<span style="color:#999;">—</span>{% endfor %}
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" style="padding:0.4rem 0.5rem;color:#777;">Keine Einträge.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if page.paginator.num_pages > 1 %}
+  <div style="display:flex;gap:1rem;justify-content:center;margin-top:1rem;">
+    {% if page.has_previous %}<a href="?{{ filter_query }}&page={{ page.previous_page_number }}">← neuer</a>{% endif %}
+    <span>Seite {{ page.number }} / {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?{{ filter_query }}&page={{ page.next_page_number }}">älter →</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

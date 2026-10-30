@@ -46,6 +46,9 @@
           <button type="submit" class="ca-button ca-button-sm">Profil-Einrichtung zurücksetzen</button>
         </form>
       {% endif %}
+      {% if can_link %}
+        <a href="{% url 'audit_log' %}?type=tenant&id={{ tenant.pk }}" class="ca-button-outline ca-button-sm">Verlauf</a>
+      {% endif %}
     </div>
   </div>
 
