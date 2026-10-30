@@ -36,6 +36,11 @@
   <a href="{% url 'permission_matrix' %}" class="ca-button-outline">Berechtigungsmatrix ansehen</a>
 
   <hr class="ca-divider">
+  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">Änderungsprotokoll</h2>
+  <p style="color:#555;margin-bottom:1rem;">Wer hat wann was geändert oder gelöscht.</p>
+  <a href="{% url 'audit_log' %}" class="ca-button-outline">Protokoll ansehen</a>
+
+  <hr class="ca-divider">
   <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">LDAP-Sync</h2>
   <p style="color:#555;margin-bottom:1rem;">
     Importiert neue Mitglieder aus der LDAP-Gruppe <code>confidentiality_clearance</code> als Mieter*innen.

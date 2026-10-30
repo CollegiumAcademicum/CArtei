@@ -576,3 +576,20 @@ class ImpersonationEvent(models.Model):
     class Meta:
         managed = False
         db_table = "impersonation_event"
+
+
+class EntityHistory(models.Model):
+    """Mirror of cartei_db.entity_history — written only by the audit_history()
+    trigger. Each row is the row's state *before* an UPDATE/DELETE (excluded
+    columns stripped); the state after is the next snapshot or the live row."""
+
+    entity_type = models.CharField(max_length=255)
+    entity_id = models.IntegerField()
+    snapshot = models.JSONField()
+    changed_at = models.DateTimeField()
+    changed_by = models.CharField(max_length=255)
+    change_source = models.CharField(max_length=255)
+
+    class Meta:
+        managed = False
+        db_table = "entity_history"

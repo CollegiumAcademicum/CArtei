@@ -54,6 +54,7 @@ urlpatterns = [
     path("admin/impersonate/stop/", impersonation.stop, name="impersonation_stop"),
     path("admin/impersonate/<int:user_id>/", impersonation.start, name="impersonation_start"),
     path("admin/sync-from-ldap/", admin_views.sync_from_ldap, name="sync_from_ldap"),
+    path("admin/history/", admin_views.audit_log, name="audit_log"),
     path("admin/permissions/", admin_views.permission_matrix, name="permission_matrix"),
     path("admin/invalidate-sessions/", admin_views.invalidate_all_sessions, name="invalidate_all_sessions"),
     path("admin/sessions/", admin_views.session_management, name="session_management"),

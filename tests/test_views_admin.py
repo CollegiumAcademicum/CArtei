@@ -82,3 +82,42 @@ def test_sync_does_not_overwrite_existing():
 
     alice = Tenant.objects.get(intranet_username="alice")
     assert alice.first_name == "Old"  # not overwritten
+
+
+def _history(entity_type, entity_id, snapshot, by="alice"):
+    from django.utils import timezone
+    from app.models import EntityHistory
+    return EntityHistory.objects.create(
+        entity_type=entity_type, entity_id=entity_id, snapshot=snapshot,
+        changed_at=timezone.now(), changed_by=by, change_source="HUMAN",
+    )
+
+
+@pytest.mark.django_db
+def test_audit_log_requires_admin():
+    client = Client()
+    client.force_login(User.objects.create_user(username="nobody", password="pw"))
+    assert client.get("/admin/history/").status_code == 403
+
+
+@pytest.mark.django_db
+def test_audit_log_diffs_against_next_snapshot_and_live_row():
+    from app.models import Tenant
+    t = Tenant.objects.create(
+        first_name="Carla", last_name="Neu", email="c@ca.de", intranet_uuid=uuid.uuid4(),
+    )
+    _history("tenant", t.pk, {"id": t.pk, "first_name": "Karla", "last_name": "Alt"})
+    _history("tenant", t.pk, {"id": t.pk, "first_name": "Carla", "last_name": "Alt"}, by="bob")
+    _history("wg", 999, {"id": 999, "name": "Weg"})
+
+    client = Client()
+    client.force_login(_admin_user())
+    entries = client.get("/admin/history/").context["entries"]
+
+    wg, newest, oldest = entries
+    assert wg["deleted"]  # no live row
+    assert newest["changes"] == [{"field": "last_name", "before": "Alt", "after": "Neu"}]
+    assert oldest["changes"] == [{"field": "first_name", "before": "Karla", "after": "Carla"}]
+
+    filtered = client.get(f"/admin/history/?type=tenant&by=bob").context["entries"]
+    assert [e["h"].changed_by for e in filtered] == ["bob"]
