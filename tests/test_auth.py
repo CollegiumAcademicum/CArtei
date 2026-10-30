@@ -254,3 +254,20 @@ def test_require_group_allows_correct_group():
     request = RequestFactory().get("/")
     request.user = user
     assert protected_view(request).status_code == 200
+
+
+@pytest.mark.django_db
+def test_link_search_returns_matches_for_admins():
+    found = [{"username": "neu_b", "first_name": "Neu", "last_name": "B", "email": "", "uuid": UUID_A}]
+    with patch("app.views.tenant.search_accounts", return_value=found) as search:
+        resp = _client("adm", ["admins"]).get("/tenants/link-search/?q=neu")
+    search.assert_called_once_with("neu")
+    assert resp.json() == {"results": [{"uid": "neu_b", "name": "Neu B"}]}
+
+
+@pytest.mark.django_db
+def test_link_search_short_query_and_non_admin():
+    with patch("app.views.tenant.search_accounts") as search:
+        assert _client("adm", ["admins"]).get("/tenants/link-search/?q=n").json() == {"results": []}
+        assert _client("mv", ["ag.mietverwaltung"]).get("/tenants/link-search/?q=neu").status_code == 403
+    search.assert_not_called()

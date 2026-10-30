@@ -68,6 +68,20 @@ def get_member(uid: str) -> dict | None:
     return found[0] if found else None
 
 
+def search_accounts(q: str, limit: int = 10) -> list[dict]:
+    """Intranet accounts whose uid, first/last name or mail contains q."""
+    v = ldap.filter.escape_filter_chars(q)
+    conn = _connect()
+    results = conn.search_s(
+        settings.LDAP_USER_SEARCH_BASE,
+        ldap.SCOPE_SUBTREE,
+        f"(|(uid=*{v}*)(givenName=*{v}*)(sn=*{v}*)(mail=*{v}*))",
+        _ATTRS,
+    )
+    # ponytail: fetches all matches then slices; fine for a few hundred accounts.
+    return [_parse(attrs) for _, attrs in results if attrs][:limit]
+
+
 def get_ag_members(ag_name: str) -> list[dict]:
     """Return members of LDAP group cn=<ag_name>,<LDAP_GROUPS_BASE>."""
     group_dn = f"cn={ldap.filter.escape_filter_chars(ag_name)},{settings.LDAP_GROUPS_BASE}"

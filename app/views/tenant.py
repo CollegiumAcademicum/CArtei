@@ -13,7 +13,7 @@ from django.core.exceptions import PermissionDenied
 
 from app.emails import send_welcome_email
 from app.forms import TenantCreateForm, TenantForm, TenantRoomAssignmentForm
-from app.ldap_utils import get_member, provision_ldap_account
+from app.ldap_utils import get_member, provision_ldap_account, search_accounts
 
 logger = logging.getLogger(__name__)
 from app.models import (
@@ -265,6 +265,24 @@ def tenant_provision(request: HttpRequest, pk: int):
     tenant = get_object_or_404(Tenant, pk=pk)
     _provision_and_notify(request, tenant)
     return redirect("tenant_detail", pk=pk)
+
+
+@login_required
+def tenant_link_search(request: HttpRequest):
+    """Type-ahead for the link form: matching intranet accounts as JSON."""
+    if "admin" not in global_roles(request.user):
+        raise PermissionDenied
+    q = request.GET.get("q", "").strip()
+    if len(q) < 2:
+        return JsonResponse({"results": []})
+    try:
+        found = search_accounts(q)
+    except Exception as exc:
+        logger.error("Account search failed: %s", exc)
+        return JsonResponse({"results": []}, status=502)
+    return JsonResponse({"results": [
+        {"uid": m["username"], "name": f"{m['first_name']} {m['last_name']}".strip()} for m in found
+    ]})
 
 
 @login_required
