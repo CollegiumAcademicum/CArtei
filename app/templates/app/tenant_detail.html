@@ -273,7 +273,7 @@
           {% if can_write_mv %}
           <td style="padding:.25rem .5rem;white-space:nowrap;">
             <button type="button" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;" onclick="document.getElementById('verify-form-{{ p.pk }}').hidden=!document.getElementById('verify-form-{{ p.pk }}').hidden">Verifizieren</button>
-            <form method="post" action="{% url 'enrollment_proof_reject' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" onsubmit="return confirm('Diesen Nachweis ablehnen und löschen?');">
+            <form method="post" action="{% url 'enrollment_proof_reject' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="Diesen Nachweis ablehnen und löschen?">
               {% csrf_token %}
               <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;">Ablehnen</button>
             </form>
@@ -336,7 +336,7 @@
           <td style="padding:.25rem .5rem;">{{ p.verified_at|date:"d.m.Y" }}</td>
           {% if can_write_mv %}
           <td style="padding:.25rem .5rem;">
-            <form method="post" action="{% url 'enrollment_proof_revert' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" onsubmit="return confirm('Verifizierung aufheben? Der Nachweis wird erneut automatisch geprüft.');">
+            <form method="post" action="{% url 'enrollment_proof_revert' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="Verifizierung aufheben? Der Nachweis wird erneut automatisch geprüft.">
               {% csrf_token %}
               <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;" title="Verifizierung aufheben – erneut automatisch prüfen">Aufheben</button>
             </form>
