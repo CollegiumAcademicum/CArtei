@@ -12,7 +12,7 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
       <strong style="font-size:1.05rem;">{{ u.username }}</strong>
       <form method="post" action="{% url 'invalidate_user_sessions' u.username %}"
-            onsubmit="return confirm('Alle Sitzungen von {{ u.username|escapejs }} beenden?');">
+            data-confirm="Alle Sitzungen von {{ u.username }} beenden?">
         {% csrf_token %}
         <button type="submit" class="ca-button-outline">Überall abmelden</button>
       </form>
@@ -37,7 +37,7 @@
           </td>
           <td style="padding:0.4rem 0.5rem;text-align:right;">
             <form method="post" action="{% url 'revoke_session' s.session_key %}"
-                  onsubmit="return confirm('Diese Sitzung beenden?');">
+                  data-confirm="Diese Sitzung beenden?">
               {% csrf_token %}
               <button type="submit" class="ca-button-outline">Beenden</button>
             </form>

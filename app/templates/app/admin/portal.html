@@ -61,7 +61,7 @@
     <strong>Alle</strong> Sitzungen ungültig machen meldet jede*n ab — dich selbst eingeschlossen.
   </p>
   <form method="post" action="{% url 'invalidate_all_sessions' %}"
-        onsubmit="return confirm('Wirklich alle Sitzungen ungültig machen? Alle Nutzer*innen werden abgemeldet.');">
+        data-confirm="Wirklich alle Sitzungen ungültig machen? Alle Nutzer*innen werden abgemeldet.">
     {% csrf_token %}
     <button type="submit" class="ca-button">Alle Sitzungen ungültig machen</button>
   </form>
