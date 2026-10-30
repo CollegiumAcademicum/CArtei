@@ -17,6 +17,9 @@
       welche Nachweise vorliegen. Alles rollenbasiert und datenschutzfreundlich:
       Jede:r sieht genau das, was die eigene Aufgabe erfordert – nicht mehr.
     </p>
+    {% if request.GET.login == "failed" %}
+      <div class="ca-message error">Anmeldung fehlgeschlagen. CArtei steht nur Intranet-Accounts mit unterschriebener Verschwiegenheitserklärung offen.</div>
+    {% endif %}
     <div class="lp-cta">
       <a class="ca-button" href="{% url 'login' %}">Anmelden</a>
       <a class="ca-button-outline" href="#roadmap">Zur Roadmap</a>
@@ -100,7 +103,7 @@
           <thead><tr><th>Repo</th><th>Rolle</th></tr></thead>
           <tbody>
             <tr><td><code>cartei_db</code></td><td>Schema – die <em>Single Source of Truth</em>. SQLAlchemy-2.0-Modelle + Alembic-Migrationen, als Paket veröffentlicht.</td></tr>
-            <tr><td><code>CArtei</code></td><td>Django-5-Webanwendung mit LDAP-Login. Liest und schreibt die Datenbank über <code>managed=False</code>-Spiegelmodelle.</td></tr>
+            <tr><td><code>CArtei</code></td><td>Django-Webanwendung mit Single Sign-on über Keycloak. Liest und schreibt die Datenbank über <code>managed=False</code>-Spiegelmodelle.</td></tr>
             <tr><td><code>cartei_deployment</code></td><td>Podman Compose + systemd auf zwei VMs (DB + App), Backups und Bootstrap-Skripte.</td></tr>
           </tbody>
         </table>
@@ -114,7 +117,7 @@
           <li><strong>Sprache &amp; Tooling:</strong> Python 3.14, Paket- und Task-Runner <code>uv</code> (kein bare <code>pip</code>).</li>
           <li><strong>Datenbank:</strong> PostgreSQL mit SQLAlchemy 2.0 (declarative, <code>Mapped[...]</code>) und Alembic-Migrationen.</li>
           <li><strong>Web:</strong> Django 5, Server-side-Templates, Bulma + hauseigenes CA-Design.</li>
-          <li><strong>Auth:</strong> LDAP gegen FreeIPA, TLS-verifiziert über den mitgelieferten CA-Cert.</li>
+          <li><strong>Auth:</strong> Single Sign-on über Keycloak (OIDC), das das FreeIPA-Verzeichnis anbindet.</li>
           <li><strong>Betrieb:</strong> Podman-Container, systemd, verschlüsselte Offsite-Backups.</li>
           <li><strong>Qualität:</strong> pytest in jedem Repo, CI baut und pusht die Container-Images.</li>
         </ul>
@@ -184,7 +187,7 @@
       </div>
       <div class="lp-phase">
         <h3>Web-App-Kern <span class="lp-phase-tag">CArtei</span></h3>
-        <p>Django 5 mit LDAP-Login, <code>managed=False</code>-Spiegelmodellen, CA-Design und CI.
+        <p>Django mit Keycloak-Login, <code>managed=False</code>-Spiegelmodellen, CA-Design und CI.
            Inklusive Dashboard, Engagement-Abfragen und Cluster-Auswertung.</p>
       </div>
       <div class="lp-phase">

@@ -4,6 +4,7 @@ from datetime import date
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError
 from django.db.models import Min, Q
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,7 +13,7 @@ from django.core.exceptions import PermissionDenied
 
 from app.emails import send_welcome_email
 from app.forms import TenantCreateForm, TenantForm, TenantRoomAssignmentForm
-from app.ldap_utils import provision_ldap_account
+from app.ldap_utils import get_member, provision_ldap_account
 
 logger = logging.getLogger(__name__)
 from app.models import (
@@ -267,6 +268,41 @@ def tenant_provision(request: HttpRequest, pk: int):
 
 
 @login_required
+def tenant_link(request: HttpRequest, pk: int):
+    """Admin links an existing intranet account to a tenant (by uid, stored with
+    its ipaUniqueID — the login identity), or clears a wrong link."""
+    if request.method != "POST" or "admin" not in global_roles(request.user):
+        raise PermissionDenied
+    tenant = get_object_or_404(Tenant, pk=pk)
+    uid = request.POST.get("uid", "").strip()
+    if not uid:
+        tenant.intranet_username = tenant.intranet_uuid = None
+        tenant.save(update_fields=["intranet_username", "intranet_uuid"])
+        messages.success(request, "Intranet-Verknüpfung entfernt.")
+        return redirect("tenant_detail", pk=pk)
+    if tenant.intranet_username:
+        messages.error(request, "Bereits verknüpft — erst die Verknüpfung entfernen.")
+        return redirect("tenant_detail", pk=pk)
+    try:
+        member = get_member(uid)
+    except Exception as exc:
+        messages.error(request, f"LDAP-Abfrage fehlgeschlagen: {exc}")
+        return redirect("tenant_detail", pk=pk)
+    if not member or not member["uuid"]:
+        messages.error(request, f"Kein Intranet-Account {uid!r} gefunden.")
+        return redirect("tenant_detail", pk=pk)
+    tenant.intranet_username = member["username"]
+    tenant.intranet_uuid = member["uuid"]
+    try:
+        tenant.save(update_fields=["intranet_username", "intranet_uuid"])
+    except IntegrityError:
+        messages.error(request, f"{uid!r} ist bereits mit einer anderen Person verknüpft.")
+        return redirect("tenant_detail", pk=pk)
+    messages.success(request, f"Mit Intranet-Account {member['username']} verknüpft.")
+    return redirect("tenant_detail", pk=pk)
+
+
+@login_required
 def tenant_reset_profile_setup(request: HttpRequest, pk: int):
     """Clear a tenant's completed profile setup so they are re-prompted at their
     next request. Keeps their entered data (pre-fills the form again)."""
@@ -401,6 +437,7 @@ def tenant_detail(request: HttpRequest, pk: int):
         "roles": roles,
         "can_provision": (not tenant.intranet_username
                           and bool({"mietverwaltung", "admin"} & roles)),
+        "can_link": "admin" in roles,
         "can_reset_profile_setup": (bool(tenant.profile_setup_completed_at)
                                     and bool({"mietverwaltung", "admin"} & roles)),
     }

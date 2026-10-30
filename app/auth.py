@@ -1,9 +1,12 @@
 import logging
 import uuid as uuid_module
+from urllib.parse import urlencode
 
 from django.conf import settings
-from django.contrib.auth.models import Group
-from django_auth_ldap.backend import LDAPBackend
+from django.contrib.auth.models import Group, User
+from django.core.exceptions import SuspiciousOperation
+from django.db import IntegrityError, transaction
+from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 
 from app.middleware import IMPERSONATION_GROUP
 
@@ -33,72 +36,108 @@ def ag_group_names(user) -> list[str]:
     )
 
 
-class CustomLDAPBackend(LDAPBackend):
-    def authenticate(self, request, username=None, password=None, **kwargs):
-        user = super().authenticate(request, username, password, **kwargs)
-        if user is not None:
-            self._sync_groups(user)
-            self._ensure_tenant(user)
+# Keycloak claim carrying FreeIPA's ipaUniqueID (user-attribute mapper on the
+# cartei client). It is the identity anchor: uids can be renamed, it can't.
+UUID_CLAIM = "ipaUniqueID"
+
+
+def claim_group_names(claims) -> set[str]:
+    """Group names from the Keycloak "groups" claim; tolerates full paths ("/ag.it")."""
+    return {g.rsplit("/", 1)[-1] for g in claims.get("groups", [])}
+
+
+def keycloak_logout_url(request) -> str:
+    """End the Keycloak session too, else "Abmelden" signs straight back in."""
+    id_token = request.session.get("oidc_id_token")
+    if not id_token:  # not a Keycloak login (e.g. /dev-login/)
+        return settings.LOGOUT_REDIRECT_URL
+    params = {
+        "id_token_hint": id_token,
+        "post_logout_redirect_uri": request.build_absolute_uri(settings.LOGOUT_REDIRECT_URL),
+    }
+    return f"{settings.OIDC_OP_LOGOUT_ENDPOINT}?{urlencode(params)}"
+
+
+class KeycloakOIDCBackend(OIDCAuthenticationBackend):
+    def verify_claims(self, claims):
+        return bool(
+            claims.get(UUID_CLAIM)
+            and claims.get("preferred_username")
+            and _dn_to_cn(settings.LDAP_REQUIRE_GROUP) in claim_group_names(claims)
+        )
+
+    def get_or_create_user(self, access_token, id_token, payload):
+        claims = self.get_userinfo(access_token, id_token, payload)
+        if not self.verify_claims(claims):
+            raise SuspiciousOperation(
+                f"Claims verification failed for {claims.get('preferred_username')!r}"
+            )
+        try:
+            intranet_uuid = uuid_module.UUID(claims[UUID_CLAIM])
+        except ValueError:
+            raise SuspiciousOperation(f"Invalid {UUID_CLAIM} {claims[UUID_CLAIM]!r}")
+        username = claims["preferred_username"]
+        try:
+            with transaction.atomic():
+                self._link_tenant(intranet_uuid, username, claims)
+                user, _ = User.objects.get_or_create(username=username)
+                user.first_name = claims.get("given_name", "")
+                user.last_name = claims.get("family_name", "")
+                user.email = claims.get("email", "")
+                user.save()
+        except IntegrityError as exc:
+            raise SuspiciousOperation(f"Identity conflict for {username!r}: {exc}")
+        self._sync_groups(user, claim_group_names(claims))
         return user
 
-    def _sync_groups(self, user) -> None:
-        admin_dn = getattr(settings, "CARTEI_ADMIN_GROUP", "").lower()
-        cluster_dn = getattr(settings, "CARTEI_CLUSTER_GROUP", "").lower()
-        mietverwaltung_dn = getattr(settings, "CARTEI_MIETVERWALTUNG_GROUP", "").lower()
-        helper_dn = getattr(settings, "CARTEI_HELFER_MIETVERWALTUNG_GROUP", "").lower()
-        impersonation_dn = getattr(settings, "CARTEI_IMPERSONATION_GROUP", "").lower()
-        try:
-            member_of: list[str] = user.ldap_user.attrs.get("memberOf", [])
-            desired: set[str] = set()
-            for dn in member_of:
-                dn_l = dn.lower()
-                if dn_l == impersonation_dn:
-                    desired.add(IMPERSONATION_GROUP)
-                # Rights groups (cartei_admin/cluster/cartei_mietverwaltung) map to
-                # fixed marker names; they aren't AG-prefixed so they never appear
-                # in the dashboard AG list. A DN could still be a rights group AND
-                # a prefixed AG, so checks are independent (not elif).
-                if dn_l == admin_dn:
-                    desired.add("admins")
-                if dn_l == cluster_dn:
-                    desired.add("gr.cluster")
-                if dn_l == mietverwaltung_dn:
-                    desired.add("cartei_mietverwaltung")
-                if dn_l == helper_dn:
-                    desired.add("cartei_helfer_mietverwaltung")
-                cn = _dn_to_cn(dn)
-                if cn.startswith(GROUP_PREFIXES):
-                    desired.add(cn)
-            current = set(user.groups.values_list("name", flat=True))
-            for name in desired - current:
-                group, _ = Group.objects.get_or_create(name=name)
-                user.groups.add(group)
-            for name in current - desired:
-                try:
-                    user.groups.remove(Group.objects.get(name=name))
-                except Group.DoesNotExist:
-                    pass
-        except Exception as exc:
-            logger.error(f"Group sync failed for {user.username!r}: {exc}")
-
-    def _ensure_tenant(self, user) -> None:
+    def _link_tenant(self, intranet_uuid, username, claims) -> None:
+        """Find the tenant by uuid (create on first login); follow uid renames."""
         from app.models import Tenant
-        if Tenant.objects.filter(intranet_username=user.username).exists():
-            return
-        try:
-            uuid_raw = user.ldap_user.attrs.get("ipaUniqueID", [None])[0]
-            if isinstance(uuid_raw, bytes):
-                uuid_raw = uuid_raw.decode()
-            try:
-                intranet_uuid = uuid_module.UUID(uuid_raw)
-            except (ValueError, AttributeError):
-                intranet_uuid = None
+        tenant = Tenant.objects.filter(intranet_uuid=intranet_uuid).first()
+        if tenant is None:
+            if Tenant.objects.filter(intranet_username=username).exists():
+                raise SuspiciousOperation(
+                    f"Tenant {username!r} is linked to a different intranet uuid than {intranet_uuid}"
+                )
             Tenant.objects.create(
-                first_name=user.first_name or "",
-                last_name=user.last_name or "",
-                email=user.email or "",
-                intranet_username=user.username,
-                intranet_uuid=intranet_uuid or uuid_module.uuid4(),
+                first_name=claims.get("given_name", ""),
+                last_name=claims.get("family_name", ""),
+                email=claims.get("email", ""),
+                intranet_username=username,
+                intranet_uuid=intranet_uuid,
             )
-        except Exception as exc:
-            logger.error(f"Failed to auto-create Tenant for {user.username!r}: {exc}")
+            return
+        old = tenant.intranet_username
+        if old != username:
+            logger.info(f"Intranet uid renamed {old!r} -> {username!r} ({intranet_uuid})")
+            tenant.intranet_username = username
+            tenant.save(update_fields=["intranet_username"])
+            if old:
+                User.objects.filter(username=old).update(username=username)
+
+    def _sync_groups(self, user, group_names: set[str]) -> None:
+        markers = {
+            _dn_to_cn(getattr(settings, name, "")).lower(): marker
+            for name, marker in (
+                ("CARTEI_IMPERSONATION_GROUP", IMPERSONATION_GROUP),
+                ("CARTEI_ADMIN_GROUP", "admins"),
+                ("CARTEI_CLUSTER_GROUP", "gr.cluster"),
+                ("CARTEI_MIETVERWALTUNG_GROUP", "cartei_mietverwaltung"),
+                ("CARTEI_HELFER_MIETVERWALTUNG_GROUP", "cartei_helfer_mietverwaltung"),
+            )
+            if getattr(settings, name, "")
+        }
+        # Rights groups map to fixed marker names; they aren't AG-prefixed so they
+        # never appear in the dashboard AG list. A group can be a rights group AND
+        # a prefixed AG (ag.it doubles as admin), so both checks apply.
+        desired: set[str] = set()
+        for cn in group_names:
+            if marker := markers.get(cn.lower()):
+                desired.add(marker)
+            if cn.startswith(GROUP_PREFIXES):
+                desired.add(cn)
+        current = set(user.groups.values_list("name", flat=True))
+        for name in desired - current:
+            group, _ = Group.objects.get_or_create(name=name)
+            user.groups.add(group)
+        user.groups.remove(*Group.objects.filter(name__in=current - desired))

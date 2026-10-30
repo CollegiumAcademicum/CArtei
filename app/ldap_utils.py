@@ -19,10 +19,10 @@ ProvisionResult = namedtuple("ProvisionResult", ["uid", "temp_password"])
 
 
 def _connect():
-    for opt, val in getattr(settings, "AUTH_LDAP_GLOBAL_OPTIONS", {}).items():
+    for opt, val in getattr(settings, "LDAP_GLOBAL_OPTIONS", {}).items():
         ldap.set_option(opt, val)
-    conn = ldap.initialize(settings.AUTH_LDAP_SERVER_URI)
-    conn.simple_bind_s(settings.AUTH_LDAP_BIND_DN, settings.AUTH_LDAP_BIND_PASSWORD)
+    conn = ldap.initialize(settings.LDAP_SERVER_URI)
+    conn.simple_bind_s(settings.LDAP_BIND_DN, settings.LDAP_BIND_PASSWORD)
     return conn
 
 
@@ -53,6 +53,19 @@ def get_clearance_members() -> list[dict]:
         _ATTRS,
     )
     return [_parse(attrs) for _, attrs in results if attrs]
+
+
+def get_member(uid: str) -> dict | None:
+    """One intranet account by uid, or None — regardless of group membership."""
+    conn = _connect()
+    results = conn.search_s(
+        settings.LDAP_USER_SEARCH_BASE,
+        ldap.SCOPE_SUBTREE,
+        f"(uid={ldap.filter.escape_filter_chars(uid)})",
+        _ATTRS,
+    )
+    found = [_parse(attrs) for _, attrs in results if attrs]
+    return found[0] if found else None
 
 
 def get_ag_members(ag_name: str) -> list[dict]:
