@@ -33,6 +33,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "mozilla_django_oidc.middleware.SessionRefresh",
     "app.middleware.ImpersonationMiddleware",
     "app.middleware.RequiredProfileSetupMiddleware",
     "app.middleware.AuditActorMiddleware",
@@ -104,6 +105,9 @@ OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_RP_SCOPES = "openid email profile"
 OIDC_USE_PKCE = True
 OIDC_STORE_ID_TOKEN = True  # id_token_hint for Keycloak logout
+# SessionRefresh (MIDDLEWARE): after this long, the next page load silently
+# re-checks with Keycloak, re-syncing groups/clearance; refused -> logged out.
+OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 15 * 60
 
 AUTHENTICATION_BACKENDS = ["app.auth.KeycloakOIDCBackend"]
 if DEBUG:  # /dev-login/ for seed_dev_data's password accounts (cartei/urls.py)

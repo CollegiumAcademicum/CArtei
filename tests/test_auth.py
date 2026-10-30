@@ -282,3 +282,61 @@ def test_link_search_short_query_and_non_admin():
         assert _client("adm", ["admins"]).get("/tenants/link-search/?q=n").json() == {"results": []}
         assert _client("mv", ["ag.mietverwaltung"]).get("/tenants/link-search/?q=neu").status_code == 403
     search.assert_not_called()
+
+
+# --- periodic permission re-check (SessionRefresh, CArtei#69) ----------------
+
+@pytest.fixture
+def oidc_backend(settings):
+    settings.AUTHENTICATION_BACKENDS = ["app.auth.KeycloakOIDCBackend", "django.contrib.auth.backends.ModelBackend"]
+
+
+def _oidc_session_client(username="olga", expired=True):
+    """Client logged in via the Keycloak backend, re-check due (expired) or not."""
+    import time
+    c = Client()
+    c.force_login(User.objects.create_user(username=username), backend="app.auth.KeycloakOIDCBackend")
+    s = c.session
+    s["oidc_id_token_expiration"] = time.time() + (-1 if expired else 600)
+    s.save()
+    return c
+
+
+KC_AUTH = "https://kc.test/realms/test/protocol/openid-connect/auth?"
+
+
+@pytest.mark.django_db
+def test_expired_session_silently_rechecks_with_keycloak(oidc_backend):
+    resp = _oidc_session_client().get("/dashboard/")
+    assert resp.status_code == 302 and resp.url.startswith(KC_AUTH)
+    assert "prompt=none" in resp.url
+
+
+@pytest.mark.django_db
+def test_fresh_sessions_posts_and_password_logins_are_not_rechecked(oidc_backend):
+    assert _oidc_session_client("fresh", expired=False).get("/dashboard/").status_code == 200
+    resp = _oidc_session_client("poster").post("/tenants/link-search/")
+    assert not (resp.status_code == 302 and resp.url.startswith(KC_AUTH))
+    dev = Client()
+    dev.force_login(User.objects.create_user(username="dev"), backend="django.contrib.auth.backends.ModelBackend")  # /dev-login/
+    assert dev.get("/dashboard/").status_code == 200
+
+
+@pytest.mark.django_db
+def test_refused_recheck_logs_out(oidc_backend):
+    c = _oidc_session_client()
+    c.get("/dashboard/")  # starts the silent re-check, stores state in the session
+    state = next(iter(c.session["oidc_states"]))
+    with patch("app.auth.KeycloakOIDCBackend.authenticate", return_value=None):  # e.g. clearance removed
+        resp = c.get(f"/oidc/callback/?code=x&state={state}")
+    assert resp.url == "/info/?login=failed"
+    assert "_auth_user_id" not in c.session
+
+
+@pytest.mark.django_db
+def test_expired_keycloak_session_goes_to_interactive_login(oidc_backend):
+    c = _oidc_session_client()
+    c.get("/tenants/?q=x")  # silent re-check remembers where we were
+    resp = c.get("/oidc/callback/?error=login_required&state=s")
+    assert resp.url == "/login/?next=%2Ftenants%2F%3Fq%3Dx"
+    assert "_auth_user_id" not in c.session

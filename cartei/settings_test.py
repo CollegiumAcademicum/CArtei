@@ -16,6 +16,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "mozilla_django_oidc.middleware.SessionRefresh",
     "app.middleware.ImpersonationMiddleware",
     "app.middleware.RequiredProfileSetupMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -52,6 +53,9 @@ OIDC_RP_CLIENT_ID = "cartei"
 OIDC_RP_CLIENT_SECRET = "test"
 OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_STORE_ID_TOKEN = True
+# SessionRefresh (MIDDLEWARE): after this long, the next page load silently
+# re-checks with Keycloak, re-syncing groups/clearance; refused -> logged out.
+OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 15 * 60
 STATIC_URL = "static/"
 STATIC_ROOT = "/tmp/cartei-test-static"
 CARTEI_ADMIN_GROUP = "cn=admins,dc=test"

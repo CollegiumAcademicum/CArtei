@@ -544,8 +544,10 @@
     var q = input.value.trim();
     if (q.length < 2 || Array.from(list.options).some(function(o) { return o.value === q; })) return;
     timer = setTimeout(function() {
-      fetch(input.dataset.searchUrl + '?q=' + encodeURIComponent(q))
-        .then(function(r) { return r.json(); })
+      // X-Requested-With: a due permission re-check answers 403 instead of a
+      // Keycloak redirect fetch can't follow; suggestions return after a reload.
+      fetch(input.dataset.searchUrl + '?q=' + encodeURIComponent(q), {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+        .then(function(r) { return r.ok ? r.json() : {results: []}; })
         .then(function(data) {
           list.replaceChildren.apply(list, data.results.map(function(a) {
             var o = document.createElement('option');
