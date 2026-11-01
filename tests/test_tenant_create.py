@@ -66,3 +66,52 @@ def test_email_required(settings):
     resp = c.post("/tenants/neu/", {"first_name": "A", "last_name": "B", "email": ""})
     assert resp.status_code == 200  # re-rendered with errors
     assert Tenant.objects.count() == 0
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("existing_mail,new_mail", [
+    ("alice@ca.de", "alice@ca.de"),
+    ("alice@ca.de", "ALICE@ca.de"),
+    ("ALICE@ca.de", "alice@ca.de"),
+])
+def test_duplicate_email_rejected_case_insensitive(settings, existing_mail, new_mail):
+    settings.TENANT_ROLE_GROUPS = MV_GROUPS
+    Tenant.objects.create(first_name="Alice", last_name="Alt", email=existing_mail)
+    c = Client()
+    _login(c, "mv_dup", groups=["ag.mietverwaltung"])
+    resp = c.post("/tenants/neu/", {
+        "first_name": "Bob", "last_name": "Neu", "email": new_mail,
+    })
+    assert resp.status_code == 200
+    assert "Diese E-Mail-Adresse wird bereits verwendet." in resp.content.decode()
+    assert Tenant.objects.count() == 1  # No partial write
+
+
+@pytest.mark.django_db
+def test_ldap_duplicate_email_rejected(settings):
+    settings.TENANT_ROLE_GROUPS = MV_GROUPS
+    c = Client()
+    _login(c, "mv_ldap_dup", groups=["ag.mietverwaltung"])
+    with patch("app.ldap_utils.is_ldap_mail_taken", return_value=True):
+        resp = c.post("/tenants/neu/", {
+            "first_name": "Clara", "last_name": "Neu", "email": "clara@ca.de",
+        })
+    assert resp.status_code == 200
+    assert "Diese E-Mail-Adresse wird bereits im Intranet verwendet." in resp.content.decode()
+    assert Tenant.objects.count() == 0  # No partial write
+
+
+@pytest.mark.django_db
+def test_optin_provision_failure_rolls_back_tenant(settings, mailoutbox):
+    settings.TENANT_ROLE_GROUPS = MV_GROUPS
+    c = Client()
+    _login(c, "mv_fail", groups=["ag.mietverwaltung"])
+    with patch("app.views.tenant.provision_ldap_account", side_effect=RuntimeError("LDAP constraint: mail must be unique")):
+        resp = c.post("/tenants/neu/", {
+            "first_name": "Daniel", "last_name": "Neu", "email": "daniel@ca.de",
+            "create_ldap_account": "on",
+        })
+    assert resp.status_code == 200
+    assert "bereits im Intranet verwendet" in resp.content.decode()
+    assert Tenant.objects.filter(last_name="Neu").count() == 0  # Rolled back, no partial write
+    assert len(mailoutbox) == 0  # No email sent

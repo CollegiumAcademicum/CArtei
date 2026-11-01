@@ -21,13 +21,17 @@ def write_through_email(form, tenant) -> bool:
     return False — the caller must then not save, or the next cache refresh
     would silently revert the edit. Sets tenant.email_refreshed_at on success."""
     email = form.cleaned_data["email"]
-    if not tenant.intranet_username or Tenant.objects.filter(pk=tenant.pk, email=email).exists():
+    if not tenant.intranet_username or Tenant.objects.filter(pk=tenant.pk, email__iexact=email).exists():
         return True
     try:
         set_ldap_mail(tenant.intranet_username, email)
     except Exception as exc:
         logger.error("Email write-through failed for tenant %s: %s", tenant.pk, exc)
-        form.add_error("email", "Konnte nicht ins Intranet (FreeIPA) übernommen werden — nicht gespeichert.")
+        err_msg = str(exc).lower()
+        if "mail" in err_msg and ("unique" in err_msg or "already exists" in err_msg or "duplicate" in err_msg):
+            form.add_error("email", "Diese E-Mail-Adresse wird bereits im Intranet verwendet.")
+        else:
+            form.add_error("email", "Konnte nicht ins Intranet (FreeIPA) übernommen werden — nicht gespeichert.")
         return False
     tenant.email_refreshed_at = timezone.now()
     return True

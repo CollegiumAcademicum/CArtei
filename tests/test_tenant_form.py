@@ -82,3 +82,38 @@ def test_sublet_source_whose_tenancy_ended_is_rejected():
     TenantRoomAssignment.objects.create(tenant=former, room=room,
         moved_in=datetime.date(2020, 1, 1), moved_out=datetime.date(2021, 1, 1))
     assert not TenantRoomAssignmentForm(data=_post(room, former), prefix="new_room").is_valid()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("target_email", ["other@b.de", "OTHER@b.de"])
+def test_form_rejects_duplicate_email_case_insensitive(target_email):
+    from unittest.mock import patch
+    from app.forms import TenantForm
+    t1 = _tenant("t1")
+    t1.email = "other@b.de"
+    t1.save()
+    t2 = _tenant("t2")
+    form = TenantForm(data={"email": target_email}, instance=t2, allowed_fields={"email"})
+    assert not form.is_valid()
+    assert "email" in form.errors
+    assert "Diese E-Mail-Adresse wird bereits verwendet." in form.errors["email"]
+
+
+@pytest.mark.django_db
+def test_form_allows_same_tenant_own_email():
+    from app.forms import TenantForm
+    t1 = _tenant("t1")
+    form = TenantForm(data={"email": t1.email.upper()}, instance=t1, allowed_fields={"email"})
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+def test_form_rejects_ldap_taken_email():
+    from unittest.mock import patch
+    from app.forms import TenantForm
+    t = _tenant("t_ldap")
+    with patch("app.ldap_utils.is_ldap_mail_taken", return_value=True):
+        form = TenantForm(data={"email": "ldap_taken@b.de"}, instance=t, allowed_fields={"email"})
+        assert not form.is_valid()
+        assert "email" in form.errors
+        assert "Diese E-Mail-Adresse wird bereits im Intranet verwendet." in form.errors["email"]

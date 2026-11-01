@@ -110,6 +110,31 @@ def get_mail_by_uuid(intranet_uuid) -> str | None:
     return found[0] if found and found[0] else None
 
 
+def is_ldap_mail_taken(email: str, exclude_username: str | None = None) -> bool:
+    """Return True if email is already in use by another intranet account in FreeIPA."""
+    if not getattr(settings, "LDAP_SERVER_URI", None):
+        return False
+    try:
+        conn = _connect()
+        results = conn.search_s(
+            settings.LDAP_USER_SEARCH_BASE,
+            ldap.SCOPE_SUBTREE,
+            f"(mail={ldap.filter.escape_filter_chars(email)})",
+            ["uid"],
+        )
+        for _, attrs in results:
+            if not attrs:
+                continue
+            uids = attrs.get("uid", [])
+            uid = uids[0].decode() if isinstance(uids[0], bytes) else uids[0]
+            if not exclude_username or uid != exclude_username:
+                return True
+        return False
+    except Exception as exc:
+        logger.warning("LDAP email uniqueness check skipped: %s", exc)
+        return False
+
+
 # --- Writes (CArtei -> FreeIPA) -------------------------------------------
 # Email: FreeIPA `mail` is the source of truth for linked tenants; tenant.email
 # is a read-through cache (see app/emails.current_email). CArtei edits are

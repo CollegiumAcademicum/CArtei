@@ -4,7 +4,7 @@ from datetime import date
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Min, Q
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -244,11 +244,32 @@ def tenant_create(request: HttpRequest):
     if request.method == "POST":
         form = TenantCreateForm(request.POST)
         if form.is_valid():
-            tenant = form.save()  # intranet_username / intranet_uuid stay NULL
-            messages.success(request, "Bewohner:in angelegt.")
             if form.cleaned_data.get("create_ldap_account"):
-                _provision_and_notify(request, tenant)
-            return redirect("tenant_detail", pk=tenant.pk)
+                with transaction.atomic():
+                    tenant = form.save()
+                    try:
+                        result = provision_ldap_account(tenant)
+                    except Exception as exc:
+                        transaction.set_rollback(True)
+                        logger.error("Failed to provision account during tenant creation: %s", exc)
+                        err_msg = str(exc)
+                        if "mail" in err_msg.lower() and ("unique" in err_msg.lower() or "already" in err_msg.lower()):
+                            form.add_error("email", "Diese E-Mail-Adresse wird bereits im Intranet verwendet.")
+                        else:
+                            form.add_error("email", f"Intranet-Account konnte nicht angelegt werden: {exc}")
+                        return render(request, "app/tenant_create.html", {"form": form})
+
+                try:
+                    send_welcome_email(tenant, result.uid, result.temp_password)
+                    messages.success(request, f"Bewohner:in angelegt: {result.uid} — Willkommens-E-Mail an {tenant.email}")
+                except Exception as exc:
+                    logger.error("Welcome email failed for tenant %s: %s", tenant.pk, exc)
+                    messages.warning(request, f"Account {result.uid} angelegt, aber Willkommens-E-Mail fehlgeschlagen.")
+                return redirect("tenant_detail", pk=tenant.pk)
+            else:
+                tenant = form.save()
+                messages.success(request, "Bewohner:in angelegt.")
+                return redirect("tenant_detail", pk=tenant.pk)
     else:
         form = TenantCreateForm()
 

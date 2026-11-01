@@ -20,7 +20,7 @@ def profile_setup(request):
         return redirect("dashboard")
 
     if request.method == "POST":
-        form = ProfileSetupForm(request.POST)
+        form = ProfileSetupForm(request.POST, tenant=tenant)
         if form.is_valid() and write_through_email(form, tenant):
             with transaction.atomic():
                 refreshed_at = tenant.email_refreshed_at  # set by write_through_email
@@ -44,7 +44,7 @@ def profile_setup(request):
             return redirect("dashboard")
         next_path = request.POST.get("next", "")
     else:
-        form = ProfileSetupForm(initial={
+        form = ProfileSetupForm(tenant=tenant, initial={
             "email": tenant.email,
             "phone": tenant.phone,
             "no_phone_number": tenant.no_phone_number,
