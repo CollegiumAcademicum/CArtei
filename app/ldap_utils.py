@@ -176,17 +176,23 @@ class ClearanceIPAError(Exception):
 
 
 def _change_clearance(method: str, uid: str, benign: str) -> None:
+    import requests
     from python_freeipa.exceptions import FreeIPAError
     try:
         reply = getattr(_ipa_client(), method)(
             a_cn=_dn_to_cn(settings.LDAP_REQUIRE_GROUP), o_user=[uid]
         )
-    except (FreeIPAError, RuntimeError) as exc:
+    except (FreeIPAError, RuntimeError, requests.RequestException) as exc:
         raise ClearanceIPAError(str(exc)) from exc
     # python-freeipa returns the RPC "result" dict: {"result", "failed", "completed"}
+    benign_seen = False
     for _, msg in reply.get("failed", {}).get("member", {}).get("user", []):
         if msg != benign:
             raise ClearanceIPAError(msg)
+        benign_seen = True
+    # Fail closed: nothing changed and no "already (not) a member" → unexplained.
+    if reply.get("completed", 0) < 1 and not benign_seen:
+        raise ClearanceIPAError(f"IPA {method} für {uid} ohne Wirkung: {reply!r}")
 
 
 def add_clearance_member(uid: str) -> None:

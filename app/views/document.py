@@ -74,11 +74,13 @@ def _row(doc, dtype, label, tenant, download_url):
         "tenant": tenant,
         "type_key": dtype,
         "type_label": label,
+        "doc_pk": doc.pk,
         "file_name": doc.file_name,
         "signed": _signed_display(doc, dtype),
         "uploaded_at": doc.uploaded_at,
         "uploaded_by": doc.uploaded_by,
         "revoked": doc.revoked_at is not None,
+        "pending": False,  # set for unapproved VEs in list_documents
         "revoked_at": _fmt(doc.revoked_at),
         "revoked_by": doc.revoked_by if doc.revoked_by_id else None,
         "revoked_note": doc.revoked_note or "",
@@ -127,6 +129,13 @@ def list_documents(request):
                 rows.append(_row(doc, dtype, label, doc.assignment.tenant, reverse(
                     "assignment_document_download",
                     kwargs={"assignment_pk": doc.assignment_id, "document_type": dtype, "doc_pk": doc.pk})))
+
+    # A live VE only counts once a granter confirmed it (GRANT event, #65).
+    ve_rows = [r for r in rows if r["type_key"] == DocumentType.VERTRAULICHKEITSERKLAERUNG and not r["revoked"]]
+    if ve_rows:
+        approved = clearance.approved_doc_ids(r["doc_pk"] for r in ve_rows)
+        for r in ve_rows:
+            r["pending"] = r["doc_pk"] not in approved
 
     rows.sort(key=lambda r: r["uploaded_at"], reverse=True)
     # ponytail: loads every readable row unpaginated, like tenant_list; add
@@ -287,7 +296,7 @@ def grant_clearance(request, pk, doc_pk):
     if not tenant.intranet_username or not tenant.intranet_uuid:
         messages.error(request, "Kein Intranet-Account vorhanden.")
         return back
-    if (request.POST.get("confirm_name") or "").strip() != f"{tenant.first_name} {tenant.last_name}":
+    if (request.POST.get("confirm_name") or "").strip() != clearance.confirm_name_for(tenant):
         messages.error(request, "Name stimmt nicht überein")
         return back
     try:

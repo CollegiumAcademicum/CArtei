@@ -5,7 +5,7 @@ import pytest
 from django.utils import timezone
 
 from app.clearance import (
-    BLACK, GREEN, RED, UNKNOWN, YELLOW, approved_doc_ids, clearance_color,
+    BLACK, GREEN, RED, UNKNOWN, YELLOW, approved_doc_ids, clearance_color, confirm_name_for,
 )
 from app.models import (
     ClearanceAction, ConfidentialityClearanceEvent, Tenant,
@@ -13,22 +13,29 @@ from app.models import (
 )
 
 
-def _expected(in_group, approved, pending):
-    if in_group is None:
-        return UNKNOWN
-    if in_group and approved:
-        return GREEN
-    if in_group or approved:
-        return BLACK
-    return YELLOW if pending else RED
+_TABLE = [
+    *[((True, True, p), GREEN) for p in (True, False)],
+    *[((True, False, p), BLACK) for p in (True, False)],
+    *[((False, True, p), BLACK) for p in (True, False)],
+    ((False, False, True), YELLOW),
+    ((False, False, False), RED),
+    *[((None, a, p), UNKNOWN) for a in (True, False) for p in (True, False)],
+]
 
 
-@pytest.mark.parametrize(
-    "in_group,approved,pending",
-    list(itertools.product([True, False, None], [True, False], [True, False])),
-)
-def test_clearance_color_table(in_group, approved, pending):
-    assert clearance_color(in_group, approved, pending) == _expected(in_group, approved, pending)
+@pytest.mark.parametrize("args,colour", _TABLE)
+def test_clearance_color_table(args, colour):
+    assert clearance_color(*args) == colour
+
+
+def test_clearance_color_table_is_exhaustive():
+    assert {a for a, _ in _TABLE} == set(itertools.product([True, False, None], [True, False], [True, False]))
+
+
+def test_confirm_name_strips_each_part():
+    t = Tenant(first_name="  Max ", last_name=" Muster  ")
+    assert confirm_name_for(t) == "Max Muster"
+    assert confirm_name_for(Tenant(first_name="Solo ", last_name="")) == "Solo"
 
 
 @pytest.mark.django_db

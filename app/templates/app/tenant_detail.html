@@ -388,6 +388,7 @@
         <strong>{{ g.label }}</strong>
         {% if g.type == "vertraulichkeitserklaerung" %}
         <span class="ca-pill ca-pill-{{ clearance.color }}" title="{{ clearance.tooltip }}">{% if clearance.color == "green" %}Freigegeben{% elif clearance.color == "yellow" %}Wartet auf Bestätigung{% elif clearance.color == "red" %}Keine Freigabe{% elif clearance.color == "black" %}Inkonsistent{% else %}Gruppenstatus unbekannt{% endif %}</span>
+        {% if clearance.is_granter %}<span style="font-size:.85rem;">Name: {{ clearance.full_name }}</span>{% endif %}
         {% elif g.has_active %}
         <span style="color:#0a0;font-size:.8rem;">● Aktiv</span>
         {% else %}
@@ -410,6 +411,9 @@
         <span>· {{ d.iban }} / {{ d.bic }}</span>
         {% else %}
         <span>· {{ d.signed_at|date:"d.m.Y" }}</span>
+        {% endif %}
+        {% if d.doc_type == "vertraulichkeitserklaerung" %}
+        <span>· hochgeladen von {{ d.uploaded_by|display }}</span>
         {% endif %}
         {% if d.doc_type == "vertraulichkeitserklaerung" and not d.revoked_at %}
         <span>· {% if d.clearance_approved %}Bestätigt{% else %}Ausstehend{% endif %}</span>

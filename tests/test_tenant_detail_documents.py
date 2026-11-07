@@ -233,3 +233,43 @@ def test_approved_ve_revoke_warns_about_group(client, owner, granter_user):
     from app.ldap_utils import _dn_to_cn
     assert f"entzieht {_dn_to_cn(settings.LDAP_REQUIRE_GROUP)} und" in html
     assert "allen internen Plattformen (und CArtei)" in html
+
+
+def test_granter_sees_real_name_on_ve_card(client, granter_user):
+    t = Tenant.objects.create(
+        first_name="Echter", last_name="Name", preferred_name="Spitzname", email="en@example.com",
+        intranet_username="echt_n", intranet_uuid="00000000-0000-0000-0000-000000000077",
+    )
+    html = _html(client, granter_user, t)
+    section = html.split('id="section-documents"', 1)[1].split("</details>", 1)[0]
+    assert "Name: Echter Name" in section
+
+
+def test_non_granter_reader_sees_no_name_line(client, owner):
+    _ve(owner)
+    mv = _grouped_user("mv_real", "ag.mietverwaltung")
+    section = _html(client, mv, owner).split('id="section-documents"', 1)[1]
+    assert "Vertraulichkeitserklärung" in section
+    assert "Name: Owner Doc" not in section
+
+
+def test_ve_row_shows_uploader(client, owner, granter_user):
+    uploader = Tenant.objects.create(
+        first_name="Up", last_name="Loader", preferred_name="Uppi", email="up@example.com",
+    )
+    VertraulichkeitserklaerungDocument.objects.create(
+        tenant=owner, file_name="ve.pdf", file_data=b"x", signed_at=datetime.date(2026, 8, 1),
+        uploaded_at=now(), uploaded_by=uploader,
+    )
+    assert "· hochgeladen von Uppi" in _html(client, granter_user, owner)
+
+
+def test_grant_dialog_name_is_stripped(client, granter_user):
+    t = Tenant.objects.create(
+        first_name=" Max ", last_name="Muster  ", email="ws@example.com",
+        intranet_username="max_ws_d", intranet_uuid="00000000-0000-0000-0000-000000000078",
+    )
+    _ve(t)
+    html = _html(client, granter_user, t)
+    assert 'data-name="Max Muster"' in html
+    assert "<strong>Max Muster</strong>" in html

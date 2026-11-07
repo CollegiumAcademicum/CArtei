@@ -124,3 +124,32 @@ def test_download_url_points_to_download_view(client, data):
         "assignment_document_download",
         args=[data["wgb"].assignment_id, "wohnungsgeberbescheinigung", data["wgb"].pk],
     )
+
+
+def test_ve_without_grant_is_ausstehend(client, data, django_assert_max_num_queries):
+    from app.models import ClearanceAction, ConfidentialityClearanceEvent, VertraulichkeitserklaerungDocument
+    now = make_aware(datetime.datetime(2026, 8, 1, 12, 0))
+
+    def ve(name):
+        return VertraulichkeitserklaerungDocument.objects.create(
+            tenant=data["subject"], file_name=name, file_data=b"x", uploaded_at=now,
+            uploaded_by=data["subject"], signed_at=datetime.date(2026, 8, 1),
+        )
+    pending, approved = ve("pending.pdf"), ve("approved.pdf")
+    ConfidentialityClearanceEvent.objects.create(
+        tenant=data["subject"], document=approved, action=ClearanceAction.GRANT, created_at=now,
+    )
+    rows = {r["file_name"]: r for r in _rows(client, "mv_dl")}
+    assert rows["pending.pdf"]["pending"] and not rows["approved.pdf"]["pending"]
+    assert not rows["ds.pdf"]["pending"]
+    html = client.get(reverse("document_list")).content.decode()
+    assert html.count(">Ausstehend</span>") == 1
+    # One approved-ids query regardless of VE count: adding more VEs adds no queries.
+    for i in range(5):
+        ve(f"more{i}.pdf")
+    with django_assert_max_num_queries(30) as ctx:
+        client.get(reverse("document_list"))
+    base = len(ctx.captured_queries)
+    ve("one_more.pdf")
+    with django_assert_max_num_queries(base):
+        client.get(reverse("document_list"))

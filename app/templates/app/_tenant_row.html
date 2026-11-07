@@ -3,7 +3,8 @@
 <tr>
   <td data-col="name" data-sort="{{ row.tenant.last_name|lower }} {{ row.tenant.first_name|lower }}">
     {% tenant_link row.tenant %}
-    {% if show_realname and row.tenant.preferred_name %}<span class="ca-tl-muted">({{ row.tenant.first_name }} {{ row.tenant.last_name }})</span>{% endif %}
+    {# real name: personal-column viewers and granters (show_documents covers both) #}
+    {% if show_documents and row.tenant.preferred_name %}<span class="ca-tl-muted">({{ row.tenant.first_name }} {{ row.tenant.last_name }})</span>{% endif %}
   </td>
   {% if show_room %}
   <td data-col="room" data-sort="{% for a, sf in row.rooms %}{{ a.room.wg.name|lower }} {{ a.room.name|lower }} {% endfor %}">

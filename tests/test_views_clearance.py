@@ -255,3 +255,25 @@ def test_revoke_approved_blocked_while_impersonating(client, granter, target, rm
     assert doc.revoked_at is None
     assert not ConfidentialityClearanceEvent.objects.filter(action=ClearanceAction.REVOKE).exists()
     assert rm_spy == []
+
+
+def test_grant_name_compare_strips_stored_whitespace(client, granter, spy):
+    client.force_login(granter[1])
+    t = Tenant.objects.create(
+        first_name=" Max ", last_name="Muster  ", email="ws@example.com",
+        intranet_username="max_ws", intranet_uuid="00000000-0000-0000-0000-000000000199",
+    )
+    _post(client, t, _doc(t), confirm_name="Max Muster")
+    assert spy == ["max_ws"]
+
+
+def test_review_js_pdf_never_uses_pip():
+    """PDFs can't render in a PiP iframe (X-Frame-Options/CSP sandbox on the
+    download), so they always open in a popup; PiP is images-only + falls back."""
+    from pathlib import Path
+
+    js = (Path(__file__).resolve().parent.parent / "app/static/app/clearance_review.js").read_text()
+    assert "kind === 'pdf' ||" in js
+    assert "createElement('iframe')" not in js and "'iframe'" not in js
+    assert ".catch(function() { popup(src); })" in js
+    assert "window.open(src, 'clearance-review', 'popup,width=520,height=720')" in js

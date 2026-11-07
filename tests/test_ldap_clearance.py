@@ -92,3 +92,21 @@ def test_is_member_filter(monkeypatch):
     monkeypatch.setattr(ldap_utils, "_connect", lambda: Conn())
     assert ldap_utils.is_clearance_member("a*b") is True
     assert "ipaUniqueID=a\\2ab" in seen["flt"] and "memberOf=" in seen["flt"]
+
+
+@pytest.mark.parametrize("reply", [{}, {"completed": 0, "failed": {"member": {"user": []}}}])
+def test_not_completed_without_benign_message_raises(monkeypatch, reply):
+    _use(monkeypatch, reply)
+    with pytest.raises(ClearanceIPAError):
+        ldap_utils.add_clearance_member("max_muster")
+
+
+def test_transport_error_wrapped(monkeypatch):
+    import requests
+
+    class Boom(FakeClient):
+        def group_add_member(self, **kw):
+            raise requests.ConnectionError("connection refused")
+    monkeypatch.setattr(ldap_utils, "_ipa_client", lambda: Boom({}))
+    with pytest.raises(ClearanceIPAError, match="connection refused"):
+        ldap_utils.add_clearance_member("max_muster")

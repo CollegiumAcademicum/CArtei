@@ -204,10 +204,13 @@ def tenant_list(request: HttpRequest):
             row["documents_missing"] = sum(1 for d in row["documents"] if not d["present"])
         if show_documents:
             approved, pending = ve_state.get(t.pk, (False, False))
-            if members is None:
+            # No account can't be in the group, LDAP up or not (same as the detail page).
+            if not t.intranet_uuid:
+                in_group = False
+            elif members is None:
                 in_group = None
-            else:  # no account can't be in the group (same as the detail page)
-                in_group = bool(t.intranet_uuid) and str(t.intranet_uuid) in members
+            else:
+                in_group = str(t.intranet_uuid) in members
             ve = {"short": _DOC_SHORT["vertraulichkeitserklaerung"],
                   "label": DocumentType("vertraulichkeitserklaerung").label, "present": approved,
                   "color": clearance.clearance_color(in_group, approved, pending),
@@ -597,7 +600,7 @@ def tenant_detail(request: HttpRequest, pk: int):
         for dtype in readable_types:
             model = DOCUMENT_MODELS[dtype]
             docs = []
-            for d in model.objects.filter(tenant=tenant).order_by("-uploaded_at"):
+            for d in model.objects.filter(tenant=tenant).select_related("uploaded_by").order_by("-uploaded_at"):
                 d.doc_type = dtype
                 d.doc_type_label = DocumentType(dtype).label
                 docs.append(d)
@@ -660,7 +663,9 @@ def _clearance_ctx(request, tenant, docs, roles):
         "can_grant": can_grant,
         "can_revoke_ve": bool({"mietverwaltung", "admin"} & roles) or is_granter,
         "has_account": bool(tenant.intranet_username and tenant.intranet_uuid),
-        "full_name": f"{tenant.first_name} {tenant.last_name}" if can_grant else "",
+        # Granters see the real name (spec) — on the card and in the grant dialog.
+        "is_granter": is_granter,
+        "full_name": clearance.confirm_name_for(tenant) if is_granter else "",
     }
     return ctx, approved
 

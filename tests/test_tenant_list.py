@@ -294,6 +294,17 @@ def test_list_granter_sees_only_ve_pill(client, monkeypatch, settings):
     assert row["documents"][0]["color"] == "yellow"
     html = resp.content.decode()
     assert 'data-col="documents"' in html and 'data-col="email"' not in html
+    assert "(Realname Lovelace)" in html  # spec: granters see the real name
+    assert 'data-col="proof"' not in html and 'data-col="ersteinzug"' not in html
+
+
+@pytest.mark.django_db
+def test_list_plain_member_sees_no_real_name(client, settings):
+    settings.TENANT_ROLE_GROUPS = {**_MV_GROUPS, "granter": ["ag.granter"]}
+    t = _tenant("ve5", first_name="Realname")
+    _assign(t)
+    _login(client, "plain", [])
+    html = client.get("/tenants/").content.decode()
     assert "Realname" not in html
 
 
@@ -307,3 +318,18 @@ def test_list_ldap_down_renders_unknown(client, monkeypatch, settings):
     resp = client.get("/tenants/")
     assert _ve_pill_classes(resp, t)["color"] == "unknown"
     assert "ca-pill-unknown" in resp.content.decode()
+
+
+@pytest.mark.django_db
+def test_list_ldap_down_no_account_is_not_unknown(client, monkeypatch, settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    with_acc = _tenant("ve6")
+    no_acc = Tenant.objects.create(first_name="Kein", last_name="Konto", email="kk@ca.de")
+    _assign(with_acc)
+    _assign(no_acc)
+    _ve_doc(no_acc)
+    monkeypatch.setattr("app.clearance.clearance_member_uuids", lambda: None)
+    _login(client, "mv", ["ag.mietverwaltung"])
+    resp = client.get("/tenants/")
+    assert _ve_pill_classes(resp, with_acc)["color"] == "unknown"
+    assert _ve_pill_classes(resp, no_acc)["color"] == "yellow"

@@ -1,5 +1,5 @@
-// Confidentiality clearance grant (#65): "Prüfen" opens the VE in a
-// picture-in-picture window; the grant dialog only submits once the exact name
+// Confidentiality clearance grant (#65): "Prüfen" opens the VE in a popup
+// (images: picture-in-picture where supported); the grant dialog only submits once the exact name
 // is typed (no paste/drop). Delegated on document and wired once: the AJAX
 // .ca-main swap re-runs this script on every in-place form submit.
 (function() {
@@ -14,18 +14,25 @@
     dlg.querySelector('#clearance-submit').disabled = true;
   }
 
+  function popup(src) {
+    window.open(src, 'clearance-review', 'popup,width=520,height=720');
+  }
+
+  // PDFs always get a plain popup: the download is served with X-Frame-Options
+  // and a sandbox CSP, so it can't render inside a PiP iframe (and we keep it
+  // that way). Document PiP is only used for images, with the popup as fallback.
   function review(src, kind) {
-    if (!('documentPictureInPicture' in window)) {
-      window.open(src, 'clearance-review', 'popup,width=520,height=720');
+    if (kind === 'pdf' || !('documentPictureInPicture' in window)) {
+      popup(src);
       return;
     }
     documentPictureInPicture.requestWindow({width: 520, height: 720}).then(function(pip) {
-      var el = pip.document.createElement(kind === 'pdf' ? 'iframe' : 'img');
+      var el = pip.document.createElement('img');
       el.src = src;
-      el.style.cssText = 'width:100%;height:100%;border:0;object-fit:contain;display:block;';
+      el.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;';
       pip.document.body.style.margin = '0';
       pip.document.body.append(el);
-    });
+    }).catch(function() { popup(src); });
   }
 
   document.addEventListener('click', function(e) {

@@ -36,6 +36,11 @@ def clearance_color(in_group: bool | None, approved: bool, pending: bool) -> str
     return YELLOW if pending else RED
 
 
+def confirm_name_for(tenant: Tenant) -> str:
+    """The exact name a granter must type (and is shown) to confirm a grant."""
+    return f"{tenant.first_name.strip()} {tenant.last_name.strip()}".strip()
+
+
 def approved_doc_ids(doc_ids: Iterable[int]) -> set[int]:
     """Doc ids among doc_ids with a GRANT event. Callers filter out revoked docs."""
     return set(
