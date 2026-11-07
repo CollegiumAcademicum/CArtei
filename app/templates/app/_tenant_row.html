@@ -27,9 +27,13 @@
     {% elif row.proof.state == "pruefung" %}<span class="ca-pill ca-pill-amber">Prüfung ({{ row.proof.count }})</span>
     {% else %}<span class="ca-pill ca-pill-red">fehlt</span>{% endif %}
   </td>
+  {% endif %}
+  {% if show_documents %}
   <td data-col="documents" data-value="{% if row.documents_missing %}incomplete{% for d in row.documents %}{% if not d.present %} fehlt-{{ d.short|lower }}{% endif %}{% endfor %}{% else %}complete{% endif %}" data-sort="{{ row.documents_missing }}">
-    {% for d in row.documents %}<span class="ca-pill {% if d.present %}ca-pill-green{% else %}ca-pill-red{% endif %}" title="{{ d.label }}{% if not d.present %} fehlt{% endif %}">{{ d.short }}</span>{% if not forloop.last %} {% endif %}{% endfor %}
+    {% for d in row.documents %}<span class="ca-pill {% if d.color %}ca-pill-{{ d.color }}{% elif d.present %}ca-pill-green{% else %}ca-pill-red{% endif %}" title="{% if d.color %}{{ d.tooltip }}{% else %}{{ d.label }}{% if not d.present %} fehlt{% endif %}{% endif %}">{{ d.short }}</span>{% if not forloop.last %} {% endif %}{% endfor %}
   </td>
+  {% endif %}
+  {% if show_realname %}
   <td data-col="flinta" data-value="{{ row.tenant.is_flinta|yesno:'true,false' }}" data-sort="{{ row.tenant.is_flinta|yesno:'1,0' }}">{% if row.tenant.is_flinta %}<span class="ca-pill ca-pill-flinta">Ja</span>{% else %}—{% endif %}</td>
   <td data-col="barrier" data-value="{{ row.tenant.barrier_free_needed|yesno:'true,false' }}" data-sort="{{ row.tenant.barrier_free_needed|yesno:'1,0' }}">{% if row.tenant.barrier_free_needed %}<span class="ca-pill ca-pill-bf">Ja</span>{% else %}—{% endif %}</td>
   <td data-col="email" data-sort="{{ row.tenant.email|lower }}">{{ row.tenant.email|default:"—" }}</td>

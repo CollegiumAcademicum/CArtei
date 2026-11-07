@@ -20,7 +20,7 @@ from app.ldap_utils import _dn_to_cn, get_member, provision_ldap_account, search
 logger = logging.getLogger(__name__)
 from app.models import (
     AGAbfrage, AGAbfrageResult, AGStatus,
-    DOCUMENT_MODELS, DocumentType, document_readers,
+    DOCUMENT_MODELS, DocumentType, VertraulichkeitserklaerungDocument, document_readers,
     EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
     RoomDamage, WGDamage, RoomDamageLine, WGDamageLine, DamageSize,
 )
@@ -99,6 +99,7 @@ def tenant_list(request: HttpRequest):
     roles = global_roles(request.user)
     visible = visible_fields(roles)
     show_realname = "first_name" in visible      # real name + email + move dates
+    show_documents = show_realname or "granter" in roles  # granter: VE pill only
     show_room = bool({"mietverwaltung", "admin"} & roles)
     show_cluster = bool({"mietverwaltung", "admin", "cluster"} & roles)
     show_surveys = bool({"cluster", "admin"} & roles)  # AG-engagement columns
@@ -155,6 +156,21 @@ def tenant_list(request: HttpRequest):
                 .values_list("tenant_id", flat=True)
             )
 
+    # VE clearance colour (#65): per tenant, from live VE docs + approval events
+    # + one LDAP group lookup. Skipped when nobody is shown.
+    ve_state: dict[int, tuple[bool, bool]] = {}  # tenant_id -> (approved, pending)
+    members = None
+    if show_documents and tenants:
+        by_tid_ve: dict[int, list[int]] = {}
+        for tid, did in VertraulichkeitserklaerungDocument.objects.filter(
+            tenant_id__in=[t.pk for t in tenants], revoked_at__isnull=True
+        ).values_list("tenant_id", "pk"):
+            by_tid_ve.setdefault(tid, []).append(did)
+        approved_ids = clearance.approved_doc_ids([d for ds in by_tid_ve.values() for d in ds])
+        for tid, ds in by_tid_ve.items():
+            ve_state[tid] = (any(d in approved_ids for d in ds), any(d not in approved_ids for d in ds))
+        members = clearance.clearance_member_uuids()
+
     # AG-engagement scope (cluster/admin): which surveys' results to load.
     abfragen = list(AGAbfrage.objects.all()) if show_surveys else []
     selected_ids = {int(x) for x in request.GET.getlist("surveys") if x.isdigit()} if show_surveys else set()
@@ -185,6 +201,22 @@ def tenant_list(request: HttpRequest):
                  "present": t.pk in active_doc_ids[dt]}
                 for dt in _DOC_SHORT
             ]
+            row["documents_missing"] = sum(1 for d in row["documents"] if not d["present"])
+        if show_documents:
+            approved, pending = ve_state.get(t.pk, (False, False))
+            if members is None:
+                in_group = None
+            else:  # no account can't be in the group (same as the detail page)
+                in_group = bool(t.intranet_uuid) and str(t.intranet_uuid) in members
+            ve = {"short": _DOC_SHORT["vertraulichkeitserklaerung"],
+                  "label": DocumentType("vertraulichkeitserklaerung").label, "present": approved,
+                  "color": clearance.clearance_color(in_group, approved, pending),
+                  "tooltip": clearance.TOOLTIP}
+            if show_realname:
+                row["documents"] = [ve if dt == "vertraulichkeitserklaerung" else d
+                                    for dt, d in zip(_DOC_SHORT, row["documents"])]
+            else:
+                row["documents"] = [ve]
             row["documents_missing"] = sum(1 for d in row["documents"] if not d["present"])
         if show_surveys:
             tr = results_by_tenant.get(t.pk, {})
@@ -225,6 +257,7 @@ def tenant_list(request: HttpRequest):
         "grouped": grouped,
         "total": len(rows),
         "show_realname": show_realname,
+        "show_documents": show_documents,
         "show_room": show_room,
         "show_cluster": show_cluster,
         "show_surveys": show_surveys,
