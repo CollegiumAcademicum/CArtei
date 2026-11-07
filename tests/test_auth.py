@@ -340,3 +340,10 @@ def test_expired_keycloak_session_goes_to_interactive_login(oidc_backend):
     resp = c.get("/oidc/callback/?error=login_required&state=s")
     assert resp.url == "/login/?next=%2Ftenants%2F%3Fq%3Dx"
     assert "_auth_user_id" not in c.session
+
+
+@pytest.mark.django_db
+def test_sync_groups_maps_grant_clearance_group():
+    user = User.objects.create_user(username="granter")
+    backend()._sync_groups(user, {"cartei_grant_confidentiality_clearance"})
+    assert set(user.groups.values_list("name", flat=True)) == {"cartei_grant_clearance"}

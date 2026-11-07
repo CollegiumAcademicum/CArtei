@@ -168,6 +168,7 @@ class KeycloakOIDCBackend(OIDCAuthenticationBackend):
                 ("CARTEI_CLUSTER_GROUP", "gr.cluster"),
                 ("CARTEI_MIETVERWALTUNG_GROUP", "cartei_mietverwaltung"),
                 ("CARTEI_HELFER_MIETVERWALTUNG_GROUP", "cartei_helfer_mietverwaltung"),
+                ("CARTEI_GRANT_CLEARANCE_GROUP", "cartei_grant_clearance"),
             )
             if getattr(settings, name, "")
         }
