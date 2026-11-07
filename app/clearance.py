@@ -3,6 +3,13 @@ from collections.abc import Iterable
 
 from django.conf import settings
 
+from app.ldap_utils import (  # noqa: F401  (single patch site for views/tests)
+    ClearanceIPAError,
+    add_clearance_member,
+    clearance_member_uuids,
+    is_clearance_member,
+    remove_clearance_member,
+)
 from app.models import ClearanceAction, ConfidentialityClearanceEvent
 
 GREEN, YELLOW, RED, BLACK, UNKNOWN = "green", "yellow", "red", "black", "unknown"

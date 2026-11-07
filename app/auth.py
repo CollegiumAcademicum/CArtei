@@ -13,6 +13,7 @@ from django.utils import timezone
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 from mozilla_django_oidc.views import OIDCAuthenticationCallbackView
 
+from app.ldap_utils import _dn_to_cn  # noqa: F401  (re-exported)
 from app.middleware import IMPERSONATION_GROUP
 
 logger = logging.getLogger(__name__)
@@ -23,13 +24,6 @@ logger = logging.getLogger(__name__)
 # separately as markers; in the final deployment those live outside these
 # prefixes, so filtering on them keeps rights groups out of the AG display.
 GROUP_PREFIXES = ("ag.", "gr.", "in.")
-
-
-def _dn_to_cn(dn: str) -> str:
-    for part in dn.split(","):
-        if part.lower().startswith("cn="):
-            return part[3:]
-    return dn
 
 
 def ag_group_names(user) -> list[str]:

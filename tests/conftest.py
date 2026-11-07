@@ -38,3 +38,7 @@ def no_freeipa(monkeypatch):
     Tests of those paths patch these again explicitly."""
     monkeypatch.setattr("app.views._shared.set_ldap_mail", lambda uid, email: None)
     monkeypatch.setattr("app.emails.get_mail_by_uuid", lambda intranet_uuid: None)
+    monkeypatch.setattr("app.clearance.is_clearance_member", lambda u: False)
+    monkeypatch.setattr("app.clearance.clearance_member_uuids", lambda: set())
+    monkeypatch.setattr("app.clearance.add_clearance_member", lambda uid: None)
+    monkeypatch.setattr("app.clearance.remove_clearance_member", lambda uid: None)
