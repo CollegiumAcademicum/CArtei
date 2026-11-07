@@ -230,7 +230,10 @@ def upload_document(request, pk):
 def revoke_document(request, pk, document_type, doc_pk):
     get_object_or_404(Tenant, pk=pk)
     caller = _caller(request.user)
-    if caller is None or not _is_mv(request.user):
+    allowed = _is_mv(request.user) or (
+        document_type == "vertraulichkeitserklaerung" and clearance.is_granter(request.user)
+    )
+    if caller is None or not allowed:
         raise PermissionDenied
     model = DOCUMENT_MODELS.get(document_type)
     if model is None:
@@ -241,6 +244,26 @@ def revoke_document(request, pk, document_type, doc_pk):
         return HttpResponseBadRequest()
     if doc.revoked_at is not None:
         return redirect("tenant_detail", pk=pk)  # already revoked; trigger would reject
+    if (
+        document_type == "vertraulichkeitserklaerung"
+        and clearance.approved_doc_ids([doc.pk])
+    ):
+        if getattr(request, "impersonator", None):
+            raise PermissionDenied
+        try:
+            others = clearance.revoke(doc.tenant, doc, caller, note)
+        except clearance.ClearanceIPAError as exc:
+            logger.exception("Clearance revoke failed for tenant %s", pk)
+            messages.error(request, f"Entzug fehlgeschlagen: {exc}")
+            return redirect("tenant_detail", pk=pk)
+        if others:
+            logger.error("Tenant %s still has another approved VE after revoke", pk)
+            messages.error(
+                request,
+                "Es gibt noch eine weitere bestätigte Vertraulichkeitserklärung – "
+                "Gruppe wurde trotzdem entzogen. Bitte prüfen.",
+            )
+        return redirect("tenant_detail", pk=pk)
     model.objects.filter(pk=doc.pk).update(
         revoked_at=now(), revoked_by_id=caller.pk, revoked_note=note,
     )

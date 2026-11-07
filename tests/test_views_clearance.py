@@ -143,3 +143,97 @@ def test_grant_ipa_failure_writes_nothing(client, granter, target, monkeypatch):
     assert r.status_code == 302
     assert not ConfidentialityClearanceEvent.objects.exists()
     assert any("IPA down" in str(m) for m in get_messages(r.wsgi_request))
+
+
+# --- revoke (Task 5) ---
+
+@pytest.fixture
+def rm_spy(monkeypatch):
+    calls = []
+    monkeypatch.setattr("app.clearance.remove_clearance_member", lambda uid: calls.append(uid))
+    return calls
+
+
+def _approve(tenant, doc):
+    ConfidentialityClearanceEvent.objects.create(
+        tenant=tenant, document=doc, action=ClearanceAction.GRANT, created_at=now()
+    )
+
+
+def _revoke(client, tenant, doc, dtype="vertraulichkeitserklaerung", note="weg"):
+    return client.post(
+        reverse("document_revoke", args=[tenant.pk, dtype, doc.pk]), {"revoked_note": note}
+    )
+
+
+def test_revoke_approved_removes_group_and_logs_event(client, granter, target, rm_spy):
+    caller, user = granter
+    client.force_login(user)
+    doc = _doc(target)
+    _approve(target, doc)
+    assert _revoke(client, target, doc).status_code == 302
+    doc.refresh_from_db()
+    assert doc.revoked_at is not None and doc.revoked_note == "weg"
+    assert rm_spy == ["max_muster"]
+    ev = ConfidentialityClearanceEvent.objects.get(action=ClearanceAction.REVOKE)
+    assert (ev.actor_id, ev.document_id, ev.tenant_id) == (caller.pk, doc.pk, target.pk)
+
+
+def test_revoke_pending_does_not_touch_group(client, granter, target, rm_spy):
+    client.force_login(granter[1])
+    doc = _doc(target)
+    _revoke(client, target, doc)
+    doc.refresh_from_db()
+    assert doc.revoked_at is not None
+    assert rm_spy == []
+    assert not ConfidentialityClearanceEvent.objects.exists()
+
+
+def test_granter_may_revoke_ve_but_not_other_types(client, granter, target, rm_spy):
+    from app.models import DatenschutzDocument
+    client.force_login(granter[1])
+    ds = DatenschutzDocument.objects.create(
+        tenant=target, signed_at=datetime.date(2026, 8, 1), uploaded_at=now(), uploaded_by=target
+    )
+    assert _revoke(client, target, ds, dtype="datenschutz").status_code == 403
+    ds.refresh_from_db()
+    assert ds.revoked_at is None
+
+
+def test_revoke_ipa_failure_keeps_doc(client, granter, target, monkeypatch):
+    def boom(uid):
+        raise clearance.ClearanceIPAError("IPA down")
+    monkeypatch.setattr("app.clearance.remove_clearance_member", boom)
+    client.force_login(granter[1])
+    doc = _doc(target)
+    _approve(target, doc)
+    r = _revoke(client, target, doc)
+    assert r.status_code == 302
+    doc.refresh_from_db()
+    assert doc.revoked_at is None
+    assert not ConfidentialityClearanceEvent.objects.filter(action=ClearanceAction.REVOKE).exists()
+    assert any("IPA down" in str(m) for m in get_messages(r.wsgi_request))
+
+
+def test_revoke_with_second_approved_fails_loudly(client, granter, target, rm_spy, caplog):
+    client.force_login(granter[1])
+    doc, other = _doc(target), _doc(target)
+    _approve(target, doc)
+    _approve(target, other)
+    r = _revoke(client, target, doc)
+    assert rm_spy == ["max_muster"]
+    msgs = list(get_messages(r.wsgi_request))
+    assert any(m.level_tag == "error" and "weitere bestätigte" in str(m) for m in msgs)
+    assert any(rec.levelname == "ERROR" for rec in caplog.records)
+
+
+def test_revoke_accountless_tenant_db_only(client, granter, rm_spy):
+    client.force_login(granter[1])
+    nouser = Tenant.objects.create(first_name="No", last_name="Account", email="n@example.com")
+    doc = _doc(nouser)
+    _approve(nouser, doc)
+    _revoke(client, nouser, doc)
+    doc.refresh_from_db()
+    assert doc.revoked_at is not None
+    assert rm_spy == []
+    assert ConfidentialityClearanceEvent.objects.filter(action=ClearanceAction.REVOKE).exists()

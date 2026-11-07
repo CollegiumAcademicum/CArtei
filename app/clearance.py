@@ -60,3 +60,23 @@ def grant(tenant: Tenant, doc: VertraulichkeitserklaerungDocument, actor: Tenant
         tenant=tenant, document=doc, action=action, actor=actor, created_at=now()
     )
     return action
+
+
+def revoke(tenant: Tenant, doc: VertraulichkeitserklaerungDocument, actor: Tenant, note: str) -> bool:
+    """Remove the tenant from the IPA group, revoke the doc, log the event.
+
+    Raises ClearanceIPAError before writing. Returns True if another non-revoked
+    approved VE of the tenant remains (the group was removed anyway).
+    """
+    if tenant.intranet_username:
+        remove_clearance_member(tenant.intranet_username)
+    type(doc).objects.filter(pk=doc.pk).update(revoked_at=now(), revoked_by_id=actor.pk, revoked_note=note)
+    ConfidentialityClearanceEvent.objects.create(
+        tenant=tenant, document=doc, action=ClearanceAction.REVOKE, actor=actor, created_at=now()
+    )
+    others = (
+        VertraulichkeitserklaerungDocument.objects
+        .filter(tenant=tenant, revoked_at__isnull=True).exclude(pk=doc.pk)
+        .values_list("pk", flat=True)
+    )
+    return bool(approved_doc_ids(others))
