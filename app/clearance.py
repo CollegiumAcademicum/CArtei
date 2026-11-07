@@ -2,6 +2,7 @@
 from collections.abc import Iterable
 
 from django.conf import settings
+from django.db import transaction
 from django.utils.timezone import now
 
 from app.ldap_utils import (  # noqa: F401  (single patch site for views/tests)
@@ -70,10 +71,11 @@ def revoke(tenant: Tenant, doc: VertraulichkeitserklaerungDocument, actor: Tenan
     """
     if tenant.intranet_username:
         remove_clearance_member(tenant.intranet_username)
-    type(doc).objects.filter(pk=doc.pk).update(revoked_at=now(), revoked_by_id=actor.pk, revoked_note=note)
-    ConfidentialityClearanceEvent.objects.create(
-        tenant=tenant, document=doc, action=ClearanceAction.REVOKE, actor=actor, created_at=now()
-    )
+    with transaction.atomic():
+        type(doc).objects.filter(pk=doc.pk).update(revoked_at=now(), revoked_by_id=actor.pk, revoked_note=note)
+        ConfidentialityClearanceEvent.objects.create(
+            tenant=tenant, document=doc, action=ClearanceAction.REVOKE, actor=actor, created_at=now()
+        )
     others = (
         VertraulichkeitserklaerungDocument.objects
         .filter(tenant=tenant, revoked_at__isnull=True).exclude(pk=doc.pk)

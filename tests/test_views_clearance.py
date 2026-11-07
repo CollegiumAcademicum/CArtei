@@ -224,7 +224,9 @@ def test_revoke_with_second_approved_fails_loudly(client, granter, target, rm_sp
     assert rm_spy == ["max_muster"]
     msgs = list(get_messages(r.wsgi_request))
     assert any(m.level_tag == "error" and "weitere bestätigte" in str(m) for m in msgs)
-    assert any(rec.levelname == "ERROR" for rec in caplog.records)
+    doc.refresh_from_db()
+    assert doc.revoked_at is not None
+    assert any(rec.levelname == "ERROR" and str(target.pk) in rec.getMessage() for rec in caplog.records)
 
 
 def test_revoke_accountless_tenant_db_only(client, granter, rm_spy):
@@ -237,3 +239,19 @@ def test_revoke_accountless_tenant_db_only(client, granter, rm_spy):
     assert doc.revoked_at is not None
     assert rm_spy == []
     assert ConfidentialityClearanceEvent.objects.filter(action=ClearanceAction.REVOKE).exists()
+
+
+def test_revoke_approved_blocked_while_impersonating(client, granter, target, rm_spy):
+    _, real = _user("imp", "cartei_grant_clearance", "00000000-0000-0000-0000-000000000105")
+    real.groups.add(Group.objects.get_or_create(name=IMPERSONATION_GROUP)[0])
+    client.force_login(real)
+    session = client.session
+    session[IMPERSONATED_USER_SESSION_KEY] = granter[1].pk
+    session.save()
+    doc = _doc(target)
+    _approve(target, doc)
+    assert _revoke(client, target, doc).status_code == 403
+    doc.refresh_from_db()
+    assert doc.revoked_at is None
+    assert not ConfidentialityClearanceEvent.objects.filter(action=ClearanceAction.REVOKE).exists()
+    assert rm_spy == []
