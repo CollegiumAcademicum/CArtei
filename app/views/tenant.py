@@ -2,6 +2,7 @@ import logging
 from collections import namedtuple
 from datetime import date
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
@@ -11,9 +12,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from django.core.exceptions import PermissionDenied
 
+from app import clearance
 from app.emails import send_welcome_email
 from app.forms import TenantCreateForm, TenantForm, TenantRoomAssignmentForm
-from app.ldap_utils import get_member, provision_ldap_account, search_accounts
+from app.ldap_utils import _dn_to_cn, get_member, provision_ldap_account, search_accounts
 
 logger = logging.getLogger(__name__)
 from app.models import (
@@ -566,12 +568,15 @@ def tenant_detail(request: HttpRequest, pk: int):
                 d.doc_type = dtype
                 d.doc_type_label = DocumentType(dtype).label
                 docs.append(d)
+            has_active = any(d.revoked_at is None for d in docs)
+            if dtype == DocumentType.VERTRAULICHKEITSERKLAERUNG:
+                ctx["clearance"], has_active = _clearance_ctx(request, tenant, docs, roles)
             groups.append({
                 "type": dtype,
                 "label": DocumentType(dtype).label,
                 "short": _DOC_SHORT[dtype],
                 "docs": docs,
-                "has_active": any(d.revoked_at is None for d in docs),
+                "has_active": has_active,
             })
         ctx["document_groups"] = groups
         ctx["can_manage_documents"] = bool({"mietverwaltung", "admin"} & roles)
@@ -597,6 +602,34 @@ def tenant_detail(request: HttpRequest, pk: int):
             )
 
     return render(request, "app/tenant_detail.html", ctx)
+
+
+def _clearance_ctx(request, tenant, docs, roles):
+    """Colour indicator + grant/revoke flags for the VE card (#65); marks each doc
+    with clearance_approved / revoke_blocked. Returns (ctx, has_active)."""
+    impersonating = bool(getattr(request, "impersonator", None))
+    approved_ids = clearance.approved_doc_ids(d.pk for d in docs)
+    for d in docs:
+        d.clearance_approved = d.pk in approved_ids
+        # Server refuses revoking an approved VE while impersonating; hide it.
+        d.revoke_blocked = d.clearance_approved and impersonating
+    live = [d for d in docs if d.revoked_at is None]
+    approved = any(d.clearance_approved for d in live)
+    pending = any(not d.clearance_approved for d in live)
+    # No account can't be in the group — don't report that as "LDAP unknown".
+    in_group = clearance.is_clearance_member(tenant.intranet_uuid) if tenant.intranet_uuid else False
+    is_granter = "granter" in roles  # same as clearance.is_granter, no extra query
+    can_grant = is_granter and not impersonating
+    ctx = {
+        "color": clearance.clearance_color(in_group, approved, pending),
+        "tooltip": clearance.TOOLTIP,
+        "group": _dn_to_cn(settings.LDAP_REQUIRE_GROUP),
+        "can_grant": can_grant,
+        "can_revoke_ve": bool({"mietverwaltung", "admin"} & roles) or is_granter,
+        "has_account": bool(tenant.intranet_username and tenant.intranet_uuid),
+        "full_name": f"{tenant.first_name} {tenant.last_name}" if can_grant else "",
+    }
+    return ctx, approved
 
 
 @login_required

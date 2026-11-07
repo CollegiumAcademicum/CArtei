@@ -99,3 +99,137 @@ def test_finanzierung_sees_only_sepa_group(client, owner):
     assert types == {"sepa_lastschriftmandat"}
     # No upload/revoke controls for a read-only reader.
     assert resp.context.get("can_manage_documents") is False
+
+
+# --- Vertraulichkeitserklärung / confidentiality_clearance (#65) -------------
+
+from django.utils.timezone import now  # noqa: E402
+
+from app import clearance  # noqa: E402
+from app.models import (  # noqa: E402
+    ClearanceAction, ConfidentialityClearanceEvent, VertraulichkeitserklaerungDocument,
+)
+
+
+def _grouped_user(username, group):
+    Tenant.objects.create(
+        first_name=username, last_name="Viewer", email=f"{username}@example.com",
+        intranet_username=username, intranet_uuid=f"00000000-0000-0000-0000-0000000{len(username):05d}",
+    )
+    u = User.objects.create_user(username=username, password="x")
+    u.groups.add(Group.objects.get_or_create(name=group)[0])
+    return u
+
+
+@pytest.fixture
+def granter_user(db):
+    return _grouped_user("granter_dd", "cartei_grant_clearance")
+
+
+@pytest.fixture
+def mv_user(db):
+    return _grouped_user("mv_dd", "cartei_mietverwaltung")
+
+
+def _ve(tenant, approved=False):
+    doc = VertraulichkeitserklaerungDocument.objects.create(
+        tenant=tenant, file_name="ve.pdf", file_data=b"x", signed_at=datetime.date(2026, 8, 1),
+        uploaded_at=now(), uploaded_by=tenant,
+    )
+    if approved:
+        ConfidentialityClearanceEvent.objects.create(
+            tenant=tenant, document=doc, action=ClearanceAction.GRANT, created_at=now()
+        )
+    return doc
+
+
+def _html(client, user, tenant):
+    client.force_login(user)
+    resp = client.get(reverse("tenant_detail", args=[tenant.pk]))
+    assert resp.status_code == 200
+    return resp.content.decode()
+
+
+def test_granter_sees_only_ve_card(client, owner, granter_user):
+    client.force_login(granter_user)
+    resp = client.get(reverse("tenant_detail", args=[owner.pk]))
+    html = resp.content.decode()
+    assert 'id="section-documents"' in html
+    assert {g["type"] for g in resp.context["document_groups"]} == {"vertraulichkeitserklaerung"}
+    section = html.split('id="section-documents"', 1)[1].split("</details>", 1)[0]
+    assert "Vertraulichkeitserklärung" in section
+    assert "Datenschutz" not in section
+
+
+@pytest.mark.parametrize("approved, pending, in_group, color", [
+    (True, False, True, "green"),
+    (False, True, False, "yellow"),
+    (True, False, False, "black"),
+    (False, False, False, "red"),
+])
+def test_ve_pill_colours(client, owner, granter_user, monkeypatch, approved, pending, in_group, color):
+    monkeypatch.setattr("app.clearance.is_clearance_member", lambda u: in_group)
+    if approved or pending:
+        _ve(owner, approved=approved)
+    html = _html(client, granter_user, owner)
+    assert f"ca-pill-{color}" in html
+    assert clearance.TOOLTIP in html
+
+
+def test_ve_has_active_only_when_approved(client, owner, granter_user):
+    _ve(owner)
+    client.force_login(granter_user)
+    resp = client.get(reverse("tenant_detail", args=[owner.pk]))
+    (g,) = resp.context["document_groups"]
+    assert g["has_active"] is False
+    assert "Ausstehend" in resp.content.decode()
+
+
+def test_ldap_down_renders_unknown(client, owner, granter_user, monkeypatch):
+    monkeypatch.setattr("app.clearance.is_clearance_member", lambda u: None)
+    html = _html(client, granter_user, owner)
+    assert "ca-pill-unknown" in html
+
+
+def test_grant_button_only_for_granter(client, owner, granter_user, mv_user):
+    _ve(owner)
+    html = _html(client, mv_user, owner)
+    assert "clearance-dialog" not in html
+    html = _html(client, granter_user, owner)
+    assert 'id="clearance-dialog"' in html
+    assert "data-pip-src" in html
+    assert "Bestätigen" in html
+
+
+def test_grant_button_disabled_without_account(client, granter_user):
+    no_account = Tenant.objects.create(first_name="Kein", last_name="Konto", email="kk@example.com")
+    _ve(no_account)
+    html = _html(client, granter_user, no_account)
+    assert "Noch kein Intranet-Account – zuerst provisionieren" in html
+    assert "disabled" in html
+
+
+def test_impersonating_granter_cannot_grant_or_revoke_approved(client, owner, granter_user):
+    from app.middleware import IMPERSONATED_USER_SESSION_KEY, IMPERSONATION_GROUP
+
+    approved, pending = _ve(owner, approved=True), _ve(owner)
+    real = _grouped_user("imp_dd", IMPERSONATION_GROUP)
+    client.force_login(real)
+    session = client.session
+    session[IMPERSONATED_USER_SESSION_KEY] = granter_user.pk
+    session.save()
+    html = client.get(reverse("tenant_detail", args=[owner.pk])).content.decode()
+    assert "clearance-dialog" not in html
+    revoke = lambda d: reverse("document_revoke", args=[owner.pk, "vertraulichkeitserklaerung", d.pk])  # noqa: E731
+    assert revoke(approved) not in html
+    assert revoke(pending) in html
+
+
+def test_approved_ve_revoke_warns_about_group(client, owner, granter_user):
+    _ve(owner, approved=True)
+    html = _html(client, granter_user, owner)
+    from django.conf import settings
+
+    from app.ldap_utils import _dn_to_cn
+    assert f"entzieht {_dn_to_cn(settings.LDAP_REQUIRE_GROUP)} und" in html
+    assert "allen internen Plattformen (und CArtei)" in html
