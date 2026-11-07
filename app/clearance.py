@@ -2,6 +2,7 @@
 from collections.abc import Iterable
 
 from django.conf import settings
+from django.utils.timezone import now
 
 from app.ldap_utils import (  # noqa: F401  (single patch site for views/tests)
     ClearanceIPAError,
@@ -10,7 +11,7 @@ from app.ldap_utils import (  # noqa: F401  (single patch site for views/tests)
     is_clearance_member,
     remove_clearance_member,
 )
-from app.models import ClearanceAction, ConfidentialityClearanceEvent
+from app.models import ClearanceAction, ConfidentialityClearanceEvent, Tenant, VertraulichkeitserklaerungDocument
 
 GREEN, YELLOW, RED, BLACK, UNKNOWN = "green", "yellow", "red", "black", "unknown"
 
@@ -46,3 +47,16 @@ def approved_doc_ids(doc_ids: Iterable[int]) -> set[int]:
 def is_granter(user) -> bool:
     names = set(user.groups.values_list("name", flat=True))
     return bool(names.intersection(settings.TENANT_ROLE_GROUPS["granter"]))
+
+
+def grant(tenant: Tenant, doc: VertraulichkeitserklaerungDocument, actor: Tenant) -> str:
+    """Add the tenant to the IPA group, then log the event. Raises ClearanceIPAError before writing."""
+    already = ConfidentialityClearanceEvent.objects.filter(
+        document=doc, action=ClearanceAction.GRANT
+    ).exists()
+    action = ClearanceAction.REGRANT if already else ClearanceAction.GRANT
+    add_clearance_member(tenant.intranet_username)
+    ConfidentialityClearanceEvent.objects.create(
+        tenant=tenant, document=doc, action=action, actor=actor, created_at=now()
+    )
+    return action

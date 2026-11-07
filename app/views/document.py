@@ -12,9 +12,11 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.timezone import localdate, now
 from django.views.decorators.http import require_POST
 
+from app import clearance
 from app.models import (
     ASSIGNMENT_DOCUMENT_MODELS, AssignmentDocumentType, DOCUMENT_MODELS,
-    DocumentType, Tenant, TenantRoomAssignment, document_readers,
+    DocumentType, Tenant, TenantRoomAssignment, VertraulichkeitserklaerungDocument,
+    document_readers,
 )
 from app.tenant_access import global_roles
 from app.document_generation.mailbox_list import (
@@ -243,6 +245,36 @@ def revoke_document(request, pk, document_type, doc_pk):
         revoked_at=now(), revoked_by_id=caller.pk, revoked_note=note,
     )
     return redirect("tenant_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def grant_clearance(request, pk, doc_pk):
+    caller = _caller(request.user)
+    if caller is None or not clearance.is_granter(request.user):
+        raise PermissionDenied
+    if getattr(request, "impersonator", None):
+        raise PermissionDenied
+    doc = get_object_or_404(VertraulichkeitserklaerungDocument, pk=doc_pk, tenant_id=pk)
+    tenant = doc.tenant
+    back = redirect(reverse("tenant_detail", args=[pk]) + "#section-documents")
+    if doc.revoked_at is not None:
+        messages.error(request, "Die Erklärung ist widerrufen.")
+        return back
+    if not tenant.intranet_username or not tenant.intranet_uuid:
+        messages.error(request, "Kein Intranet-Account vorhanden.")
+        return back
+    if (request.POST.get("confirm_name") or "").strip() != f"{tenant.first_name} {tenant.last_name}":
+        messages.error(request, "Name stimmt nicht überein")
+        return back
+    try:
+        clearance.grant(tenant, doc, caller)
+    except clearance.ClearanceIPAError as exc:
+        logger.exception("Clearance grant failed for tenant %s", pk)
+        messages.error(request, f"Freigabe fehlgeschlagen: {exc}")
+        return back
+    messages.success(request, "Vertraulichkeitsfreigabe erteilt.")
+    return back
 
 
 @login_required
