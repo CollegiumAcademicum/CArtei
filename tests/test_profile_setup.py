@@ -236,3 +236,25 @@ def test_staff_can_reset_profile_setup_keeping_data(room):
     assert tenant.profile_setup_completed_at is None
     # Entered data is kept.
     assert tenant.phone == "123" and tenant.mailbox_list_opt_in
+
+
+@pytest.mark.django_db
+def test_profile_setup_rejects_duplicate_email(room):
+    Tenant.objects.create(first_name="Other", last_name="Tenant", email="taken@ca.de")
+    tenant = _tenant("resident_setup", room)
+    user = User.objects.create_user("resident_setup", password="pw")
+    client = Client()
+    client.force_login(user)
+
+    resp = client.post("/profile/setup/", {
+        "email": "TAKEN@ca.de",
+        "phone": "0123456",
+        "no_phone_number": "",
+        "mailbox_list_opt_in": "yes",
+        "is_flinta": "no",
+    })
+    assert resp.status_code == 200
+    assert "Diese E-Mail-Adresse wird bereits verwendet." in resp.content.decode()
+    tenant.refresh_from_db()
+    assert tenant.email == "ada@example.invalid"  # unchanged
+    assert tenant.profile_setup_completed_at is None

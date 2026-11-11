@@ -7,6 +7,26 @@ from app.models import Room, Tenant, TenantRoomAssignment
 from app.tenant_access import EDITABLE_COLUMNS
 
 
+def validate_unique_email(email: str, current_tenant: Tenant | None = None) -> str:
+    email = email.strip()
+    qs = Tenant.objects.filter(email__iexact=email)
+    if current_tenant and current_tenant.pk:
+        qs = qs.exclude(pk=current_tenant.pk)
+    if qs.exists():
+        raise forms.ValidationError("Diese E-Mail-Adresse wird bereits verwendet.")
+
+    exclude_username = current_tenant.intranet_username if current_tenant else None
+    try:
+        from app.ldap_utils import is_ldap_mail_taken
+        if is_ldap_mail_taken(email, exclude_username=exclude_username):
+            raise forms.ValidationError("Diese E-Mail-Adresse wird bereits im Intranet verwendet.")
+    except forms.ValidationError:
+        raise
+    except Exception:
+        pass
+    return email
+
+
 class TenantForm(forms.ModelForm):
     # Model column is a plain CharField; declare EmailField so format is validated.
     email = forms.EmailField(required=True)
@@ -29,6 +49,9 @@ class TenantForm(forms.ModelForm):
         for name in list(self.fields):
             if name not in allowed:
                 del self.fields[name]
+
+    def clean_email(self):
+        return validate_unique_email(self.cleaned_data["email"], current_tenant=self.instance)
 
     def clean(self):
         cleaned = super().clean()
@@ -60,6 +83,13 @@ class ProfileSetupForm(forms.Form):
         widget=forms.RadioSelect,
     )
 
+    def __init__(self, *args, tenant=None, **kwargs):
+        self.tenant = tenant
+        super().__init__(*args, **kwargs)
+
+    def clean_email(self):
+        return validate_unique_email(self.cleaned_data["email"], current_tenant=self.tenant)
+
     def clean(self):
         cleaned = super().clean()
         has_phone = bool((cleaned.get("phone") or "").strip())
@@ -83,6 +113,9 @@ class TenantCreateForm(forms.ModelForm):
     class Meta:
         model = Tenant
         fields = ["first_name", "last_name", "email", "phone"]
+
+    def clean_email(self):
+        return validate_unique_email(self.cleaned_data["email"], current_tenant=None)
 
 
 class RoomFurnitureForm(forms.ModelForm):
