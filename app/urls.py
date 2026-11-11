@@ -34,6 +34,7 @@ urlpatterns = [
     path("tenants/<int:pk>/documents/upload/", document.upload_document, name="document_upload"),
     path("tenants/<int:pk>/documents/<str:document_type>/<int:doc_pk>/revoke/", document.revoke_document, name="document_revoke"),
     path("tenants/<int:pk>/documents/<str:document_type>/<int:doc_pk>/download/", document.download_document, name="document_download"),
+    path("tenants/<int:pk>/documents/vertraulichkeitserklaerung/<int:doc_pk>/grant/", document.grant_clearance, name="clearance_grant"),
     path("assignments/<int:assignment_pk>/documents/upload/", document.upload_assignment_document, name="assignment_document_upload"),
     path("assignments/<int:assignment_pk>/documents/<str:document_type>/<int:doc_pk>/revoke/", document.revoke_assignment_document, name="assignment_document_revoke"),
     path("assignments/<int:assignment_pk>/documents/<str:document_type>/<int:doc_pk>/download/", document.download_assignment_document, name="assignment_document_download"),

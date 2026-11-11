@@ -1,4 +1,5 @@
 {% extends "app/base.html" %}
+{% load static %}
 {% load proof_extras %}
 {% load tenant_extras %}
 {% block title %}{{ display_name }} — CArtei{% endblock %}
@@ -378,14 +379,17 @@
   <details id="section-documents" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="cursor:pointer;font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;">
       <span>Rechtsdokumente</span>
-      {% for g in document_groups %}<span class="ca-pill {% if g.has_active %}ca-pill-green{% else %}ca-pill-red{% endif %}" title="{{ g.label }}{% if not g.has_active %} – noch nicht unterschrieben{% endif %}">{{ g.short }}</span>{% endfor %}
+      {% for g in document_groups %}{% if g.type == "vertraulichkeitserklaerung" %}<span class="ca-pill ca-pill-{{ clearance.color }}" title="{{ clearance.tooltip }}">{{ g.short }}</span>{% else %}<span class="ca-pill {% if g.has_active %}ca-pill-green{% else %}ca-pill-red{% endif %}" title="{{ g.label }}{% if not g.has_active %} – noch nicht unterschrieben{% endif %}">{{ g.short }}</span>{% endif %}{% endfor %}
     </summary>
 
     {% for g in document_groups %}
     <div class="ca-doc-card" style="margin-top:.75rem;border:1px solid #e2e2e2;border-radius:6px;padding:.5rem .75rem;">
       <div style="display:flex;align-items:center;gap:.5rem;">
         <strong>{{ g.label }}</strong>
-        {% if g.has_active %}
+        {% if g.type == "vertraulichkeitserklaerung" %}
+        <span class="ca-pill ca-pill-{{ clearance.color }}" title="{{ clearance.tooltip }}">{% if clearance.color == "green" %}Freigegeben{% elif clearance.color == "yellow" %}Wartet auf Bestätigung{% elif clearance.color == "red" %}Keine Freigabe{% elif clearance.color == "black" %}Inkonsistent{% else %}Gruppenstatus unbekannt{% endif %}</span>
+        {% if clearance.is_granter %}<span style="font-size:.85rem;">Name: {{ clearance.full_name }}</span>{% endif %}
+        {% elif g.has_active %}
         <span style="color:#0a0;font-size:.8rem;">● Aktiv</span>
         {% else %}
         <span style="color:#b26a00;font-size:.8rem;">○ Noch nicht unterschrieben</span>
@@ -408,13 +412,26 @@
         {% else %}
         <span>· {{ d.signed_at|date:"d.m.Y" }}</span>
         {% endif %}
+        {% if d.doc_type == "vertraulichkeitserklaerung" %}
+        <span>· hochgeladen von {{ d.uploaded_by|display }}</span>
+        {% endif %}
+        {% if d.doc_type == "vertraulichkeitserklaerung" and not d.revoked_at %}
+        <span>· {% if d.clearance_approved %}Bestätigt{% else %}Ausstehend{% endif %}</span>
+        {% if clearance.can_grant and not d.clearance_approved or clearance.can_grant and clearance.color == "black" %}
+        {% url 'document_download' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk as ve_src %}
+        <button type="button" class="ca-button-outline" style="font-size:.8rem;padding:.2rem .6rem;" data-pip-src="{{ ve_src }}" data-pip-kind="{% if d.file_name|default:''|lower|slice:'-4:' == '.pdf' %}pdf{% else %}image{% endif %}">Prüfen</button>
+        <button type="button" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;" data-clearance-grant="{% url 'clearance_grant' pk=tenant.pk doc_pk=d.pk %}"{% if not clearance.has_account %} disabled title="Noch kein Intranet-Account – zuerst provisionieren"{% endif %}>{% if d.clearance_approved %}Erneut gewähren{% else %}Bestätigen{% endif %}</button>
+        {% endif %}
+        {% endif %}
         {% if d.revoked_at %}
         <span style="color:#a00;">· Widerrufen ({{ d.revoked_at|date:"d.m.Y" }}{% if d.revoked_note %}: {{ d.revoked_note }}{% endif %})</span>
-        {% elif can_manage_documents %}
-        <form method="post" action="{% url 'document_revoke' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;">
+        {% elif d.revoke_blocked %}
+        {# approved VE: server refuses revoke while impersonating #}
+        {% elif can_manage_documents or g.type == "vertraulichkeitserklaerung" and clearance.can_revoke_ve %}
+        <form method="post" action="{% url 'document_revoke' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;" data-confirm="{% if d.clearance_approved %}Erklärung widerrufen? Dies entzieht {{ clearance.group }} und beendet den Zugang zu allen internen Plattformen (und CArtei). Dies kann nicht rückgängig gemacht werden.{% else %}Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.{% endif %}">
           {% csrf_token %}
           <input name="revoked_note" type="text" required placeholder="Grund des Widerrufs" style="padding:.2rem;">
-          <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;" onclick="return confirm('Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.');">Widerrufen</button>
+          <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Widerrufen</button>
         </form>
         {% endif %}
       </div>
@@ -457,6 +474,26 @@
       {% endif %}
     </div>
     {% endfor %}
+
+    {% if clearance.can_grant %}
+    <dialog id="clearance-dialog" data-name="{{ clearance.full_name }}" style="border:none;border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,0.18);padding:2rem;max-width:460px;width:100%;">
+      <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Vertraulichkeitsfreigabe gewähren</h2>
+      <p style="font-size:0.9rem;color:#7a7a7a;margin-bottom:.5rem;">
+        Ich habe die Vertraulichkeitserklärung und ihre Metadaten (Name, Datum, Unterschrift) geprüft.
+        Mit „Gewähren“ erhält <strong>{{ clearance.full_name }}</strong> die Gruppe <code>{{ clearance.group }}</code>
+        und damit Zugang zu allen internen Plattformen des Collegiums.
+      </p>
+      <p style="font-size:0.9rem;color:#7a7a7a;margin-bottom:1rem;">Zur Bestätigung bitte <strong>{{ clearance.full_name }}</strong> eintippen:</p>
+      <form method="post" action="">
+        {% csrf_token %}
+        <input type="text" name="confirm_name" id="clearance-confirm" class="input" style="margin-bottom:1rem;" autocomplete="off">
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+          <button type="button" class="ca-button-outline" data-clearance-cancel>Abbrechen</button>
+          <button type="submit" id="clearance-submit" class="ca-button" disabled>Gewähren</button>
+        </div>
+      </form>
+    </dialog>
+    {% endif %}
   </details>
   {% endif %}
 
@@ -536,6 +573,7 @@
   {% endif %}
 </div>
 
+{% if clearance.can_grant %}<script src="{% static 'app/clearance_review.js' %}"></script>{% endif %}
 <script>
 // Account type-ahead for the link form: query once typing pauses (300 ms).
 (function() {

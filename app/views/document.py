@@ -12,9 +12,11 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.timezone import localdate, now
 from django.views.decorators.http import require_POST
 
+from app import clearance
 from app.models import (
     ASSIGNMENT_DOCUMENT_MODELS, AssignmentDocumentType, DOCUMENT_MODELS,
-    DocumentType, Tenant, TenantRoomAssignment, document_readers,
+    DocumentType, Tenant, TenantRoomAssignment, VertraulichkeitserklaerungDocument,
+    document_readers,
 )
 from app.tenant_access import global_roles
 from app.document_generation.mailbox_list import (
@@ -72,11 +74,13 @@ def _row(doc, dtype, label, tenant, download_url):
         "tenant": tenant,
         "type_key": dtype,
         "type_label": label,
+        "doc_pk": doc.pk,
         "file_name": doc.file_name,
         "signed": _signed_display(doc, dtype),
         "uploaded_at": doc.uploaded_at,
         "uploaded_by": doc.uploaded_by,
         "revoked": doc.revoked_at is not None,
+        "pending": False,  # set for unapproved VEs in list_documents
         "revoked_at": _fmt(doc.revoked_at),
         "revoked_by": doc.revoked_by if doc.revoked_by_id else None,
         "revoked_note": doc.revoked_note or "",
@@ -125,6 +129,13 @@ def list_documents(request):
                 rows.append(_row(doc, dtype, label, doc.assignment.tenant, reverse(
                     "assignment_document_download",
                     kwargs={"assignment_pk": doc.assignment_id, "document_type": dtype, "doc_pk": doc.pk})))
+
+    # A live VE only counts once a granter confirmed it (GRANT event, #65).
+    ve_rows = [r for r in rows if r["type_key"] == DocumentType.VERTRAULICHKEITSERKLAERUNG and not r["revoked"]]
+    if ve_rows:
+        approved = clearance.approved_doc_ids(r["doc_pk"] for r in ve_rows)
+        for r in ve_rows:
+            r["pending"] = r["doc_pk"] not in approved
 
     rows.sort(key=lambda r: r["uploaded_at"], reverse=True)
     # ponytail: loads every readable row unpaginated, like tenant_list; add
@@ -228,7 +239,10 @@ def upload_document(request, pk):
 def revoke_document(request, pk, document_type, doc_pk):
     get_object_or_404(Tenant, pk=pk)
     caller = _caller(request.user)
-    if caller is None or not _is_mv(request.user):
+    allowed = _is_mv(request.user) or (
+        document_type == "vertraulichkeitserklaerung" and clearance.is_granter(request.user)
+    )
+    if caller is None or not allowed:
         raise PermissionDenied
     model = DOCUMENT_MODELS.get(document_type)
     if model is None:
@@ -239,10 +253,60 @@ def revoke_document(request, pk, document_type, doc_pk):
         return HttpResponseBadRequest()
     if doc.revoked_at is not None:
         return redirect("tenant_detail", pk=pk)  # already revoked; trigger would reject
+    if (
+        document_type == "vertraulichkeitserklaerung"
+        and clearance.approved_doc_ids([doc.pk])
+    ):
+        if getattr(request, "impersonator", None):
+            raise PermissionDenied
+        try:
+            others = clearance.revoke(doc.tenant, doc, caller, note)
+        except clearance.ClearanceIPAError as exc:
+            logger.exception("Clearance revoke failed for tenant %s", pk)
+            messages.error(request, f"Entzug fehlgeschlagen: {exc}")
+            return redirect("tenant_detail", pk=pk)
+        if others:
+            logger.error("Tenant %s still has another approved VE after revoke", pk)
+            messages.error(
+                request,
+                "Es gibt noch eine weitere bestätigte Vertraulichkeitserklärung – "
+                "Gruppe wurde trotzdem entzogen. Bitte prüfen.",
+            )
+        return redirect("tenant_detail", pk=pk)
     model.objects.filter(pk=doc.pk).update(
         revoked_at=now(), revoked_by_id=caller.pk, revoked_note=note,
     )
     return redirect("tenant_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def grant_clearance(request, pk, doc_pk):
+    caller = _caller(request.user)
+    if caller is None or not clearance.is_granter(request.user):
+        raise PermissionDenied
+    if getattr(request, "impersonator", None):
+        raise PermissionDenied
+    doc = get_object_or_404(VertraulichkeitserklaerungDocument, pk=doc_pk, tenant_id=pk)
+    tenant = doc.tenant
+    back = redirect(reverse("tenant_detail", args=[pk]) + "#section-documents")
+    if doc.revoked_at is not None:
+        messages.error(request, "Die Erklärung ist widerrufen.")
+        return back
+    if not tenant.intranet_username or not tenant.intranet_uuid:
+        messages.error(request, "Kein Intranet-Account vorhanden.")
+        return back
+    if (request.POST.get("confirm_name") or "").strip() != clearance.confirm_name_for(tenant):
+        messages.error(request, "Name stimmt nicht überein")
+        return back
+    try:
+        clearance.grant(tenant, doc, caller)
+    except clearance.ClearanceIPAError as exc:
+        logger.exception("Clearance grant failed for tenant %s", pk)
+        messages.error(request, f"Freigabe fehlgeschlagen: {exc}")
+        return back
+    messages.success(request, "Vertraulichkeitsfreigabe erteilt.")
+    return back
 
 
 @login_required

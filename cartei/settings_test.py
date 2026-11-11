@@ -61,6 +61,7 @@ STATIC_ROOT = "/tmp/cartei-test-static"
 CARTEI_ADMIN_GROUP = "cn=admins,dc=test"
 CARTEI_CLUSTER_GROUP = "cn=cluster,dc=test"
 CARTEI_IMPERSONATION_GROUP = "cn=cartei_impersonation,dc=test"
+CARTEI_GRANT_CLEARANCE_GROUP = "cn=cartei_grant_confidentiality_clearance,dc=test"
 LDAP_GROUPS_BASE = "cn=groups,dc=test"
 LDAP_REQUIRE_GROUP = "cn=clearance,dc=test"
 LDAP_USER_SEARCH_BASE = "cn=users,dc=test"
@@ -72,6 +73,7 @@ TENANT_ROLE_GROUPS = {
     "mietverwaltung_helfer": ["cartei_helfer_mietverwaltung"],
     "werkstatt": ["cartei_werkstatt"],
     "finanzierung": ["ag.finanzierung"],
+    "granter": ["cartei_grant_clearance"],
 }
 
 BRIEFKASTENLISTE_IGNORE_ROOMS = False

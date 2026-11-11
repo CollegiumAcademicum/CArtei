@@ -229,3 +229,107 @@ def test_engagement_summary_panel_when_surveys_selected(settings):
     assert "engagement-summary" in with_surveys
     without = c.get("/tenants/").content.decode()
     assert "engagement-summary" not in without
+
+
+# --- VE clearance colour on the list pill (#65) ------------------------------
+
+def _ve_doc(tenant, approved=False):
+    from django.utils.timezone import now
+
+    from app.models import ClearanceAction, ConfidentialityClearanceEvent, VertraulichkeitserklaerungDocument
+    doc = VertraulichkeitserklaerungDocument.objects.create(
+        tenant=tenant, file_name="ve.pdf", file_data=b"x", signed_at=date(2026, 8, 1),
+        uploaded_at=now(), uploaded_by=tenant,
+    )
+    if approved:
+        ConfidentialityClearanceEvent.objects.create(
+            tenant=tenant, document=doc, action=ClearanceAction.GRANT, created_at=now()
+        )
+    return doc
+
+
+def _ve_pill_classes(resp, tenant):
+    row = next(r for r in resp.context["rows"] if r["tenant"].pk == tenant.pk)
+    return next(d for d in row["documents"] if d["short"] == "VE")
+
+
+@pytest.mark.django_db
+def test_list_ve_pill_black_when_group_without_approval(client, monkeypatch, settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _tenant("ve1")
+    _assign(t)
+    _ve_doc(t)
+    monkeypatch.setattr("app.clearance.clearance_member_uuids", lambda: {str(t.intranet_uuid)})
+    _login(client, "mv", ["ag.mietverwaltung"])
+    resp = client.get("/tenants/")
+    ve = _ve_pill_classes(resp, t)
+    assert ve["color"] == "black" and not ve["present"]
+    assert 'ca-pill-black' in resp.content.decode()
+
+
+@pytest.mark.django_db
+def test_list_ve_pill_green(client, monkeypatch, settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _tenant("ve2")
+    _assign(t)
+    _ve_doc(t, approved=True)
+    monkeypatch.setattr("app.clearance.clearance_member_uuids", lambda: {str(t.intranet_uuid)})
+    _login(client, "mv", ["ag.mietverwaltung"])
+    ve = _ve_pill_classes(client.get("/tenants/"), t)
+    assert ve["color"] == "green" and ve["present"]
+
+
+@pytest.mark.django_db
+def test_list_granter_sees_only_ve_pill(client, monkeypatch, settings):
+    settings.TENANT_ROLE_GROUPS = {**_MV_GROUPS, "granter": ["ag.granter"]}
+    t = _tenant("ve3", first_name="Realname")
+    _assign(t)
+    _ve_doc(t)
+    _login(client, "gr", ["ag.granter"])
+    resp = client.get("/tenants/")
+    assert resp.status_code == 200
+    assert not resp.context["show_realname"]
+    row = next(r for r in resp.context["rows"] if r["tenant"].pk == t.pk)
+    assert [d["short"] for d in row["documents"]] == ["VE"]
+    assert row["documents"][0]["color"] == "yellow"
+    html = resp.content.decode()
+    assert 'data-col="documents"' in html and 'data-col="email"' not in html
+    assert "(Realname Lovelace)" in html  # spec: granters see the real name
+    assert 'data-col="proof"' not in html and 'data-col="ersteinzug"' not in html
+
+
+@pytest.mark.django_db
+def test_list_plain_member_sees_no_real_name(client, settings):
+    settings.TENANT_ROLE_GROUPS = {**_MV_GROUPS, "granter": ["ag.granter"]}
+    t = _tenant("ve5", first_name="Realname")
+    _assign(t)
+    _login(client, "plain", [])
+    html = client.get("/tenants/").content.decode()
+    assert "Realname" not in html
+
+
+@pytest.mark.django_db
+def test_list_ldap_down_renders_unknown(client, monkeypatch, settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _tenant("ve4")
+    _assign(t)
+    monkeypatch.setattr("app.clearance.clearance_member_uuids", lambda: None)
+    _login(client, "mv", ["ag.mietverwaltung"])
+    resp = client.get("/tenants/")
+    assert _ve_pill_classes(resp, t)["color"] == "unknown"
+    assert "ca-pill-unknown" in resp.content.decode()
+
+
+@pytest.mark.django_db
+def test_list_ldap_down_no_account_is_not_unknown(client, monkeypatch, settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    with_acc = _tenant("ve6")
+    no_acc = Tenant.objects.create(first_name="Kein", last_name="Konto", email="kk@ca.de")
+    _assign(with_acc)
+    _assign(no_acc)
+    _ve_doc(no_acc)
+    monkeypatch.setattr("app.clearance.clearance_member_uuids", lambda: None)
+    _login(client, "mv", ["ag.mietverwaltung"])
+    resp = client.get("/tenants/")
+    assert _ve_pill_classes(resp, with_acc)["color"] == "unknown"
+    assert _ve_pill_classes(resp, no_acc)["color"] == "yellow"

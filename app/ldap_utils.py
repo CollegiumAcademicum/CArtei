@@ -19,6 +19,13 @@ logger = logging.getLogger(__name__)
 ProvisionResult = namedtuple("ProvisionResult", ["uid", "temp_password"])
 
 
+def _dn_to_cn(dn: str) -> str:
+    for part in dn.split(","):
+        if part.lower().startswith("cn="):
+            return part[3:]
+    return dn
+
+
 def _connect():
     for opt, val in getattr(settings, "LDAP_GLOBAL_OPTIONS", {}).items():
         ldap.set_option(opt, val)
@@ -54,6 +61,33 @@ def get_clearance_members() -> list[dict]:
         _ATTRS,
     )
     return [_parse(attrs) for _, attrs in results if attrs]
+
+
+def clearance_member_uuids() -> set[str] | None:
+    """ipaUniqueIDs of all clearance-group members; None if LDAP is unreachable."""
+    try:
+        return {m["uuid"] for m in get_clearance_members()}
+    except ldap.LDAPError:
+        logger.warning("clearance_member_uuids: LDAP error", exc_info=True)
+        return None
+
+
+def is_clearance_member(intranet_uuid) -> bool | None:
+    """Whether the account is in the clearance group; None if unknown."""
+    if not intranet_uuid:
+        return None
+    try:
+        results = _connect().search_s(
+            settings.LDAP_USER_SEARCH_BASE,
+            ldap.SCOPE_SUBTREE,
+            f"(&(ipaUniqueID={ldap.filter.escape_filter_chars(str(intranet_uuid))})"
+            f"(memberOf={settings.LDAP_REQUIRE_GROUP}))",
+            ["uid"],
+        )
+    except ldap.LDAPError:
+        logger.warning("is_clearance_member: LDAP error", exc_info=True)
+        return None
+    return any(attrs for _, attrs in results)
 
 
 def get_member(uid: str) -> dict | None:
@@ -161,6 +195,38 @@ def set_ldap_mail(uid: str, email: str) -> None:
     except BadRequest as exc:
         if getattr(exc, "code", None) != 4202:  # EmptyModlist: mail already equal
             raise
+
+class ClearanceIPAError(Exception):
+    """Changing the clearance group membership in FreeIPA failed."""
+
+
+def _change_clearance(method: str, uid: str, benign: str) -> None:
+    import requests
+    from python_freeipa.exceptions import FreeIPAError
+    try:
+        reply = getattr(_ipa_client(), method)(
+            a_cn=_dn_to_cn(settings.LDAP_REQUIRE_GROUP), o_user=[uid]
+        )
+    except (FreeIPAError, RuntimeError, requests.RequestException) as exc:
+        raise ClearanceIPAError(str(exc)) from exc
+    # python-freeipa returns the RPC "result" dict: {"result", "failed", "completed"}
+    benign_seen = False
+    for _, msg in reply.get("failed", {}).get("member", {}).get("user", []):
+        if msg != benign:
+            raise ClearanceIPAError(msg)
+        benign_seen = True
+    # Fail closed: nothing changed and no "already (not) a member" → unexplained.
+    if reply.get("completed", 0) < 1 and not benign_seen:
+        raise ClearanceIPAError(f"IPA {method} für {uid} ohne Wirkung: {reply!r}")
+
+
+def add_clearance_member(uid: str) -> None:
+    _change_clearance("group_add_member", uid, "This entry is already a member")
+
+
+def remove_clearance_member(uid: str) -> None:
+    _change_clearance("group_remove_member", uid, "This entry is not a member")
+
 
 _UMLAUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
                          "Ä": "ae", "Ö": "oe", "Ü": "ue"})

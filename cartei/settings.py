@@ -162,6 +162,11 @@ CARTEI_HELFER_MIETVERWALTUNG_GROUP = os.environ.get(
 CARTEI_IMPERSONATION_GROUP = os.environ.get("CARTEI_IMPERSONATION_GROUP") or (
     "cn=cartei_impersonation,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
 )
+# Members may grant confidentiality_clearance (#65); _sync_groups maps this DN to
+# the "cartei_grant_clearance" Django group.
+CARTEI_GRANT_CLEARANCE_GROUP = os.environ.get("CARTEI_GRANT_CLEARANCE_GROUP") or (
+    "cn=cartei_grant_confidentiality_clearance,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
+)
 LDAP_USER_SEARCH_BASE = os.environ.get(
     "LDAP_USER_SEARCH_BASE",
     "cn=users,cn=accounts,dc=intranet,dc=ca-hd,dc=de",
@@ -229,6 +234,7 @@ TENANT_ROLE_GROUPS = {
     # AG Werkstatt: may edit room furniture (Ausstattung) only, nothing else.
     "werkstatt": _group_list("TENANT_GROUP_WERKSTATT", "cartei_werkstatt"),
     "finanzierung": _group_list("TENANT_GROUP_FINANZIERUNG", "cartei_finanzierung"),
+    "granter": _group_list("TENANT_GROUP_GRANTER", "cartei_grant_clearance"),
 }
 
 USE_X_FORWARDED_HOST = True

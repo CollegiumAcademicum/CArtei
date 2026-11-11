@@ -2,6 +2,7 @@ import logging
 from collections import namedtuple
 from datetime import date
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
@@ -12,14 +13,15 @@ from django.urls import reverse
 
 from django.core.exceptions import PermissionDenied
 
+from app import clearance
 from app.emails import send_welcome_email
 from app.forms import TenantCreateForm, TenantForm, TenantRoomAssignmentForm
-from app.ldap_utils import get_member, provision_ldap_account, search_accounts
+from app.ldap_utils import _dn_to_cn, get_member, provision_ldap_account, search_accounts
 
 logger = logging.getLogger(__name__)
 from app.models import (
     AGAbfrage, AGAbfrageResult, AGStatus,
-    DOCUMENT_MODELS, DocumentType, document_readers,
+    DOCUMENT_MODELS, DocumentType, VertraulichkeitserklaerungDocument, document_readers,
     EnrollmentProof, InternalNote, Tenant, TenantRoomAssignment,
     RoomDamage, WGDamage, RoomDamageLine, WGDamageLine, DamageSize,
 )
@@ -98,6 +100,7 @@ def tenant_list(request: HttpRequest):
     roles = global_roles(request.user)
     visible = visible_fields(roles)
     show_realname = "first_name" in visible      # real name + email + move dates
+    show_documents = show_realname or "granter" in roles  # granter: VE pill only
     show_room = bool({"mietverwaltung", "admin"} & roles)
     show_cluster = bool({"mietverwaltung", "admin", "cluster"} & roles)
     show_surveys = bool({"cluster", "admin"} & roles)  # AG-engagement columns
@@ -154,6 +157,21 @@ def tenant_list(request: HttpRequest):
                 .values_list("tenant_id", flat=True)
             )
 
+    # VE clearance colour (#65): per tenant, from live VE docs + approval events
+    # + one LDAP group lookup. Skipped when nobody is shown.
+    ve_state: dict[int, tuple[bool, bool]] = {}  # tenant_id -> (approved, pending)
+    members = None
+    if show_documents and tenants:
+        by_tid_ve: dict[int, list[int]] = {}
+        for tid, did in VertraulichkeitserklaerungDocument.objects.filter(
+            tenant_id__in=[t.pk for t in tenants], revoked_at__isnull=True
+        ).values_list("tenant_id", "pk"):
+            by_tid_ve.setdefault(tid, []).append(did)
+        approved_ids = clearance.approved_doc_ids([d for ds in by_tid_ve.values() for d in ds])
+        for tid, ds in by_tid_ve.items():
+            ve_state[tid] = (any(d in approved_ids for d in ds), any(d not in approved_ids for d in ds))
+        members = clearance.clearance_member_uuids()
+
     # AG-engagement scope (cluster/admin): which surveys' results to load.
     abfragen = list(AGAbfrage.objects.all()) if show_surveys else []
     selected_ids = {int(x) for x in request.GET.getlist("surveys") if x.isdigit()} if show_surveys else set()
@@ -184,6 +202,25 @@ def tenant_list(request: HttpRequest):
                  "present": t.pk in active_doc_ids[dt]}
                 for dt in _DOC_SHORT
             ]
+            row["documents_missing"] = sum(1 for d in row["documents"] if not d["present"])
+        if show_documents:
+            approved, pending = ve_state.get(t.pk, (False, False))
+            # No account can't be in the group, LDAP up or not (same as the detail page).
+            if not t.intranet_uuid:
+                in_group = False
+            elif members is None:
+                in_group = None
+            else:
+                in_group = str(t.intranet_uuid) in members
+            ve = {"short": _DOC_SHORT["vertraulichkeitserklaerung"],
+                  "label": DocumentType("vertraulichkeitserklaerung").label, "present": approved,
+                  "color": clearance.clearance_color(in_group, approved, pending),
+                  "tooltip": clearance.TOOLTIP}
+            if show_realname:
+                row["documents"] = [ve if dt == "vertraulichkeitserklaerung" else d
+                                    for dt, d in zip(_DOC_SHORT, row["documents"])]
+            else:
+                row["documents"] = [ve]
             row["documents_missing"] = sum(1 for d in row["documents"] if not d["present"])
         if show_surveys:
             tr = results_by_tenant.get(t.pk, {})
@@ -224,6 +261,7 @@ def tenant_list(request: HttpRequest):
         "grouped": grouped,
         "total": len(rows),
         "show_realname": show_realname,
+        "show_documents": show_documents,
         "show_room": show_room,
         "show_cluster": show_cluster,
         "show_surveys": show_surveys,
@@ -593,16 +631,19 @@ def tenant_detail(request: HttpRequest, pk: int):
         for dtype in readable_types:
             model = DOCUMENT_MODELS[dtype]
             docs = []
-            for d in model.objects.filter(tenant=tenant).order_by("-uploaded_at"):
+            for d in model.objects.filter(tenant=tenant).select_related("uploaded_by").order_by("-uploaded_at"):
                 d.doc_type = dtype
                 d.doc_type_label = DocumentType(dtype).label
                 docs.append(d)
+            has_active = any(d.revoked_at is None for d in docs)
+            if dtype == DocumentType.VERTRAULICHKEITSERKLAERUNG:
+                ctx["clearance"], has_active = _clearance_ctx(request, tenant, docs, roles)
             groups.append({
                 "type": dtype,
                 "label": DocumentType(dtype).label,
                 "short": _DOC_SHORT[dtype],
                 "docs": docs,
-                "has_active": any(d.revoked_at is None for d in docs),
+                "has_active": has_active,
             })
         ctx["document_groups"] = groups
         ctx["can_manage_documents"] = bool({"mietverwaltung", "admin"} & roles)
@@ -628,6 +669,36 @@ def tenant_detail(request: HttpRequest, pk: int):
             )
 
     return render(request, "app/tenant_detail.html", ctx)
+
+
+def _clearance_ctx(request, tenant, docs, roles):
+    """Colour indicator + grant/revoke flags for the VE card (#65); marks each doc
+    with clearance_approved / revoke_blocked. Returns (ctx, has_active)."""
+    impersonating = bool(getattr(request, "impersonator", None))
+    approved_ids = clearance.approved_doc_ids(d.pk for d in docs)
+    for d in docs:
+        d.clearance_approved = d.pk in approved_ids
+        # Server refuses revoking an approved VE while impersonating; hide it.
+        d.revoke_blocked = d.clearance_approved and impersonating
+    live = [d for d in docs if d.revoked_at is None]
+    approved = any(d.clearance_approved for d in live)
+    pending = any(not d.clearance_approved for d in live)
+    # No account can't be in the group — don't report that as "LDAP unknown".
+    in_group = clearance.is_clearance_member(tenant.intranet_uuid) if tenant.intranet_uuid else False
+    is_granter = "granter" in roles  # same as clearance.is_granter, no extra query
+    can_grant = is_granter and not impersonating
+    ctx = {
+        "color": clearance.clearance_color(in_group, approved, pending),
+        "tooltip": clearance.TOOLTIP,
+        "group": _dn_to_cn(settings.LDAP_REQUIRE_GROUP),
+        "can_grant": can_grant,
+        "can_revoke_ve": bool({"mietverwaltung", "admin"} & roles) or is_granter,
+        "has_account": bool(tenant.intranet_username and tenant.intranet_uuid),
+        # Granters see the real name (spec) — on the card and in the grant dialog.
+        "is_granter": is_granter,
+        "full_name": clearance.confirm_name_for(tenant) if is_granter else "",
+    }
+    return ctx, approved
 
 
 @login_required

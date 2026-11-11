@@ -61,6 +61,9 @@ RESOURCE_SECTIONS = [
         _f("room_assignments_new", "Neues Zimmer zuweisen", frozenset(), _ROOM_STAFF),
         _f("room_assignment_notes", "Zimmerbelegung-Notizen (Belegung)", _ROOM_STAFF, _ROOM_STAFF),
     ]),
+    Section("clearance", "Vertraulichkeitserklärung", [
+        _f("clearance_grant", "Vertraulichkeitserklärung prüfen & confidentiality_clearance gewähren (inkl. Klarname)", {"mietverwaltung", "admin", "granter"}, {"granter"}),
+    ]),
     Section("engagement", "AG-Engagement & Cluster-Notizen", [
         _f("engagement_results", "AG-Abfrage-Ergebnisse", _OWN_CLUSTER_ADMIN, frozenset()),
         _f("cluster_notes", "Cluster-Notizen", _CLUSTER_ADMIN, _CLUSTER_ADMIN),

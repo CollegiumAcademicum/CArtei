@@ -287,6 +287,25 @@ class VertraulichkeitserklaerungDocument(DocumentBase):
         db_table = "vertraulichkeitserklaerung_document"
 
 
+class ClearanceAction(models.TextChoices):
+    GRANT = "GRANT", "Gewährt"
+    REGRANT = "REGRANT", "Erneut gewährt"
+    REVOKE = "REVOKE", "Entzogen"
+
+
+class ConfidentialityClearanceEvent(models.Model):
+    """Append-only log of confidentiality_clearance grants/revocations (#65)."""
+    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="clearance_events")
+    document = models.ForeignKey(VertraulichkeitserklaerungDocument, on_delete=models.DO_NOTHING, db_constraint=False, db_column="document_id", related_name="clearance_events")
+    action = models.CharField(max_length=20, choices=ClearanceAction.choices)
+    actor = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True, db_column="actor_id", related_name="+")
+    created_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "confidentiality_clearance_event"
+
+
 class DocumentSigner(models.Model):
     """Polymorphic signer shared across the per-type document tables
     (mirrors cartei_db: document_type + document_id, no FK)."""
@@ -411,6 +430,9 @@ DEFAULT_DOCUMENT_READERS = frozenset({"owner", "mietverwaltung", "admin"})
 DOCUMENT_READERS = {
     DocumentType.SEPA_LASTSCHRIFTMANDAT.value:
         frozenset({"owner", "mietverwaltung", "admin", "finanzierung"}),
+    # Granters check the VE before granting confidentiality_clearance (#65).
+    DocumentType.VERTRAULICHKEITSERKLAERUNG.value:
+        frozenset({"owner", "mietverwaltung", "admin", "granter"}),
 }
 
 

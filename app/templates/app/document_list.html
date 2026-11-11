@@ -44,7 +44,7 @@
           <td data-col="uploaded" data-value="{{ r.uploaded_at|date:'Y-m-d' }}" data-sort="{{ r.uploaded_at|date:'Y-m-d H:i:s' }}">{{ r.uploaded_at|date:"d.m.Y" }}</td>
           <td data-col="uploader" data-sort="{{ r.uploaded_by|display|lower }}">{% tenant_link r.uploaded_by %}</td>
           <td data-col="status" data-value="{% if r.revoked %}revoked{% else %}active{% endif %}" data-sort="{{ r.revoked|yesno:'1,0' }}">
-            {% if r.revoked %}<span class="ca-pill ca-pill-red" title="Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {{ r.revoked_by|display }}{% endif %}{% if r.revoked_note %}: {{ r.revoked_note }}{% endif %}">Widerrufen</span>{% else %}<span class="ca-pill ca-pill-green">Aktiv</span>{% endif %}
+            {% if r.revoked %}<span class="ca-pill ca-pill-red" title="Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {{ r.revoked_by|display }}{% endif %}{% if r.revoked_note %}: {{ r.revoked_note }}{% endif %}">Widerrufen</span>{% elif r.pending %}<span class="ca-pill ca-pill-amber" title="Wartet auf Bestätigung der Vertraulichkeitsfreigabe">Ausstehend</span>{% else %}<span class="ca-pill ca-pill-green">Aktiv</span>{% endif %}
           </td>
           <td>{% if r.detail or r.revoked %}<span class="detail-caret" style="color:var(--ca-teal);white-space:nowrap;">▸ Details</span>{% endif %}</td>
         </tr>
