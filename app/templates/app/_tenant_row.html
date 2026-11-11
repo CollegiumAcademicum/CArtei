@@ -19,8 +19,8 @@
   <td data-col="cluster" data-sort="{{ row.cluster|lower }}">{{ row.cluster|default:"—" }}</td>
   {% endif %}
   {% if show_realname %}
-  <td data-col="mailbox" data-value="{% if not row.tenant.profile_setup_completed_at %}pending{% else %}{{ row.tenant.mailbox_list_opt_in|yesno:'true,false' }}{% endif %}" data-sort="{% if not row.tenant.profile_setup_completed_at %}-1{% else %}{{ row.tenant.mailbox_list_opt_in|yesno:'1,0' }}{% endif %}">
-    {% if not row.tenant.profile_setup_completed_at %}<span class="ca-pill ca-pill-amber">Ausstehend</span>{% elif row.tenant.mailbox_list_opt_in %}<span class="ca-pill ca-pill-yes">Ja</span>{% else %}<span class="ca-pill ca-pill-no">Nein</span>{% endif %}
+  <td data-col="mailbox" data-value="{% if not row.tenant.profile_setup_completed_at and not row.tenant.mailbox_list_opt_in %}pending{% else %}{{ row.tenant.mailbox_list_opt_in|yesno:'true,false' }}{% endif %}" data-sort="{% if not row.tenant.profile_setup_completed_at and not row.tenant.mailbox_list_opt_in %}-1{% else %}{{ row.tenant.mailbox_list_opt_in|yesno:'1,0' }}{% endif %}">
+    {% if not row.tenant.profile_setup_completed_at and not row.tenant.mailbox_list_opt_in %}<span class="ca-pill ca-pill-amber">Ausstehend</span>{% elif row.tenant.mailbox_list_opt_in %}<span class="ca-pill ca-pill-yes">Ja</span>{% else %}<span class="ca-pill ca-pill-no">Nein</span>{% endif %}
   </td>
   <td data-col="proof" data-value="{{ row.proof.state }}" data-sort="{{ row.proof.state }}">
     {% if row.proof.state == "gueltig" %}<span class="ca-pill ca-pill-green">gültig</span>

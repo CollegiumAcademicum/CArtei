@@ -33,7 +33,7 @@ def resident_rows(today):
         if (tenant.pk, room_name) in seen_rooms:
             continue
         seen_rooms.add((tenant.pk, room_name))
-        confirmed_opt_in = bool(tenant.profile_setup_completed_at and tenant.mailbox_list_opt_in)
+        confirmed_opt_in = tenant.mailbox_list_opt_in
         if confirmed_opt_in:
             room_parts = room_name.split(".")
             if (
