@@ -73,3 +73,5 @@ TENANT_ROLE_GROUPS = {
     "werkstatt": ["cartei_werkstatt"],
     "finanzierung": ["ag.finanzierung"],
 }
+
+BRIEFKASTENLISTE_IGNORE_ROOMS = False

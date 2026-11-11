@@ -194,3 +194,22 @@ def test_yes_counts_before_profile_setup_is_completed():
     _assignment(tenant, room, today)
 
     assert resident_rows(today)[0]["opt_in"] is True
+
+
+@pytest.mark.django_db
+def test_ignore_rooms_flag_adds_unassigned_yes(settings):
+    today = timezone.localdate()
+    building = Building.objects.create(name="Neubau")
+    wg = WG.objects.create(building=building, name="1.02")
+    room = Room.objects.create(wg=wg, name="1.02.1", size_sqm="12.00")
+    _assignment(_tenant("Housed"), room, today)
+    _tenant("Imported")
+    _tenant("Declined", opt_in=False)
+    moved_out = _tenant("Gone")
+    _assignment(moved_out, room, today - timedelta(days=30), today - timedelta(days=1))
+
+    assert [r["forename"] for r in resident_rows(today)] == ["Housed"]
+    settings.BRIEFKASTENLISTE_IGNORE_ROOMS = True
+    rows = {r["forename"]: r for r in resident_rows(today)}
+    assert set(rows) == {"Housed", "Imported"}
+    assert rows["Imported"]["flatnumber"] == ""
