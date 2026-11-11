@@ -163,7 +163,7 @@ def test_impersonated_resident_is_gated_but_impersonator_can_stop(room):
 
 @pytest.mark.django_db
 def test_staff_overview_marks_unconfirmed_mailbox_choice_pending(room):
-    tenant = _tenant("resident", room, mailbox_list_opt_in=True)
+    tenant = _tenant("resident", room)
     admin = User.objects.create_user("admin", password="pw")
     admin.groups.add(Group.objects.create(name="admins"))
     client = Client()

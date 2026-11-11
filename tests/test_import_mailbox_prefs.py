@@ -18,6 +18,8 @@ def _tenant(username, **values):
 def test_import_sets_opt_in_and_keeps_cartei_answers(tmp_path):
     yes, no, blank = _tenant("ada_yes"), _tenant("bo_no", mailbox_list_opt_in=True), _tenant("cy_blank")
     answered = _tenant("di_done", profile_setup_completed_at=timezone.now())
+    legacy_yes = _tenant("ed_legacy", mailbox_list_opt_in=True)
+    confirmed_yes = _tenant("fa_set", mailbox_list_opt_in=True, profile_setup_completed_at=timezone.now())
     csv_file = tmp_path / "prefs.csv"
     csv_file.write_text(
         "username,mailbox_name,share_study_info,freitext,is_admin\n"
@@ -29,9 +31,11 @@ def test_import_sets_opt_in_and_keeps_cartei_answers(tmp_path):
         encoding="utf-8",
     )
     call_command("import_mailbox_prefs", str(csv_file))
-    for t in (yes, no, blank, answered):
+    for t in (yes, no, blank, answered, legacy_yes, confirmed_yes):
         t.refresh_from_db()
     assert yes.mailbox_list_opt_in is True
     assert no.mailbox_list_opt_in is False
     assert blank.mailbox_list_opt_in is False
     assert answered.mailbox_list_opt_in is False
+    assert legacy_yes.mailbox_list_opt_in is False
+    assert confirmed_yes.mailbox_list_opt_in is True

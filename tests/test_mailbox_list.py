@@ -182,7 +182,8 @@ def test_build_document_sorts_drops_prefix_and_truncates_to_wg():
 
 
 @pytest.mark.django_db
-def test_unconfirmed_existing_yes_is_excluded_from_generated_list():
+def test_yes_counts_before_profile_setup_is_completed():
+    # Imported answers predate the setup gate; a stored "yes" is always explicit.
     today = timezone.localdate()
     building = Building.objects.create(name="Neubau")
     wg = WG.objects.create(building=building, name="1.02")
@@ -192,6 +193,4 @@ def test_unconfirmed_existing_yes_is_excluded_from_generated_list():
     tenant.save(update_fields=["profile_setup_completed_at"])
     _assignment(tenant, room, today)
 
-    assert resident_rows(today)[0]["opt_in"] is False
-    with pytest.raises(NoMailboxResidents):
-        generate_mailbox_list(today)
+    assert resident_rows(today)[0]["opt_in"] is True
