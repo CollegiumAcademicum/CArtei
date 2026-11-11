@@ -253,3 +253,6 @@ LOGGING = {
         "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
     },
 }
+
+# Rollout stopgap: list opted-in tenants that have no room assignment yet (empty WG column).
+BRIEFKASTENLISTE_IGNORE_ROOMS = os.environ.get("BRIEFKASTENLISTE_IGNORE_ROOMS", "false").lower() == "true"
