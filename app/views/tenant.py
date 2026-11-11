@@ -8,6 +8,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Min, Q
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from django.core.exceptions import PermissionDenied
 
@@ -378,6 +379,15 @@ def _provision_and_notify(request, tenant):
 
 def _current_tenant(request):
     return Tenant.objects.filter(intranet_username=request.user.username).first()
+
+
+@login_required
+def briefkasten(request: HttpRequest):
+    # Replaces abfrage.ca-hd.de: the opt-in lives in the own profile's "personal" section.
+    tenant = _current_tenant(request)
+    if tenant is None:
+        return redirect("dashboard")
+    return redirect(reverse("tenant_detail", args=[tenant.pk]) + "#section-personal")
 
 
 def _build_sections(tenant, form, visible, editable):
