@@ -14,6 +14,7 @@ urlpatterns = [
     path("abfragen/<int:pk>/delete/", abfragen.abfrage_delete, name="abfrage_delete"),
     path("wgs/", rooms.wg_list, name="wg_list"),
     path("wgs/<int:pk>/", rooms.wg_detail, name="wg_detail"),
+    path("briefkasten/", tenant.briefkasten, name="briefkasten"),
     path("tenants/", tenant.tenant_list, name="tenant_list"),
     path("tenants/neu/", tenant.tenant_create, name="tenant_create"),
     path("tenants/<int:pk>/", tenant.tenant_detail, name="tenant_detail"),
