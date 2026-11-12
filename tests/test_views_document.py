@@ -229,7 +229,7 @@ def finanzierung_user(db):
         intranet_username="fin_user", intranet_uuid="00000000-0000-0000-0000-000000000030",
     )
     User.objects.create_user(username="fin_user", password="x").groups.add(
-        Group.objects.get_or_create(name="ag.finanzierung")[0]
+        Group.objects.get_or_create(name="cartei_finanzierung")[0]
     )
     return "fin_user"
 

@@ -92,7 +92,7 @@ def test_owner_post_bad_email_rejected():
 
 @pytest.mark.django_db
 def test_mietverwaltung_can_edit_dob(settings):
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
     t = _tenant("someone")
     c = Client()
     _login(c, "mv", groups=["ag.mietverwaltung"])
@@ -102,7 +102,7 @@ def test_mietverwaltung_can_edit_dob(settings):
 
 @pytest.mark.django_db
 def test_mietverwaltung_sees_sublet_of_picker(settings):
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
     t = _tenant("subj")
     c = Client()
     _login(c, "mv2", groups=["ag.mietverwaltung"])
@@ -112,7 +112,7 @@ def test_mietverwaltung_sees_sublet_of_picker(settings):
 
 @pytest.mark.django_db
 def test_date_fields_use_native_picker_and_iso_roundtrip(settings):
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
     t = _tenant("dsubj")
     c = Client()
     _login(c, "mvd", groups=["ag.mietverwaltung"])
@@ -130,7 +130,7 @@ def test_future_moved_out_shows_as_active_room(settings):
     """An assignment with a future moved_out date must appear as an active (editable) room."""
     import datetime
     from app.models import Building, WG, Room, TenantRoomAssignment
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
     t = _tenant("mvfuture")
     b = Building.objects.create(name="BauF")
     wg = WG.objects.create(building=b, name="WGF", cluster="OG2")
@@ -148,7 +148,7 @@ def test_past_assignment_is_editable_for_manager(settings):
     """A past (moved_out in the past) assignment must render as an editable form for MV/Admin."""
     import datetime
     from app.models import Building, WG, Room, TenantRoomAssignment
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
     t = _tenant("mvpast")
     b = Building.objects.create(name="BauP")
     wg = WG.objects.create(building=b, name="WGP", cluster="OG3")
@@ -265,7 +265,7 @@ def test_housing_post_saves_without_new_room(settings):
     """Housing section should save existing assignment changes even when new-room form is blank."""
     import datetime
     from app.models import Building, WG, Room, TenantRoomAssignment
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
     t = _tenant("mvtest2")
     b = Building.objects.create(name="Bau")
     wg = WG.objects.create(building=b, name="WG1", cluster="OG1")
@@ -296,7 +296,7 @@ def test_housing_post_with_all_browser_fields(settings):
     """Browser sends tenant housing fields too — ensure those don't block room assignment save."""
     import datetime
     from app.models import Building, WG, Room, TenantRoomAssignment
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
     t = _tenant("mvtest3")
     b = Building.objects.create(name="Bau2")
     wg = WG.objects.create(building=b, name="WG2", cluster="OG1")
@@ -340,7 +340,7 @@ def test_new_room_without_moved_in_shows_error_not_silent(settings):
     error, not silently drop the assignment."""
     import datetime
     from app.models import Building, WG, Room, TenantRoomAssignment
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
     t = _tenant("mvnew")
     b = Building.objects.create(name="Bau3")
     wg = WG.objects.create(building=b, name="WG3", cluster="OG2")
@@ -387,7 +387,7 @@ def test_detail_shows_reverse_sublet(settings):
 def test_room_renters_endpoint_lists_only_active_and_gates_access(settings):
     import datetime
     from app.models import Building, WG, Room, TenantRoomAssignment
-    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+    settings.TENANT_ROLE_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
     b = Building.objects.create(name="BauR")
     wg = WG.objects.create(building=b, name="WGR", cluster="OG1")
     room = Room.objects.create(wg=wg, name="401", size_sqm=14)
