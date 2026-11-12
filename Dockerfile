@@ -28,6 +28,10 @@ RUN uv sync --no-group dev
 
 COPY . .
 
+# Commit this image was built from (CI passes the git SHA); see /version/.
+ARG GIT_SHA=dev
+ENV CARTEI_VERSION=$GIT_SHA
+
 EXPOSE 8000
 
 CMD ["sh", "-c", \

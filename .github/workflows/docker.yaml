@@ -1,8 +1,9 @@
-name: Build and push Docker image
+name: Test, build and push Docker image
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 # Back-to-back merges must not race on :latest — a newer push cancels the older build.
@@ -11,7 +12,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # python-ldap builds against libldap; weasyprint needs pango at runtime.
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libldap-dev libsasl2-dev libpango-1.0-0 libpangoft2-1.0-0
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Run tests
+        run: uv run pytest -q
+
+  # Only tested code reaches :latest (and with it pod0's nightly update).
   build:
+    needs: test
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -30,11 +51,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Short commit SHA
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      # :<sha> stays pullable for rollbacks; the app shows it at /version/.
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ghcr.io/collegiumacademicum/cartei-web:latest
+          build-args: GIT_SHA=${{ steps.sha.outputs.short }}
+          tags: |
+            ghcr.io/collegiumacademicum/cartei-web:latest
+            ghcr.io/collegiumacademicum/cartei-web:${{ steps.sha.outputs.short }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -55,6 +55,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "app.context_processors.privileged",
+                "app.context_processors.version",
             ],
         },
     }
@@ -262,3 +263,6 @@ LOGGING = {
 
 # Rollout stopgap: list opted-in tenants that have no room assignment yet (empty WG column).
 BRIEFKASTENLISTE_IGNORE_ROOMS = os.environ.get("BRIEFKASTENLISTE_IGNORE_ROOMS", "false").lower() == "true"
+
+# Git commit the image was built from (Dockerfile build-arg); shown in the footer and at /version/.
+CARTEI_VERSION = os.environ.get("CARTEI_VERSION", "dev")

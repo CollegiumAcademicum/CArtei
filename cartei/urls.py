@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.http import HttpResponse
 from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
 from django.urls import include, path
@@ -13,8 +14,14 @@ def _root(request):
     return redirect("landing")
 
 
+def _version(request):
+    """Public: which commit is running (deploy checks)."""
+    return HttpResponse(settings.CARTEI_VERSION, content_type="text/plain")
+
+
 urlpatterns = [
     path("", _root),
+    path("version/", _version, name="version"),
     path("login/", oidc_views.OIDCAuthenticationRequestView.as_view(), name="login"),
     path("oidc/callback/", KeycloakCallbackView.as_view(), name="oidc_authentication_callback"),
     path("logout/", oidc_views.OIDCLogoutView.as_view(), name="logout"),

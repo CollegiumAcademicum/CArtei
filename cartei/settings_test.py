@@ -32,6 +32,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "app.context_processors.version",
             ],
         },
     }
@@ -77,3 +78,4 @@ TENANT_ROLE_GROUPS = {
 }
 
 BRIEFKASTENLISTE_IGNORE_ROOMS = False
+CARTEI_VERSION = "dev"
