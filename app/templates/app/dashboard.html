@@ -1,5 +1,5 @@
 {% extends "app/base.html" %}
-{% load tenant_extras %}
+{% load static tenant_extras %}
 {% block title %}Dashboard — CArtei{% endblock %}
 {% block content %}
 <div style="display:flex;gap:1.5rem;align-items:flex-start;">
@@ -18,14 +18,8 @@
     {% if tenant.pronouns %}
       <p style="font-size:0.85rem;color:#7a7a7a;">{{ tenant.pronouns }}</p>
     {% endif %}
-    {% if user_groups %}
-      <div style="margin-top:1rem;">
-        <p style="font-size:0.85rem;font-weight:600;color:#7a7a7a;margin-bottom:0.5rem;">Meine AGs</p>
-        {% for g in user_groups %}
-          <span style="display:block;font-size:0.9rem;">{{ g }}</span>
-        {% endfor %}
-      </div>
-    {% endif %}
+    {{ ag_tags_html }}
+    <script src="{% static 'app/ag_tags.js' %}"></script>
   </div>
 
   <div style="flex:1;margin-top:1.5rem;">

@@ -7,6 +7,7 @@ from django.core.exceptions import SuspiciousOperation
 from django.test import Client, RequestFactory
 
 from app.models import Tenant
+from app.auth import sync_user_groups
 from app.tenant_access import global_roles
 
 UUID_A = "11111111-1111-1111-1111-111111111111"
@@ -49,7 +50,7 @@ def test_claim_group_names_strips_full_paths():
 @pytest.mark.django_db
 def test_sync_groups_adds_admins():
     user = User.objects.create_user(username="alice")
-    backend()._sync_groups(user, {"admins", "ag.kueche"})
+    sync_user_groups(user, {"admins", "ag.kueche"})
     names = set(user.groups.values_list("name", flat=True))
     assert {"admins", "ag.kueche"} <= names
     assert "gr.cluster" not in names
@@ -58,7 +59,7 @@ def test_sync_groups_adds_admins():
 @pytest.mark.django_db
 def test_sync_groups_adds_cluster():
     user = User.objects.create_user(username="bob")
-    backend()._sync_groups(user, {"cluster"})
+    sync_user_groups(user, {"cluster"})
     assert user.groups.filter(name="gr.cluster").exists()
 
 
@@ -67,7 +68,7 @@ def test_sync_groups_adds_mietverwaltung(settings):
     # cartei_mietverwaltung has no AG prefix, so it is only synced via its DN's cn.
     settings.CARTEI_MIETVERWALTUNG_GROUP = "cn=cartei_mietverwaltung,dc=test"
     user = User.objects.create_user(username="mara")
-    backend()._sync_groups(user, {"cartei_mietverwaltung"})
+    sync_user_groups(user, {"cartei_mietverwaltung"})
     assert user.groups.filter(name="cartei_mietverwaltung").exists()
 
 
@@ -76,14 +77,14 @@ def test_sync_groups_adds_finanzierung():
     # cartei_finanzierung has no AG prefix, so it is only synced via its DN's cn,
     # and that marker is what grants the "finanzierung" role.
     user = User.objects.create_user(username="fiona")
-    backend()._sync_groups(user, {"cartei_finanzierung"})
+    sync_user_groups(user, {"cartei_finanzierung"})
     assert "finanzierung" in global_roles(user)
 
 
 @pytest.mark.django_db
 def test_sync_groups_keeps_prefixed_groups_only():
     user = User.objects.create_user(username="hans")
-    backend()._sync_groups(user, {"ag.kueche", "gr.vorstand", "in.finanzen", "ipausers"})
+    sync_user_groups(user, {"ag.kueche", "gr.vorstand", "in.finanzen", "ipausers"})
     assert set(user.groups.values_list("name", flat=True)) == {"ag.kueche", "gr.vorstand", "in.finanzen"}
 
 
@@ -93,19 +94,19 @@ def test_sync_groups_admin_group_is_also_an_ag(settings):
     # keep the AG so its members can submit engagement reports.
     settings.CARTEI_ADMIN_GROUP = "cn=ag.it,dc=test"
     user = User.objects.create_user(username="ida")
-    backend()._sync_groups(user, {"ag.it"})
+    sync_user_groups(user, {"ag.it"})
     assert {"admins", "ag.it"} <= set(user.groups.values_list("name", flat=True))
 
 
 @pytest.mark.django_db
 def test_sync_groups_grants_and_revokes_impersonation():
     user = User.objects.create_user(username="sam")
-    backend()._sync_groups(user, {"cartei_impersonation"})
+    sync_user_groups(user, {"cartei_impersonation"})
     assert user.groups.filter(name="cartei_impersonation").exists()
     user.refresh_from_db()
     assert user.is_superuser is False  # a plain group, not the superuser flag
 
-    backend()._sync_groups(user, {"ag.kueche"})
+    sync_user_groups(user, {"ag.kueche"})
     assert not user.groups.filter(name="cartei_impersonation").exists()
 
 
@@ -113,7 +114,7 @@ def test_sync_groups_grants_and_revokes_impersonation():
 def test_sync_groups_removes_stale_groups():
     user = User.objects.create_user(username="carol")
     user.groups.add(Group.objects.create(name="ag.kueche"))
-    backend()._sync_groups(user, set())
+    sync_user_groups(user, set())
     assert user.groups.count() == 0
 
 
@@ -355,5 +356,5 @@ def test_expired_keycloak_session_goes_to_interactive_login(oidc_backend):
 @pytest.mark.django_db
 def test_sync_groups_maps_grant_clearance_group():
     user = User.objects.create_user(username="granter")
-    backend()._sync_groups(user, {"cartei_grant_confidentiality_clearance"})
+    sync_user_groups(user, {"cartei_grant_confidentiality_clearance"})
     assert set(user.groups.values_list("name", flat=True)) == {"cartei_grant_clearance"}

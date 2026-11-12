@@ -7,6 +7,7 @@ from django.shortcuts import render
 from app.auth import GROUP_PREFIXES, ag_group_names
 from app.models import AGAbfrage, AGAbfrageHealth, AGHealth, EnrollmentType, Tenant
 from app.residency import has_active_assignment
+from app.views.ag_membership import ag_tags_html
 
 # Worst first, so struggling AGs surface at the top of the widget.
 _HEALTH_RANK = {"TOT": 0, "KRITISCH": 1, "KERNAUFGABEN": 2, "GESUND": 3}
@@ -59,6 +60,7 @@ def dashboard(request):
     return render(request, "app/dashboard.html", {
         "tenant": tenant,
         "user_groups": user_groups,
+        "ag_tags_html": ag_tags_html(request),
         "active_abfragen": active_abfragen,
         "ag_status": ag_status,
         "current_tenants": current,
