@@ -485,7 +485,7 @@
         und damit Zugang zu allen internen Plattformen des Collegiums.
       </p>
       <p style="font-size:0.9rem;color:#7a7a7a;margin-bottom:1rem;">Zur Bestätigung bitte <strong>{{ clearance.full_name }}</strong> eintippen:</p>
-      <form method="post" action="">
+      <form method="post" action="" data-alert-errors>
         {% csrf_token %}
         <input type="text" name="confirm_name" id="clearance-confirm" class="input" style="margin-bottom:1rem;" autocomplete="off">
         <div style="display:flex;gap:0.75rem;justify-content:flex-end;">

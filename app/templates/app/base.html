@@ -134,6 +134,12 @@ document.addEventListener('submit', function(e) {
       });
       if (window.caWireDropZones) window.caWireDropZones();
       window.scrollTo(0, scrollY);
+      // Messages render at the top, often off-screen after the scroll restore —
+      // forms with data-alert-errors must not fail silently, so pop their errors.
+      if (f.dataset.alertErrors !== undefined) {
+        var errs = Array.from(next.querySelectorAll('.ca-message.error'), function(m) { return m.textContent.trim(); });
+        if (errs.length) alert(errs.join('\n'));
+      }
     })
     .catch(function() {
       // Network/abort — re-enable so the action can be retried (on success the
