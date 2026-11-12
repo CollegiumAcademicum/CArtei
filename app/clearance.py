@@ -24,6 +24,8 @@ STATUS_TEXT = {
     UNKNOWN: "Gruppenstatus unbekannt (LDAP nicht erreichbar)",
 }
 _COLOUR_NAME = {GREEN: "Grün", YELLOW: "Gelb", RED: "Rot", BLACK: "Schwarz", UNKNOWN: "Grau"}
+# (colour name, meaning) per status, for the .ca-hint legend on the tenant page.
+LEGEND = [(_COLOUR_NAME[c], text) for c, text in STATUS_TEXT.items()]
 
 
 def tooltip(colour: str) -> str:

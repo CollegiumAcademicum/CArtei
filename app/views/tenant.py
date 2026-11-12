@@ -690,6 +690,7 @@ def _clearance_ctx(request, tenant, docs, roles):
     ctx = {
         "color": (color := clearance.clearance_color(in_group, approved, pending)),
         "tooltip": clearance.tooltip(color),
+        "legend": clearance.LEGEND,
         "group": _dn_to_cn(settings.LDAP_REQUIRE_GROUP),
         "can_grant": can_grant,
         "can_revoke_ve": bool({"mietverwaltung", "admin"} & roles) or is_granter,

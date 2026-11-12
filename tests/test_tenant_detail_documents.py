@@ -173,7 +173,10 @@ def test_ve_pill_colours(client, owner, granter_user, monkeypatch, approved, pen
         _ve(owner, approved=approved)
     html = _html(client, granter_user, owner)
     assert f"ca-pill-{color}" in html
-    assert clearance.tooltip(color) in html
+    assert clearance.tooltip(color) in html  # summary pill
+    assert 'aria-label="Was bedeuten die Farben?"' in html
+    for name, text in clearance.LEGEND:
+        assert f"{name}:</strong> {text}" in html
 
 
 def test_ve_has_active_only_when_approved(client, owner, granter_user):

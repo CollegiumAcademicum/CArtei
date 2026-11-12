@@ -387,7 +387,8 @@
       <div style="display:flex;align-items:center;gap:.5rem;">
         <strong>{{ g.label }}</strong>
         {% if g.type == "vertraulichkeitserklaerung" %}
-        <span class="ca-pill ca-pill-{{ clearance.color }}" title="{{ clearance.tooltip }}">{% if clearance.color == "green" %}Freigegeben{% elif clearance.color == "yellow" %}Wartet auf Bestätigung{% elif clearance.color == "red" %}Keine Freigabe{% elif clearance.color == "black" %}Inkonsistent{% else %}Gruppenstatus unbekannt{% endif %}</span>
+        <span class="ca-pill ca-pill-{{ clearance.color }}">{% if clearance.color == "green" %}Freigegeben{% elif clearance.color == "yellow" %}Wartet auf Bestätigung{% elif clearance.color == "red" %}Keine Freigabe{% elif clearance.color == "black" %}Inkonsistent{% else %}Gruppenstatus unbekannt{% endif %}</span>
+        <span class="ca-hint" tabindex="0" role="button" aria-label="Was bedeuten die Farben?">i<span class="ca-hint-bubble" style="width:320px;">{% for name, text in clearance.legend %}<strong style="color:inherit;">{{ name }}:</strong> {{ text }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</span></span>
         {% if clearance.is_granter %}<span style="font-size:.85rem;">Name: {{ clearance.full_name }}</span>{% endif %}
         {% elif g.has_active %}
         <span style="color:#0a0;font-size:.8rem;">● Aktiv</span>
