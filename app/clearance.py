@@ -16,14 +16,20 @@ from app.models import ClearanceAction, ConfidentialityClearanceEvent, Tenant, V
 
 GREEN, YELLOW, RED, BLACK, UNKNOWN = "green", "yellow", "red", "black", "unknown"
 
-TOOLTIP = (
-    "Grün: Gruppe confidentiality_clearance + bestätigte Erklärung · "
-    "Gelb: Erklärung wartet auf Bestätigung · "
-    "Rot: weder Gruppe noch Erklärung · "
-    "Schwarz: Gruppe und Erklärung passen nicht zusammen (Gruppe ohne bestätigte Erklärung "
-    "oder bestätigte Erklärung ohne Gruppe) · "
-    "Grau: Gruppenstatus unbekannt (LDAP nicht erreichbar)"
-)
+STATUS_TEXT = {
+    GREEN: "Freigegeben: in Gruppe confidentiality_clearance, Erklärung bestätigt",
+    YELLOW: "Erklärung liegt vor, wartet auf Bestätigung",
+    RED: "Keine Freigabe: weder Gruppe noch Erklärung",
+    BLACK: "Inkonsistent: Gruppe ohne bestätigte Erklärung oder bestätigte Erklärung ohne Gruppe",
+    UNKNOWN: "Gruppenstatus unbekannt (LDAP nicht erreichbar)",
+}
+_COLOUR_NAME = {GREEN: "Grün", YELLOW: "Gelb", RED: "Rot", BLACK: "Schwarz", UNKNOWN: "Grau"}
+
+
+def tooltip(colour: str) -> str:
+    """Hover text for the VE pill: current status first, then the full legend (one per line)."""
+    legend = "\n".join(f"{_COLOUR_NAME[c]}: {text}" for c, text in STATUS_TEXT.items())
+    return f"Vertraulichkeitserklärung – {STATUS_TEXT[colour]}\n\n{legend}"
 
 
 def clearance_color(in_group: bool | None, approved: bool, pending: bool) -> str:

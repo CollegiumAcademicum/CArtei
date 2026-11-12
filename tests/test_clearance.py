@@ -61,3 +61,11 @@ def test_approved_doc_ids():
 def test_granter_reads_only_ve():
     assert "granter" in document_readers("vertraulichkeitserklaerung")
     assert "granter" not in document_readers("datenschutz")
+
+
+def test_tooltip_leads_with_current_status_and_lists_all():
+    from app.clearance import STATUS_TEXT, tooltip
+    for colour in (GREEN, YELLOW, RED, BLACK, UNKNOWN):
+        lines = tooltip(colour).split("\n")
+        assert STATUS_TEXT[colour] in lines[0]
+        assert all(any(text in line for line in lines[2:]) for text in STATUS_TEXT.values())

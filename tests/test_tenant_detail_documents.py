@@ -173,7 +173,7 @@ def test_ve_pill_colours(client, owner, granter_user, monkeypatch, approved, pen
         _ve(owner, approved=approved)
     html = _html(client, granter_user, owner)
     assert f"ca-pill-{color}" in html
-    assert clearance.TOOLTIP in html
+    assert clearance.tooltip(color) in html
 
 
 def test_ve_has_active_only_when_approved(client, owner, granter_user):
