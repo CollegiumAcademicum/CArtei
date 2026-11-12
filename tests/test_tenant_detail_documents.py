@@ -200,6 +200,9 @@ def test_grant_button_only_for_granter(client, owner, granter_user, mv_user):
     assert "clearance-dialog" not in html
     html = _html(client, granter_user, owner)
     assert 'id="clearance-dialog"' in html
+    # Grant errors render off-screen after the AJAX swap; the form opts into an alert.
+    assert 'method="post" action="" data-alert-errors' in html
+    assert "margin-left:auto;\" data-alert-errors data-confirm=" in html  # revoke form
     assert "data-pip-src" in html
     assert "Bestätigen" in html
 

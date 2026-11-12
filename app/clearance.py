@@ -64,31 +64,37 @@ def is_granter(user) -> bool:
 
 
 def grant(tenant: Tenant, doc: VertraulichkeitserklaerungDocument, actor: Tenant) -> str:
-    """Add the tenant to the IPA group, then log the event. Raises ClearanceIPAError before writing."""
+    """Log the event and add the tenant to the IPA group as one unit.
+
+    The DB write goes first inside the transaction and IPA last: an IPA failure
+    (ClearanceIPAError) rolls the event back, a DB failure never reaches IPA.
+    """
     already = ConfidentialityClearanceEvent.objects.filter(
         document=doc, action=ClearanceAction.GRANT
     ).exists()
     action = ClearanceAction.REGRANT if already else ClearanceAction.GRANT
-    add_clearance_member(tenant.intranet_username)
-    ConfidentialityClearanceEvent.objects.create(
-        tenant=tenant, document=doc, action=action, actor=actor, created_at=now()
-    )
+    with transaction.atomic():
+        ConfidentialityClearanceEvent.objects.create(
+            tenant=tenant, document=doc, action=action, actor=actor, created_at=now()
+        )
+        add_clearance_member(tenant.intranet_username)
     return action
 
 
 def revoke(tenant: Tenant, doc: VertraulichkeitserklaerungDocument, actor: Tenant, note: str) -> bool:
     """Remove the tenant from the IPA group, revoke the doc, log the event.
 
-    Raises ClearanceIPAError before writing. Returns True if another non-revoked
-    approved VE of the tenant remains (the group was removed anyway).
+    DB writes first, IPA last, in one transaction (see grant): a ClearanceIPAError
+    rolls the revoke back. Returns True if another non-revoked approved VE of the
+    tenant remains (the group was removed anyway).
     """
-    if tenant.intranet_username:
-        remove_clearance_member(tenant.intranet_username)
     with transaction.atomic():
         type(doc).objects.filter(pk=doc.pk).update(revoked_at=now(), revoked_by_id=actor.pk, revoked_note=note)
         ConfidentialityClearanceEvent.objects.create(
             tenant=tenant, document=doc, action=ClearanceAction.REVOKE, actor=actor, created_at=now()
         )
+        if tenant.intranet_username:
+            remove_clearance_member(tenant.intranet_username)
     others = (
         VertraulichkeitserklaerungDocument.objects
         .filter(tenant=tenant, revoked_at__isnull=True).exclude(pk=doc.pk)
