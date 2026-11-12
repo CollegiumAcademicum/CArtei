@@ -145,6 +145,21 @@ def test_grant_ipa_failure_writes_nothing(client, granter, target, monkeypatch):
     assert any("IPA down" in str(m) for m in get_messages(r.wsgi_request))
 
 
+def _broken_event_create(monkeypatch):
+    def boom(**kw):
+        raise RuntimeError("DB down")
+    monkeypatch.setattr(ConfidentialityClearanceEvent.objects, "create", boom)
+
+
+def test_grant_db_failure_never_reaches_ipa(client, granter, target, spy, monkeypatch):
+    client.force_login(granter[1])
+    doc = _doc(target)
+    _broken_event_create(monkeypatch)
+    with pytest.raises(RuntimeError):
+        _post(client, target, doc, confirm_name="Max Muster")
+    assert spy == []
+
+
 # --- revoke (Task 5) ---
 
 @pytest.fixture
@@ -213,6 +228,18 @@ def test_revoke_ipa_failure_keeps_doc(client, granter, target, monkeypatch):
     assert doc.revoked_at is None
     assert not ConfidentialityClearanceEvent.objects.filter(action=ClearanceAction.REVOKE).exists()
     assert any("IPA down" in str(m) for m in get_messages(r.wsgi_request))
+
+
+def test_revoke_db_failure_never_reaches_ipa(client, granter, target, rm_spy, monkeypatch):
+    client.force_login(granter[1])
+    doc = _doc(target)
+    _approve(target, doc)
+    _broken_event_create(monkeypatch)
+    with pytest.raises(RuntimeError):
+        _revoke(client, target, doc)
+    assert rm_spy == []
+    doc.refresh_from_db()
+    assert doc.revoked_at is None
 
 
 def test_revoke_with_second_approved_fails_loudly(client, granter, target, rm_spy, caplog):

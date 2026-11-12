@@ -429,7 +429,7 @@
         {% elif d.revoke_blocked %}
         {# approved VE: server refuses revoke while impersonating #}
         {% elif can_manage_documents or g.type == "vertraulichkeitserklaerung" and clearance.can_revoke_ve %}
-        <form method="post" action="{% url 'document_revoke' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;" data-confirm="{% if d.clearance_approved %}Erklärung widerrufen? Dies entzieht {{ clearance.group }} und beendet den Zugang zu allen internen Plattformen (und CArtei). Dies kann nicht rückgängig gemacht werden.{% else %}Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.{% endif %}">
+        <form method="post" action="{% url 'document_revoke' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;" data-alert-errors data-confirm="{% if d.clearance_approved %}Erklärung widerrufen? Dies entzieht {{ clearance.group }} und beendet den Zugang zu allen internen Plattformen (und CArtei). Dies kann nicht rückgängig gemacht werden.{% else %}Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.{% endif %}">
           {% csrf_token %}
           <input name="revoked_note" type="text" required placeholder="Grund des Widerrufs" style="padding:.2rem;">
           <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Widerrufen</button>
