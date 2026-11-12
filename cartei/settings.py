@@ -168,6 +168,11 @@ CARTEI_IMPERSONATION_GROUP = os.environ.get("CARTEI_IMPERSONATION_GROUP") or (
 CARTEI_GRANT_CLEARANCE_GROUP = os.environ.get("CARTEI_GRANT_CLEARANCE_GROUP") or (
     "cn=cartei_grant_confidentiality_clearance,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
 )
+# Members may read SEPA-Lastschriftmandate (role "finanzierung"); _sync_groups maps
+# this DN to the "cartei_finanzierung" Django group.
+CARTEI_FINANZIERUNG_GROUP = os.environ.get("CARTEI_FINANZIERUNG_GROUP") or (
+    "cn=cartei_finanzierung,cn=groups,cn=accounts,dc=intranet,dc=ca-hd,dc=de"
+)
 LDAP_USER_SEARCH_BASE = os.environ.get(
     "LDAP_USER_SEARCH_BASE",
     "cn=users,cn=accounts,dc=intranet,dc=ca-hd,dc=de",

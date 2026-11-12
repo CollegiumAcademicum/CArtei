@@ -90,7 +90,7 @@ def test_finanzierung_sees_only_sepa_group(client, owner):
     # AG Finanzierung may read SEPA and nothing else — the documents section
     # renders only the SEPA group, no consent/Mietvertrag documents.
     User.objects.create_user(username="fin_dd", password="x").groups.add(
-        Group.objects.get_or_create(name="ag.finanzierung")[0]
+        Group.objects.get_or_create(name="cartei_finanzierung")[0]
     )
     client.login(username="fin_dd", password="x")
     resp = client.get(reverse("tenant_detail", args=[owner.pk]))

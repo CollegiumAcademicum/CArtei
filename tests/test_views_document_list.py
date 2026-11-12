@@ -29,7 +29,7 @@ def _user(uname, group=None):
 def data(db):
     subject = _tenant(1, "subj_dl")
     _tenant(2, "mv_dl"); _user("mv_dl", "ag.mietverwaltung")
-    _tenant(3, "fin_dl"); _user("fin_dl", "ag.finanzierung")
+    _tenant(3, "fin_dl"); _user("fin_dl", "cartei_finanzierung")
     _tenant(4, "plain_dl"); _user("plain_dl")
     now = make_aware(datetime.datetime(2026, 8, 1, 12, 0))
 

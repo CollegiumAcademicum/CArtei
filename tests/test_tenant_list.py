@@ -7,7 +7,7 @@ from django.test import Client
 
 from app.models import Building, Room, Tenant, TenantRoomAssignment, WG
 
-_MV_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["ag.finanzierung"]}
+_MV_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
 
 
 def _tenant(username, **kw):

@@ -7,6 +7,7 @@ from django.core.exceptions import SuspiciousOperation
 from django.test import Client, RequestFactory
 
 from app.models import Tenant
+from app.tenant_access import global_roles
 
 UUID_A = "11111111-1111-1111-1111-111111111111"
 
@@ -71,6 +72,15 @@ def test_sync_groups_adds_mietverwaltung(settings):
 
 
 @pytest.mark.django_db
+def test_sync_groups_adds_finanzierung():
+    # cartei_finanzierung has no AG prefix, so it is only synced via its DN's cn,
+    # and that marker is what grants the "finanzierung" role.
+    user = User.objects.create_user(username="fiona")
+    backend()._sync_groups(user, {"cartei_finanzierung"})
+    assert "finanzierung" in global_roles(user)
+
+
+@pytest.mark.django_db
 def test_sync_groups_keeps_prefixed_groups_only():
     user = User.objects.create_user(username="hans")
     backend()._sync_groups(user, {"ag.kueche", "gr.vorstand", "in.finanzen", "ipausers"})
@@ -79,8 +89,8 @@ def test_sync_groups_keeps_prefixed_groups_only():
 
 @pytest.mark.django_db
 def test_sync_groups_admin_group_is_also_an_ag(settings):
-    # The IT AG doubles as the admin group: membership must grant admin AND
-    # keep ag.it as a normal AG so its members can submit engagement reports.
+    # If a rights group is also an AG, membership must grant the right AND
+    # keep the AG so its members can submit engagement reports.
     settings.CARTEI_ADMIN_GROUP = "cn=ag.it,dc=test"
     user = User.objects.create_user(username="ida")
     backend()._sync_groups(user, {"ag.it"})
