@@ -168,7 +168,7 @@ class KeycloakOIDCBackend(OIDCAuthenticationBackend):
         }
         # Rights groups map to fixed marker names; they aren't AG-prefixed so they
         # never appear in the dashboard AG list. A group can be a rights group AND
-        # a prefixed AG (ag.it doubles as admin), so both checks apply.
+        # a prefixed group (gr.cluster), so both checks apply.
         desired: set[str] = set()
         for cn in group_names:
             if marker := markers.get(cn.lower()):
