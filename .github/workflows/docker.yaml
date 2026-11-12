@@ -5,6 +5,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Back-to-back merges must not race on :latest — a newer push cancels the older build.
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
