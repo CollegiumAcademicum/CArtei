@@ -214,8 +214,8 @@ def tenant_list(request: HttpRequest):
                 in_group = str(t.intranet_uuid) in members
             ve = {"short": _DOC_SHORT["vertraulichkeitserklaerung"],
                   "label": DocumentType("vertraulichkeitserklaerung").label, "present": approved,
-                  "color": clearance.clearance_color(in_group, approved, pending),
-                  "tooltip": clearance.TOOLTIP}
+                  "color": (color := clearance.clearance_color(in_group, approved, pending)),
+                  "tooltip": clearance.tooltip(color)}
             if show_realname:
                 row["documents"] = [ve if dt == "vertraulichkeitserklaerung" else d
                                     for dt, d in zip(_DOC_SHORT, row["documents"])]
@@ -688,8 +688,9 @@ def _clearance_ctx(request, tenant, docs, roles):
     is_granter = "granter" in roles  # same as clearance.is_granter, no extra query
     can_grant = is_granter and not impersonating
     ctx = {
-        "color": clearance.clearance_color(in_group, approved, pending),
-        "tooltip": clearance.TOOLTIP,
+        "color": (color := clearance.clearance_color(in_group, approved, pending)),
+        "tooltip": clearance.tooltip(color),
+        "legend": clearance.LEGEND,
         "group": _dn_to_cn(settings.LDAP_REQUIRE_GROUP),
         "can_grant": can_grant,
         "can_revoke_ve": bool({"mietverwaltung", "admin"} & roles) or is_granter,
