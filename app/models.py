@@ -306,6 +306,24 @@ class ConfidentialityClearanceEvent(models.Model):
         db_table = "confidentiality_clearance_event"
 
 
+class AGMembershipAction(models.TextChoices):
+    JOIN = "JOIN", "Beigetreten"
+    LEAVE = "LEAVE", "Verlassen"
+
+
+class AGMembershipEvent(models.Model):
+    """Append-only log of AG/INI self-service joins/leaves in FreeIPA."""
+    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="ag_membership_events")
+    uid = models.TextField()
+    group_cn = models.TextField()
+    action = models.CharField(max_length=10, choices=AGMembershipAction.choices)
+    created_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "ag_membership_event"
+
+
 class DocumentSigner(models.Model):
     """Polymorphic signer shared across the per-type document tables
     (mirrors cartei_db: document_type + document_id, no FK)."""

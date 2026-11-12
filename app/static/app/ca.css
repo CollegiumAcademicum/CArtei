@@ -558,3 +558,18 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 
 /* Clearance grant (#65): disabled grant buttons read as unavailable. */
 [data-clearance-grant]:disabled, #clearance-submit:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Dashboard "Meine AGs" tag editor (ag_tags.js) */
+.ag-chip {
+  display: inline-flex; align-items: center; margin: 0 4px 4px 0; padding: 1px 8px;
+  border-radius: 999px; background: #eafaf8; color: var(--ca-teal); font-size: 0.85rem;
+}
+.ag-chip-fixed { background: #f0f0f0; color: #555; cursor: help; }
+.ag-chip-x {
+  border: none; background: none; cursor: pointer; color: inherit;
+  font-size: 1rem; line-height: 1; padding: 0 0 0 4px;
+}
+.ag-tags-add { margin-top: 0.4rem; }
+.ag-tags-busy { opacity: 0.6; cursor: progress; }
+.ag-tags-error { color: #B61B29; font-size: 0.85rem; margin-top: 0.4rem; }
+.ag-tags-note { color: #7a7a7a; font-size: 0.75rem; margin-top: 0.4rem; }

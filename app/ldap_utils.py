@@ -196,36 +196,102 @@ def set_ldap_mail(uid: str, email: str) -> None:
         if getattr(exc, "code", None) != 4202:  # EmptyModlist: mail already equal
             raise
 
-class ClearanceIPAError(Exception):
+class GroupIPAError(Exception):
+    """Changing a FreeIPA group membership failed."""
+
+
+class ClearanceIPAError(GroupIPAError):
     """Changing the clearance group membership in FreeIPA failed."""
 
 
-def _change_clearance(method: str, uid: str, benign: str) -> None:
+_ALREADY_MEMBER = "This entry is already a member"
+_NOT_MEMBER = "This entry is not a member"
+
+
+def _change_membership(method: str, cn: str, uid: str, benign: str,
+                       error: type[GroupIPAError] = GroupIPAError) -> None:
     import requests
     from python_freeipa.exceptions import FreeIPAError
     try:
-        reply = getattr(_ipa_client(), method)(
-            a_cn=_dn_to_cn(settings.LDAP_REQUIRE_GROUP), o_user=[uid]
-        )
+        reply = getattr(_ipa_client(), method)(a_cn=cn, o_user=[uid])
     except (FreeIPAError, RuntimeError, requests.RequestException) as exc:
-        raise ClearanceIPAError(str(exc)) from exc
+        raise error(str(exc)) from exc
     # python-freeipa returns the RPC "result" dict: {"result", "failed", "completed"}
     benign_seen = False
     for _, msg in reply.get("failed", {}).get("member", {}).get("user", []):
         if msg != benign:
-            raise ClearanceIPAError(msg)
+            raise error(msg)
         benign_seen = True
     # Fail closed: nothing changed and no "already (not) a member" → unexplained.
     if reply.get("completed", 0) < 1 and not benign_seen:
-        raise ClearanceIPAError(f"IPA {method} für {uid} ohne Wirkung: {reply!r}")
+        raise error(f"IPA {method} für {uid} ohne Wirkung: {reply!r}")
 
 
 def add_clearance_member(uid: str) -> None:
-    _change_clearance("group_add_member", uid, "This entry is already a member")
+    _change_membership("group_add_member", _dn_to_cn(settings.LDAP_REQUIRE_GROUP), uid,
+                       _ALREADY_MEMBER, ClearanceIPAError)
 
 
 def remove_clearance_member(uid: str) -> None:
-    _change_clearance("group_remove_member", uid, "This entry is not a member")
+    _change_membership("group_remove_member", _dn_to_cn(settings.LDAP_REQUIRE_GROUP), uid,
+                       _NOT_MEMBER, ClearanceIPAError)
+
+
+# AG/INI self-service (app.views.ag_membership). svc-cartei may only write
+# `member` of ag.*/in.* groups (operations.md); "only yourself" and "no rights
+# groups" are app-side checks in the view.
+def add_group_member(cn: str, uid: str) -> None:
+    _change_membership("group_add_member", cn, uid, _ALREADY_MEMBER)
+
+
+def remove_group_member(cn: str, uid: str) -> None:
+    _change_membership("group_remove_member", cn, uid, _NOT_MEMBER)
+
+
+def list_self_service_groups() -> list[dict]:
+    """Every ag.* / in.* group in FreeIPA as {"cn", "description"}, sorted by cn.
+    Read live (Django only knows groups someone has logged in with). Raises
+    ldap.LDAPError; callers drop rights groups."""
+    results = _connect().search_s(
+        settings.LDAP_GROUPS_BASE, ldap.SCOPE_SUBTREE,
+        "(|(cn=ag.*)(cn=in.*))", ["cn", "description"],
+    )
+
+    def first(attrs, key):
+        return attrs.get(key, [b""])[0].decode()
+
+    return sorted(
+        ({"cn": first(a, "cn"), "description": first(a, "description")} for dn, a in results if dn),
+        key=lambda g: g["cn"],
+    )
+
+
+def user_memberships(uid: str) -> tuple[set[str], set[str]]:
+    """(all, direct) group cns of a user, read fresh. `all` is memberOf, which
+    includes nested memberships just like the Keycloak groups claim; `direct` are
+    the groups whose `member` lists the user (only those can be left via IPA).
+    Raises ldap.LDAPError, or LookupError if the uid isn't exactly one entry."""
+    conn = _connect()
+    users = [(dn, a) for dn, a in conn.search_s(
+        settings.LDAP_USER_SEARCH_BASE, ldap.SCOPE_SUBTREE,
+        f"(uid={ldap.filter.escape_filter_chars(uid)})", ["memberOf"],
+    ) if dn]
+    if len(users) != 1:
+        raise LookupError(f"LDAP: {len(users)} Konten für uid {uid}")
+    user_dn, attrs = users[0]
+    groups_suffix = "," + settings.LDAP_GROUPS_BASE.lower()
+    # memberOf also lists roles, privileges, HBAC/sudo rules — keep only groups.
+    all_cns = {
+        _dn_to_cn(dn) for dn in (v.decode() for v in attrs.get("memberOf", []))
+        if dn.lower().endswith(groups_suffix)
+    }
+    direct = {
+        a["cn"][0].decode() for dn, a in conn.search_s(
+            settings.LDAP_GROUPS_BASE, ldap.SCOPE_SUBTREE,
+            f"(member={ldap.filter.escape_filter_chars(user_dn)})", ["cn"],
+        ) if dn
+    }
+    return all_cns, direct
 
 
 _UMLAUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",

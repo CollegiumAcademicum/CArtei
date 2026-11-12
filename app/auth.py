@@ -57,6 +57,54 @@ def keycloak_logout_url(request) -> str:
     return f"{settings.OIDC_OP_LOGOUT_ENDPOINT}?{urlencode(params)}"
 
 
+# Rights-group settings (FreeIPA group DNs) and the fixed Django marker group each
+# maps to. tenant_access / decorators gate on the marker names.
+RIGHTS_GROUP_SETTINGS = (
+    ("CARTEI_IMPERSONATION_GROUP", IMPERSONATION_GROUP),
+    ("CARTEI_ADMIN_GROUP", "admins"),
+    ("CARTEI_CLUSTER_GROUP", "gr.cluster"),
+    ("CARTEI_MIETVERWALTUNG_GROUP", "cartei_mietverwaltung"),
+    ("CARTEI_HELFER_MIETVERWALTUNG_GROUP", "cartei_helfer_mietverwaltung"),
+    ("CARTEI_GRANT_CLEARANCE_GROUP", "cartei_grant_clearance"),
+    ("CARTEI_FINANZIERUNG_GROUP", "cartei_finanzierung"),
+)
+
+
+def rights_group_cns() -> set[str]:
+    """Lowercased cns of every group that grants CArtei rights: the rights-group
+    DNs above, LDAP_REQUIRE_GROUP and every TENANT_ROLE_GROUPS name. AG self-service
+    refuses these whatever their prefix, so a rights setting pointed at an AG
+    can't be self-joined."""
+    dns = [getattr(settings, name, "") for name, _ in RIGHTS_GROUP_SETTINGS]
+    dns.append(settings.LDAP_REQUIRE_GROUP)
+    cns = {_dn_to_cn(dn).lower() for dn in dns if dn}
+    return cns | {g.lower() for names in settings.TENANT_ROLE_GROUPS.values() for g in names}
+
+
+def sync_user_groups(user, group_names: set[str]) -> None:
+    """Set the user's Django groups from their FreeIPA group cns. Used at login
+    (Keycloak claim) and after AG self-service (fresh LDAP memberOf)."""
+    markers = {
+        _dn_to_cn(getattr(settings, name, "")).lower(): marker
+        for name, marker in RIGHTS_GROUP_SETTINGS
+        if getattr(settings, name, "")
+    }
+    # Rights groups map to fixed marker names; they aren't AG-prefixed so they
+    # never appear in the dashboard AG list. A group can be a rights group AND
+    # a prefixed group (gr.cluster), so both checks apply.
+    desired: set[str] = set()
+    for cn in group_names:
+        if marker := markers.get(cn.lower()):
+            desired.add(marker)
+        if cn.startswith(GROUP_PREFIXES):
+            desired.add(cn)
+    current = set(user.groups.values_list("name", flat=True))
+    for name in desired - current:
+        group, _ = Group.objects.get_or_create(name=name)
+        user.groups.add(group)
+    user.groups.remove(*Group.objects.filter(name__in=current - desired))
+
+
 class KeycloakCallbackView(OIDCAuthenticationCallbackView):
     """OIDC callback, also hit by SessionRefresh's silent re-check every
     OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS — which re-runs the backend, so groups,
@@ -115,7 +163,7 @@ class KeycloakOIDCBackend(OIDCAuthenticationBackend):
                 user.save()
         except IntegrityError as exc:
             raise SuspiciousOperation(f"Identity conflict for {username!r}: {exc}")
-        self._sync_groups(user, claim_group_names(claims))
+        sync_user_groups(user, claim_group_names(claims))
         return user
 
     def _link_tenant(self, intranet_uuid, username, claims) -> None:
@@ -153,31 +201,3 @@ class KeycloakOIDCBackend(OIDCAuthenticationBackend):
         if fields:
             tenant.save(update_fields=fields)
 
-    def _sync_groups(self, user, group_names: set[str]) -> None:
-        markers = {
-            _dn_to_cn(getattr(settings, name, "")).lower(): marker
-            for name, marker in (
-                ("CARTEI_IMPERSONATION_GROUP", IMPERSONATION_GROUP),
-                ("CARTEI_ADMIN_GROUP", "admins"),
-                ("CARTEI_CLUSTER_GROUP", "gr.cluster"),
-                ("CARTEI_MIETVERWALTUNG_GROUP", "cartei_mietverwaltung"),
-                ("CARTEI_HELFER_MIETVERWALTUNG_GROUP", "cartei_helfer_mietverwaltung"),
-                ("CARTEI_GRANT_CLEARANCE_GROUP", "cartei_grant_clearance"),
-                ("CARTEI_FINANZIERUNG_GROUP", "cartei_finanzierung"),
-            )
-            if getattr(settings, name, "")
-        }
-        # Rights groups map to fixed marker names; they aren't AG-prefixed so they
-        # never appear in the dashboard AG list. A group can be a rights group AND
-        # a prefixed group (gr.cluster), so both checks apply.
-        desired: set[str] = set()
-        for cn in group_names:
-            if marker := markers.get(cn.lower()):
-                desired.add(marker)
-            if cn.startswith(GROUP_PREFIXES):
-                desired.add(cn)
-        current = set(user.groups.values_list("name", flat=True))
-        for name in desired - current:
-            group, _ = Group.objects.get_or_create(name=name)
-            user.groups.add(group)
-        user.groups.remove(*Group.objects.filter(name__in=current - desired))

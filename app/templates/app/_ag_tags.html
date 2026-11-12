@@ -1,0 +1,18 @@
+<div id="ag-tags" style="margin-top:1rem;" data-url="{% url 'ag_membership' %}" data-available-url="{% url 'ag_available' %}">
+  <p style="font-size:0.85rem;font-weight:600;color:#7a7a7a;margin-bottom:0.5rem;">Meine AGs</p>
+  <div>
+    {% for c in chips %}
+      <span class="ag-chip{% if c.hint %} ag-chip-fixed{% endif %}" data-cn="{{ c.cn }}"{% if c.hint %} title="{{ c.hint }}"{% endif %}>{{ c.cn }}{% if editable and not c.hint %}<button type="button" class="ag-chip-x" data-cn="{{ c.cn }}" aria-label="{{ c.cn }} verlassen">×</button>{% endif %}</span>
+    {% endfor %}
+  </div>
+  {% if editable %}
+    {# GET form on purpose: base.html's AJAX swap only intercepts POST forms. #}
+    <form class="ag-tags-add">
+      {% csrf_token %}
+      <input class="ca-input ca-input-sm" name="group" list="ag-tags-options" placeholder="AG oder INI hinzufügen …" autocomplete="off" aria-label="AG oder INI hinzufügen">
+      <datalist id="ag-tags-options"></datalist>
+    </form>
+    <p class="ag-tags-error" role="alert" hidden></p>
+    <p class="ag-tags-note">Nextcloud-Ordner können nach einer Änderung eine Weile brauchen, bis sie erscheinen oder verschwinden.</p>
+  {% endif %}
+</div>
