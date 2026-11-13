@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, timezone
 
 from django.contrib import messages
@@ -8,10 +9,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from app import ldap_utils
-from app.auth import ag_group_names
+from app.auth import ag_group_names, sync_user_groups
 from app.decorators import require_group
 from app.models import AGAbfrage, AGAbfrageHealth, AGAbfrageResult, Tenant
 from app.residency import has_active_assignment
+from app.views.ag_membership import (
+    MembershipError, actor_username, change_membership, is_self_service,
+)
+
+logger = logging.getLogger(__name__)
 
 # Ordered worst-last so the slider index maps green→black / active→inactive.
 _STATUS_CHOICES = [
@@ -77,6 +83,51 @@ def abfrage_detail(request: HttpRequest, pk: int):
     })
 
 
+def _apply_member_changes(request, ag_name: str, members: list[dict]) -> None:
+    """Apply the engagement form's remove_<uid> / add_<tenant_id> marks in FreeIPA,
+    one at a time, each verified and logged by change_membership. Only current
+    LDAP members can be removed and only non-members added, so a stale tab or a
+    crafted field never logs a change that didn't happen."""
+    names = {m["username"]: f"{m['first_name']} {m['last_name']}" for m in members}
+    actor = actor_username(request)
+    removed, added, own = [], [], None
+    for uid in sorted(k.removeprefix("remove_") for k in request.POST if k.startswith("remove_")):
+        if uid not in names:
+            logger.error("ag_edit: remove of non-member ignored: actor=%s cn=%s uid=%s", actor, ag_name, uid)
+            continue
+        try:
+            all_cns, _ = change_membership(ag_name, uid, "leave", actor=actor)
+        except MembershipError as exc:
+            messages.error(request, str(exc))
+            continue
+        removed.append(names[uid])
+        if uid == request.user.username:
+            own = all_cns
+    add_ids = [k.removeprefix("add_") for k in request.POST if k.startswith("add_")]
+    for tenant in Tenant.objects.filter(pk__in=[i for i in add_ids if i.isdigit()]):
+        name = f"{tenant.first_name} {tenant.last_name}"
+        uid = tenant.intranet_username
+        if not uid:
+            messages.warning(request, f"{name} hat kein Intranet-Account und wurde nicht zu {ag_name} hinzugefügt.")
+            continue
+        if uid in names:
+            continue
+        try:
+            all_cns, _ = change_membership(ag_name, uid, "join", actor=actor)
+        except MembershipError as exc:
+            messages.error(request, str(exc))
+            continue
+        added.append(name)
+        if uid == request.user.username:
+            own = all_cns
+    if own is not None:
+        sync_user_groups(request.user, own)
+    parts = ([f"Aus {ag_name} entfernt: {', '.join(removed)}"] if removed else []) + \
+            ([f"Zu {ag_name} hinzugefügt: {', '.join(added)}"] if added else [])
+    if parts:
+        messages.success(request, ". ".join(parts) + ".")
+
+
 @login_required
 def ag_edit(request: HttpRequest, pk: int, ag_name: str):
     abfrage = get_object_or_404(AGAbfrage, pk=pk)
@@ -91,6 +142,7 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
     # Cluster only views other AGs' submissions (editing them was a bug, #36).
     can_edit = is_admin or (is_member and abfrage.can_ag_edit())
     readonly = not can_edit and "gr.cluster" in user_groups
+    can_manage = can_edit and is_self_service(ag_name) and abfrage.can_ag_edit()
     if request.method == "POST" and not can_edit:
         raise PermissionDenied
 
@@ -137,6 +189,15 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
                     "note": request.POST.get("health_note", "").strip() or None,
                 },
             )
+        if any(k.startswith(("remove_", "add_")) for k in request.POST):
+            if can_manage:
+                _apply_member_changes(request, ag_name, members)
+            else:
+                logger.error("ag_edit: member fields ignored (not manageable): user=%s cn=%s",
+                             request.user.username, ag_name)
+        # Removed yourself from the AG: this page is no longer yours.
+        if not is_admin and not request.user.groups.filter(name=ag_name).exists():
+            return redirect("dashboard")
         return redirect("ag_edit", pk=pk, ag_name=ag_name)
 
     existing = {
