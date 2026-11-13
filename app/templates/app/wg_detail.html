@@ -195,7 +195,7 @@
   {% endfor %}
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 // Room assignments are read-only until "Bearbeiten"; each card saves/reverts on
 // its own. Revert restores the card's fields and collapses back to the display.
 document.querySelectorAll('.ca-room-assignment').forEach(function(card) {

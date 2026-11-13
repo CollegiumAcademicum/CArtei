@@ -17,7 +17,7 @@
         <div class="ca-facet">
           <h5>Bewohner*innen</h5>
           <div class="select is-small" style="width:100%;">
-            <select name="residents" onchange="document.getElementById('scope-form').submit()" style="width:100%;">
+            <select name="residents" data-autosubmit style="width:100%;">
               <option value="active" {% if residents == "active" %}selected{% endif %}>Aktuelle</option>
               <option value="former" {% if residents == "former" %}selected{% endif %}>Ehemalige</option>
               <option value="all" {% if residents == "all" %}selected{% endif %}>Alle</option>
@@ -30,7 +30,7 @@
           <h5>Ansicht</h5>
           <label class="ca-facet-line">
             <input type="checkbox" name="group" value="cluster" {% if grouped %}checked{% endif %}
-              onchange="document.getElementById('scope-form').submit()"> Nach Cluster gruppieren
+              data-autosubmit> Nach Cluster gruppieren
           </label>
         </div>
         {% endif %}
@@ -146,7 +146,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 (function () {
   const table = document.getElementById("tenant-table");
   if (!table || !table.tBodies.length) return;

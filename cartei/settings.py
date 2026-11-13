@@ -3,6 +3,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.csp import CSP
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,6 +29,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -52,6 +54,7 @@ TEMPLATES = [
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
+                "django.template.context_processors.csp",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "app.context_processors.privileged",
@@ -256,6 +259,28 @@ SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0"))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", "false").lower() == "true"
 SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD", "false").lower() == "true"
 SECURE_REFERRER_POLICY = "same-origin"
+
+# CSP: inline <script> needs nonce="{{ csp_nonce }}"; no inline on*= handlers.
+# Inline style= stays allowed (used throughout the templates). form-action needs
+# Keycloak: the logout POST redirects there. CSP_REPORT_ONLY=true is the escape
+# hatch: violations are only logged in the browser console, nothing is blocked.
+_keycloak = urlparse(KEYCLOAK_REALM_URL)
+_csp = {
+    "default-src": [CSP.SELF],
+    "script-src": [CSP.SELF, CSP.NONCE],
+    "style-src": [CSP.SELF, CSP.UNSAFE_INLINE, "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+    "font-src": [CSP.SELF, "https://fonts.gstatic.com"],
+    "img-src": [CSP.SELF, "https://collegiumacademicum.de"],
+    "connect-src": [CSP.SELF],
+    "object-src": [CSP.NONE],
+    "base-uri": [CSP.SELF],
+    "frame-ancestors": [CSP.NONE],
+    "form-action": [CSP.SELF, f"{_keycloak.scheme}://{_keycloak.netloc}"],
+}
+if os.environ.get("CSP_REPORT_ONLY", "false").lower() == "true":
+    SECURE_CSP_REPORT_ONLY = _csp
+else:
+    SECURE_CSP = _csp
 
 LOGGING = {
     "version": 1,

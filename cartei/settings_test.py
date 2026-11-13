@@ -1,4 +1,6 @@
 """Test settings: no LDAP/Keycloak, SQLite in-memory, domain models temporarily managed."""
+from django.utils.csp import CSP
+
 AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
 SECRET_KEY = "test-secret-key-not-for-production"
 DEBUG = True
@@ -12,6 +14,7 @@ INSTALLED_APPS = [
     "app",
 ]
 MIDDLEWARE = [
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -30,6 +33,7 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
+                "django.template.context_processors.csp",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "app.context_processors.version",
@@ -57,6 +61,19 @@ OIDC_STORE_ID_TOKEN = True
 # SessionRefresh (MIDDLEWARE): after this long, the next page load silently
 # re-checks with Keycloak, re-syncing groups/clearance; refused -> logged out.
 OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 15 * 60
+# Mirrors settings.SECURE_CSP (form-action points at the test Keycloak).
+SECURE_CSP = {
+    "default-src": [CSP.SELF],
+    "script-src": [CSP.SELF, CSP.NONCE],
+    "style-src": [CSP.SELF, CSP.UNSAFE_INLINE, "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+    "font-src": [CSP.SELF, "https://fonts.gstatic.com"],
+    "img-src": [CSP.SELF, "https://collegiumacademicum.de"],
+    "connect-src": [CSP.SELF],
+    "object-src": [CSP.NONE],
+    "base-uri": [CSP.SELF],
+    "frame-ancestors": [CSP.NONE],
+    "form-action": [CSP.SELF, "https://kc.test"],
+}
 STATIC_URL = "static/"
 STATIC_ROOT = "/tmp/cartei-test-static"
 CARTEI_ADMIN_GROUP = "cn=admins,dc=test"

@@ -67,7 +67,7 @@
   <p id="no-match" style="display:none;color:#7a7a7a;">Keine Treffer für die aktuellen Filter.</p>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 {# Trimmed copy of the tenant_list filter/sort logic, plus expandable detail rows. #}
 (function () {
   const table = document.getElementById("doc-table");

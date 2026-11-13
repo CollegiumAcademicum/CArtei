@@ -21,11 +21,11 @@ section. Needs: assignment, mode ("status" | "edit"), can_manage_documents, all_
       <a href="{% url 'assignment_document_download' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="color:var(--ca-teal);">{{ g.active_doc.file_name }}</a>
       <span>· {{ g.active_doc.signed_at|date:"d.m.Y" }} ({{ g.active_doc.company_signed_by.first_name }} {{ g.active_doc.company_signed_by.last_name }})</span>
       {% if mode == "edit" and can_manage_documents %}
-      <form method="post" action="{% url 'assignment_document_revoke' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;">
+      <form method="post" action="{% url 'assignment_document_revoke' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;" data-confirm="Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
         <input name="revoked_note" type="text" required placeholder="Grund des Widerrufs" style="padding:.2rem;">
-        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;" onclick="return confirm('Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.');">Widerrufen</button>
+        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Widerrufen</button>
       </form>
       {% endif %}
     </div>

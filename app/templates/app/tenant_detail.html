@@ -273,7 +273,7 @@
           <td style="padding:.25rem .5rem;">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% if p.review_reason %}<br><small style="color:#a15c00;">{{ p.review_reason }}</small>{% endif %}{% else %}Ausstehend{% endif %}</td>
           {% if can_write_mv %}
           <td style="padding:.25rem .5rem;white-space:nowrap;">
-            <button type="button" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;" onclick="document.getElementById('verify-form-{{ p.pk }}').hidden=!document.getElementById('verify-form-{{ p.pk }}').hidden">Verifizieren</button>
+            <button type="button" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;" data-toggle-hidden="verify-form-{{ p.pk }}">Verifizieren</button>
             <form method="post" action="{% url 'enrollment_proof_reject' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="Diesen Nachweis ablehnen und löschen?">
               {% csrf_token %}
               <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;">Ablehnen</button>
@@ -296,7 +296,7 @@
               <input name="educational_institution" type="text" value="{{ p.educational_institution|default:'' }}" placeholder="Bildungseinrichtung" style="padding:.25rem;flex:1;min-width:150px;">
               <input name="valid_until" type="date" value="{{ p.valid_until|date:'Y-m-d' }}" required style="padding:.25rem;">
               <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Bestätigen</button>
-              <button type="button" class="ca-button-outline" style="font-size:.8rem;padding:.2rem .6rem;" onclick="this.closest('tr').hidden=true">Abbrechen</button>
+              <button type="button" class="ca-button-outline" style="font-size:.8rem;padding:.2rem .6rem;" data-toggle-hidden="verify-form-{{ p.pk }}">Abbrechen</button>
             </form>
           </td>
         </tr>
@@ -575,7 +575,7 @@
 </div>
 
 {% if clearance.can_grant %}<script src="{% static 'app/clearance_review.js' %}"></script>{% endif %}
-<script>
+<script nonce="{{ csp_nonce }}">
 // Account type-ahead for the link form: query once typing pauses (300 ms).
 (function() {
   var input = document.querySelector('input[data-search-url]');

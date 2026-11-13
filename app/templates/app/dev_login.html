@@ -40,7 +40,7 @@
         <label class="ca-label" for="id_password">Passwort</label>
         <div style="position:relative;">
           <input class="ca-input" type="password" name="password" id="id_password" required style="padding-right:2.5rem;">
-          <button type="button" onclick="(function(){var i=document.getElementById('id_password');i.type=i.type==='password'?'text':'password';})()" style="position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;color:#7a7a7a;">
+          <button type="button" data-toggle-password="id_password" style="position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;color:#7a7a7a;">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
@@ -63,5 +63,6 @@
   </div>
 </footer>
 
+<script src="{% static 'app/ui.js' %}"></script>
 </body>
 </html>
