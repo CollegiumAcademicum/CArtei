@@ -1,7 +1,9 @@
-"""AG/INI self-service: the dashboard "Meine AGs" tag editor. A user joins and
-leaves ag.* / in.* groups in FreeIPA for themselves only. Every failure answers
-{"ok": false, "error"} and is logged; the chips only ever show LDAP's re-read."""
+"""AG/INI membership changes in FreeIPA: the dashboard "Meine AGs" tag editor
+(a user joins/leaves ag.* / in.* groups for themselves) and the shared
+write-verify-log step also used by the engagement check (app.views.abfragen).
+Every failure is logged and reported; the UI only ever shows LDAP's re-read."""
 import logging
+from typing import Literal
 
 import ldap
 from django.contrib.auth.decorators import login_required
@@ -23,6 +25,71 @@ _UNREADABLE = "Gruppenliste aus LDAP nicht lesbar."
 
 def _self_service(cn: str, rights: set[str]) -> bool:
     return cn.startswith(SELF_SERVICE_PREFIXES) and cn.lower() not in rights
+
+
+def is_self_service(cn: str) -> bool:
+    """ag.* / in.* and not a rights group: membership may be changed via CArtei."""
+    return _self_service(cn, rights_group_cns())
+
+
+def actor_username(request) -> str:
+    """Who really acted: the impersonator while impersonating."""
+    return (getattr(request, "impersonator", None) or request.user).username
+
+
+class MembershipError(Exception):
+    """A membership change failed; str() is the German message for the user.
+    Already logged when raised."""
+
+
+class NestedMembershipError(MembershipError):
+    """The membership exists only through another group; IPA can't remove it here."""
+
+
+def change_membership(cn: str, uid: str, action: Literal["join", "leave"], *,
+                      actor: str) -> tuple[set[str], set[str]]:
+    """Add/remove uid to/from cn in FreeIPA, verify by re-read, log the event.
+    Returns uid's (all, direct) group cns from the re-read. The caller has
+    checked that cn is self-service and that actor may do this; Django groups
+    are not synced here."""
+    ctx = f"actor={actor} uid={uid} cn={cn!r} action={action}"
+    verb = "Beitritt zu" if action == "join" else "Austritt aus"
+    try:
+        if action == "leave":
+            all_cns, direct = ldap_utils.user_memberships(uid)
+            if cn in all_cns and cn not in direct:
+                logger.error("AG membership: leave of nested membership: %s", ctx)
+                raise NestedMembershipError(
+                    f"{cn}: Mitgliedschaft von {uid} besteht über eine andere Gruppe "
+                    "und kann hier nicht beendet werden.")
+            ldap_utils.remove_group_member(cn, uid)
+        else:
+            ldap_utils.add_group_member(cn, uid)
+    except _LDAP_ERRORS as exc:
+        logger.exception("AG membership: LDAP read failed: %s", ctx)
+        raise MembershipError(f"{verb} {cn} fehlgeschlagen ({uid}): {exc}") from exc
+    except ldap_utils.GroupIPAError as exc:
+        logger.exception("AG membership: IPA write failed: %s", ctx)
+        raise MembershipError(f"{verb} {cn} fehlgeschlagen ({uid}): {exc}") from exc
+
+    # Re-read: callers show what FreeIPA says, not what was asked.
+    try:
+        all_cns, direct = ldap_utils.user_memberships(uid)
+    except _LDAP_ERRORS as exc:
+        logger.exception("AG membership: LDAP re-read failed: %s", ctx)
+        raise MembershipError(
+            f"{verb} {cn} ({uid}): Änderung nicht überprüfbar ({exc}). Seite neu laden.") from exc
+    if (cn in direct) != (action == "join"):
+        logger.error("AG membership: re-read disagrees: %s direct=%s", ctx, sorted(direct))
+        raise MembershipError(
+            f"FreeIPA meldet die Änderung, aber {uid} ist "
+            f"{'nicht ' if action == 'join' else ''}in {cn}. Bitte IT-AG Bescheid geben.")
+    AGMembershipEvent.objects.create(
+        tenant=Tenant.objects.filter(intranet_username=uid).first(),
+        uid=uid, group_cn=cn, actor_username=actor, created_at=now(),
+        action=AGMembershipAction.JOIN if action == "join" else AGMembershipAction.LEAVE,
+    )
+    return all_cns, direct
 
 
 def _joinable() -> list[dict]:
@@ -47,10 +114,7 @@ def ag_tags_html(request, direct: set[str] | None = None) -> str:
         else:
             hint = ""
         chips.append({"cn": cn, "hint": hint})
-    return render_to_string("app/_ag_tags.html", {
-        "chips": chips,
-        "editable": not getattr(request, "impersonator", None),
-    }, request=request)
+    return render_to_string("app/_ag_tags.html", {"chips": chips}, request=request)
 
 
 def _fail(status: int, error: str) -> JsonResponse:
@@ -74,9 +138,6 @@ def ag_membership(request):
     cn = request.POST.get("group", "")
     action = request.POST.get("action", "")
     ctx = f"user={request.user.username} cn={cn!r} action={action!r}"
-    if getattr(request, "impersonator", None):
-        logger.error("AG self-service refused while impersonating: %s", ctx)
-        return _fail(403, "Während einer Impersonation nicht möglich.")
     tenant = Tenant.objects.filter(intranet_username=request.user.username).first()
     if tenant is None or not tenant.intranet_username:
         logger.error("AG self-service without linked intranet account: %s", ctx)
@@ -95,40 +156,13 @@ def ag_membership(request):
         logger.error("AG self-service refused, not self-joinable: %s", ctx)
         return _fail(403, f"{cn} ist keine selbst verwaltbare AG/INI.")
 
-    verb = "Beitritt zu" if action == "join" else "Austritt aus"
     try:
-        if action == "leave":
-            all_cns, direct = ldap_utils.user_memberships(uid)
-            if cn in all_cns and cn not in direct:
-                logger.error("AG self-service leave of nested membership: %s", ctx)
-                return _fail(409, f"{cn}: Mitgliedschaft besteht über eine andere Gruppe "
-                                  "und kann hier nicht verlassen werden.")
-            ldap_utils.remove_group_member(cn, uid)
-        else:
-            ldap_utils.add_group_member(cn, uid)
-    except _LDAP_ERRORS as exc:
-        logger.exception("AG self-service: LDAP read failed: %s", ctx)
-        return _fail(502, f"{verb} {cn} fehlgeschlagen: {exc}")
-    except ldap_utils.GroupIPAError as exc:
-        logger.exception("AG self-service: IPA write failed: %s", ctx)
-        return _fail(502, f"{verb} {cn} fehlgeschlagen: {exc}")
-
-    # Re-read: the chips and Django groups show what FreeIPA says, not what we asked.
-    try:
-        all_cns, direct = ldap_utils.user_memberships(uid)
-    except _LDAP_ERRORS as exc:
-        logger.exception("AG self-service: LDAP re-read failed: %s", ctx)
-        return _fail(502, f"{verb} {cn}: Änderung nicht überprüfbar ({exc}). Seite neu laden.")
-    if (cn in direct) != (action == "join"):
-        logger.error("AG self-service: re-read disagrees: %s direct=%s", ctx, sorted(direct))
-        return _fail(502, f"FreeIPA meldet die Änderung, aber {cn} ist "
-                          f"{'nicht ' if action == 'join' else ''}in deinen Gruppen. "
-                          "Bitte IT-AG Bescheid geben.")
+        all_cns, direct = change_membership(cn, uid, action, actor=actor_username(request))
+    except NestedMembershipError as exc:
+        return _fail(409, str(exc))
+    except MembershipError as exc:
+        return _fail(502, str(exc))
     sync_user_groups(request.user, all_cns)
-    AGMembershipEvent.objects.create(
-        tenant=tenant, uid=uid, group_cn=cn, created_at=now(),
-        action=AGMembershipAction.JOIN if action == "join" else AGMembershipAction.LEAVE,
-    )
     return JsonResponse({
         "ok": True,
         "html": ag_tags_html(request, direct),

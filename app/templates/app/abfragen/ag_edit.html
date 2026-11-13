@@ -26,8 +26,25 @@
 
   {% if closed %}
   <div class="ca-message warning">Diese Abfrage ist geschlossen. Bearbeitungen sind nicht mehr möglich.</div>
+  {% elif readonly %}
+  <div class="ca-message info">{% if abfrage.can_ag_edit %}Nur Ansicht: Bewertungen trägt die AG selbst ein.{% else %}Diese Abfrage ist geschlossen – nur Ansicht.{% endif %}</div>
+  <p style="margin-bottom:1rem;"><strong>Gesamtzustand:</strong> {{ health_label|default:"nicht angegeben" }}{% if health.note %} – {{ health.note }}{% endif %}</p>
+  <table class="table is-fullwidth is-striped" style="font-size:0.9rem;">
+    <thead><tr><th>Bewohner:in</th><th>Status</th><th>Notiz</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{% if row.tenant %}{% tenant_link row.tenant %}{% else %}{{ row.name }}{% endif %}</td>
+      <td>{{ row.status_label|default:"—" }}</td>
+      <td>{{ row.result.note|default:"" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3" style="color:#7a7a7a;">Keine Mitglieder in LDAP gefunden.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
   {% else %}
-  <form id="ag-edit-form" method="post">
+  <form id="ag-edit-form" method="post" data-self-uid="{{ request.user.username }}">
     {% csrf_token %}
 
     <div style="margin-bottom:1.5rem;padding:1rem;background:#fafafa;border-radius:6px;">
@@ -43,13 +60,15 @@
     <div style="overflow-x:auto;">
       <table class="table is-fullwidth is-striped" style="font-size:0.9rem;">
         <thead>
-          <tr><th>Bewohner:in</th><th>Status</th><th>Notiz (optional)</th></tr>
+          <tr><th>Bewohner:in</th><th>Status</th><th>Notiz (optional)</th>{% if can_manage %}<th></th>{% endif %}</tr>
         </thead>
         <tbody id="ag-rows">
         {% for row in rows %}
         <tr>
           <td>
-            {% if row.tenant %}{% tenant_link row.tenant %}{% else %}{{ row.name }}<br><em style="color:#999;font-size:0.8rem;">(kein Eintrag im System)</em>{% endif %}
+            <span class="ag-row-name">{% if row.tenant %}{% tenant_link row.tenant %}{% else %}{{ row.name }}{% endif %}</span>
+            {% if not row.tenant %}<br><em style="color:#999;font-size:0.8rem;">(kein Eintrag im System)</em>{% endif %}
+            {% if can_manage and not row.member %}<span class="ag-row-tag ag-row-tag-out">nicht in der AG</span>{% endif %}
           </td>
           {% if row.tenant %}
           <td>
@@ -65,9 +84,12 @@
           {% else %}
           <td colspan="2" style="color:#7a7a7a;font-size:0.85rem;">Nicht im System — bitte LDAP-Sync durchführen</td>
           {% endif %}
+          {% if can_manage %}
+          <td>{% if row.member %}<button type="button" class="remove-btn" data-uid="{{ row.member.username }}" data-name="{{ row.name }}">Entfernen</button>{% elif row.tenant.intranet_username %}<button type="button" class="readd-btn" data-pk="{{ row.tenant.pk }}" data-name="{{ row.name }}" data-uid="{{ row.tenant.intranet_username }}">Wieder hinzufügen</button>{% endif %}</td>
+          {% endif %}
         </tr>
         {% empty %}
-        <tr><td colspan="3" style="color:#7a7a7a;">Keine Mitglieder in LDAP gefunden.</td></tr>
+        <tr><td colspan="{% if can_manage %}4{% else %}3{% endif %}" style="color:#7a7a7a;">Keine Mitglieder in LDAP gefunden.</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -77,7 +99,7 @@
       <select id="add-tenant-select" class="input is-small" style="max-width:340px;">
         <option value="">Weitere:n Bewohner:in hinzufügen …</option>
         {% for t in all_tenants %}
-        <option value="{{ t.pk }}" data-name="{{ t.first_name }} {{ t.last_name }}">{{ t.last_name }}, {{ t.first_name }} ({{ t.intranet_username }})</option>
+        <option value="{{ t.pk }}" data-name="{{ t.first_name }} {{ t.last_name }}" data-uid="{{ t.intranet_username|default:'' }}">{{ t.last_name }}, {{ t.first_name }} ({{ t.intranet_username }})</option>
         {% endfor %}
       </select>
       <button type="button" class="ca-button-sm" id="add-tenant-btn">Hinzufügen</button>
@@ -94,8 +116,14 @@
           </div>
         </td>
         <td><input class="input is-small" type="text" name="note___PK__" placeholder="Notiz …"></td>
+        {% if can_manage %}<td><button type="button" class="ag-undo-add">Rückgängig</button></td>{% endif %}
       </tr>
     </template>
+
+    {% if can_manage %}
+    <div id="ag-member-summary" class="ca-message info" data-ag="{{ ag_name }}" hidden></div>
+    <p class="ag-member-note">Nichts passiert in LDAP, bevor „Speichern“ gedrückt wird.</p>
+    {% endif %}
 
     <div class="ca-form-actions" style="display:none;gap:.5rem;align-items:center;">
       <button type="submit" class="ca-button">Speichern</button>
@@ -131,6 +159,36 @@
     }
     document.querySelectorAll('.ca-slider').forEach(initSlider);
 
+    var summary = document.getElementById('ag-member-summary');
+
+    function addTag(tr, text) {
+      var span = document.createElement('span');
+      span.className = 'ag-row-tag';
+      span.textContent = text;
+      tr.querySelector('td').appendChild(span);
+      return span;
+    }
+
+    // "Beim Speichern: X wird aus ag.y entfernt, Z wird hinzugefügt." Built with
+    // textContent, names never go through innerHTML.
+    function updateSummary() {
+      if (!summary) return;
+      var rm = Array.from(document.querySelectorAll('#ag-rows tr.ag-removing'), function (tr) { return tr.dataset.name; });
+      var add = Array.from(document.querySelectorAll('#ag-rows tr.ag-adding'), function (tr) { return tr.dataset.uid ? tr.dataset.name : null; }).filter(Boolean);
+      summary.replaceChildren();
+      summary.hidden = !rm.length && !add.length;
+      if (summary.hidden) return;
+      function b(text) { var e = document.createElement('b'); e.textContent = text; return e; }
+      function verb(list) { return list.length > 1 ? ' werden ' : ' wird '; }
+      summary.append('Beim Speichern: ');
+      if (rm.length) {
+        var code = document.createElement('code'); code.textContent = summary.dataset.ag;
+        summary.append(b(rm.join(', ')), verb(rm) + 'aus ', code, ' entfernt');
+      }
+      if (add.length) summary.append(rm.length ? ', ' : '', b(add.join(', ')), verb(add) + 'hinzugefügt');
+      summary.append('.');
+    }
+
     var sel = document.getElementById('add-tenant-select');
     var btn = document.getElementById('add-tenant-btn');
     var tbody = document.getElementById('ag-rows');
@@ -144,6 +202,17 @@
       var tr = tmp.firstElementChild;
       tr.querySelector('.tenant-name').textContent = opt.dataset.name;
       tr.dataset.added = '1';
+      if (summary) {
+        // Picked on an ag./in. page: also join the FreeIPA group on save. The
+        // server refuses tenants without an intranet account with a message.
+        var mark = document.createElement('input');
+        mark.type = 'hidden'; mark.name = 'add_' + opt.value; mark.value = '1';
+        tr.appendChild(mark);
+        tr.classList.add('ag-adding');
+        tr.dataset.name = opt.dataset.name;
+        tr.dataset.uid = opt.dataset.uid;
+        addTag(tr, opt.dataset.uid ? 'wird hinzugefügt' : 'kein Intranet-Account – nur Bewertung');
+      }
       tbody.appendChild(tr);
       tr.querySelectorAll('.ca-slider').forEach(initSlider);
       sel.value = '';
@@ -169,12 +238,71 @@
       form.querySelectorAll('input[type=text]').forEach(function (t) {
         if (t.value !== (t.dataset.orig || '')) dirty = true;
       });
-      if (form.querySelector('#ag-rows tr[data-added]')) dirty = true;
+      if (form.querySelector('#ag-rows tr[data-added], #ag-rows tr.ag-removing, #ag-rows tr.ag-adding')) dirty = true;
+      updateSummary();
       if (card) card.classList.toggle('is-dirty', dirty);
       actions.style.display = dirty ? 'flex' : 'none';
     }
 
+    function setRemoving(tr, on) {
+      var btn = tr.querySelector('.remove-btn');
+      tr.classList.toggle('ag-removing', on);
+      tr.dataset.name = btn.dataset.name;
+      btn.textContent = on ? 'Rückgängig' : 'Entfernen';
+      var mark = tr.querySelector('input.ag-remove-mark');
+      var tag = tr.querySelector('.ag-row-tag-rm');
+      if (on && !mark) {
+        mark = document.createElement('input');
+        mark.type = 'hidden'; mark.className = 'ag-remove-mark';
+        mark.name = 'remove_' + btn.dataset.uid; mark.value = '1';
+        btn.parentNode.appendChild(mark);
+        addTag(tr, 'wird entfernt').classList.add('ag-row-tag-rm');
+      } else if (!on) {
+        if (mark) mark.remove();
+        if (tag) tag.remove();
+      }
+      // Leaving the AG yourself redirects to the dashboard: submit natively so
+      // the messages survive (see base.html).
+      if (btn.dataset.uid === form.dataset.selfUid) {
+        if (on) form.dataset.noSwap = ''; else delete form.dataset.noSwap;
+      }
+    }
+
+    // An extra row (rated, not a member) can be put back into the group, e.g.
+    // after a removal saved by mistake.
+    function setReadding(tr, on) {
+      var btn = tr.querySelector('.readd-btn');
+      tr.classList.toggle('ag-adding', on);
+      tr.dataset.name = btn.dataset.name;
+      tr.dataset.uid = btn.dataset.uid;
+      btn.textContent = on ? 'Rückgängig' : 'Wieder hinzufügen';
+      var mark = tr.querySelector('input.ag-add-mark');
+      if (on && !mark) {
+        mark = document.createElement('input');
+        mark.type = 'hidden'; mark.className = 'ag-add-mark';
+        mark.name = 'add_' + btn.dataset.pk; mark.value = '1';
+        btn.parentNode.appendChild(mark);
+        addTag(tr, 'wird hinzugefügt').classList.add('ag-row-tag-add');
+      } else if (!on) {
+        if (mark) mark.remove();
+        var tag = tr.querySelector('.ag-row-tag-add');
+        if (tag) tag.remove();
+      }
+    }
+
+    tbody.addEventListener('click', function (e) {
+      var rm = e.target.closest('.remove-btn');
+      if (rm) { var tr = rm.closest('tr'); setRemoving(tr, !tr.classList.contains('ag-removing')); }
+      var undo = e.target.closest('.ag-undo-add');
+      if (undo) undo.closest('tr').remove();
+      var re = e.target.closest('.readd-btn');
+      if (re) { var row = re.closest('tr'); setReadding(row, !row.classList.contains('ag-adding')); }
+      if (rm || undo || re) checkDirty();
+    });
+
     document.getElementById('ag-revert').addEventListener('click', function () {
+      form.querySelectorAll('#ag-rows tr.ag-removing').forEach(function (tr) { setRemoving(tr, false); });
+      form.querySelectorAll('#ag-rows tr.ag-adding:not([data-added])').forEach(function (tr) { setReadding(tr, false); });
       form.querySelectorAll('#ag-rows tr[data-added]').forEach(function (tr) { tr.remove(); });
       form.querySelectorAll('input[type=text]').forEach(function (t) { t.value = t.dataset.orig || ''; });
       form.querySelectorAll('.ca-slider').forEach(initSlider);

@@ -573,3 +573,20 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ag-tags-busy { opacity: 0.6; cursor: progress; }
 .ag-tags-error { color: #B61B29; font-size: 0.85rem; margin-top: 0.4rem; }
 .ag-tags-note { color: #7a7a7a; font-size: 0.75rem; margin-top: 0.4rem; }
+
+/* Engagement check: AG member add/remove marks (ag_edit.html) */
+#ag-rows tr.ag-removing td { background: #fdecea; }
+#ag-rows tr.ag-removing .ag-row-name { text-decoration: line-through; color: #999; }
+#ag-rows tr.ag-adding td { background: #e8f5e9; }
+.ag-row-tag {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 4px;
+  font-size: 0.75rem; font-weight: 600; background: #d9f0e0; color: #1c6b3a;
+}
+.ag-row-tag-rm { background: #f7d4d4; color: #B61B29; }
+.ag-row-tag-out { background: #eee; color: #555; }
+.remove-btn, .ag-undo-add, .readd-btn {
+  border: 1px solid #e3b3b3; background: #fff; color: #B61B29; border-radius: 4px;
+  padding: 2px 8px; font: inherit; font-size: 0.8rem; cursor: pointer; white-space: nowrap;
+}
+.ag-undo-add, tr.ag-removing .remove-btn { border-color: #ccc; color: #555; }
+.ag-member-note { color: #7a7a7a; font-size: 0.8rem; margin: -0.5rem 0 1rem; }
