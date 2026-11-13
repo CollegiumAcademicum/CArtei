@@ -70,11 +70,16 @@
 </footer>
 
 <script src="{% static 'app/dragdrop.js' %}"></script>
-<script>
+<script src="{% static 'app/ui.js' %}"></script>
+<script nonce="{{ csp_nonce }}">
 // AJAX form swap: POST forms are submitted in place and only .ca-main is
 // replaced, so scroll position and open <details> survive with no reload — no
 // post-redirect scroll replay needed. This handler lives outside .ca-main so
 // the swap never duplicates it.
+// CSP: only scripts carrying this page's nonce may run, so swapped-in scripts
+// are re-tagged with it — but only those carrying the response's own nonce,
+// i.e. the ones the server itself emitted.
+var pageNonce = document.currentScript.nonce;
 document.addEventListener('submit', function(e) {
   var f = e.target;
   if (!f.closest('.ca-main') || f.method.toLowerCase() !== 'post') return;
@@ -93,6 +98,7 @@ document.addEventListener('submit', function(e) {
     if (f.dataset.busyLabel) { busyBtn.dataset.orig = busyBtn.textContent; busyBtn.textContent = f.dataset.busyLabel; }
   }
   var scrollY = window.scrollY; // held across the swap; restored after re-layout
+  var responseNonce = null;
   fetch(f.action || location.href, { method: 'POST', body: new FormData(f) })
     .then(function(r) {
       // Error page (e.g. 404: already deleted in another tab) has no .ca-main to
@@ -111,6 +117,9 @@ document.addEventListener('submit', function(e) {
         return null;
       }
       if (r.redirected) history.replaceState({}, '', r.url); // keep ?query in sync
+      var csp = r.headers.get('content-security-policy') || r.headers.get('content-security-policy-report-only') || '';
+      var m = csp.match(/'nonce-([^']+)'/);
+      responseNonce = m && m[1];
       return r.text();
     })
     .then(function(html) {
@@ -129,11 +138,13 @@ document.addEventListener('submit', function(e) {
         if (d) d.open = true;
       });
       document.querySelector('.ca-main').replaceWith(next);
-      // innerHTML-inserted <script> won't run — recreate each so the per-card
+      // innerHTML-inserted scripts won't run — recreate each so the per-card
       // revert/edit binding re-attaches to the fresh DOM.
       next.querySelectorAll('script').forEach(function(s) {
         var n = document.createElement('script');
-        if (s.src) n.src = s.src; else n.textContent = s.textContent;
+        if (s.src) n.src = s.src;
+        else if (responseNonce && (s.nonce || s.getAttribute('nonce')) === responseNonce) { n.textContent = s.textContent; n.nonce = pageNonce; }
+        else { s.remove(); return; }
         s.replaceWith(n);
       });
       if (window.caWireDropZones) window.caWireDropZones();

@@ -11,6 +11,6 @@ a damage). The download/set views enforce the real permission. {% endcomment %}
 {% elif add_url %}
   <form method="post" action="{% url 'damage_photo_set' kind d.pk %}" enctype="multipart/form-data" style="display:inline;">
     {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
-    <label class="ca-button-outline ca-button-sm" style="cursor:pointer;white-space:nowrap;">Foto<input type="file" name="photo" accept="image/jpeg,image/png,application/pdf" onchange="this.form.submit()" style="display:none;"></label>
+    <label class="ca-button-outline ca-button-sm" style="cursor:pointer;white-space:nowrap;">Foto<input type="file" name="photo" accept="image/jpeg,image/png,application/pdf" data-autosubmit style="display:none;"></label>
   </form>
 {% endif %}

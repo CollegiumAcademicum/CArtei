@@ -1,6 +1,6 @@
 // Drag-and-drop for all file uploads. Auto-discovers every file input on the
 // page and turns its enclosing <form> into a drop zone. Dropping a file assigns
-// it to the input and fires `change`, so existing onchange auto-submit keeps
+// it to the input and fires `change`, so existing data-autosubmit keeps
 // working with zero template changes.
 (function () {
   "use strict";

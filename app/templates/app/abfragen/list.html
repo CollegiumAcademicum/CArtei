@@ -51,8 +51,7 @@
             <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Details</a>
             <button type="button" class="ca-logout" style="color:#999;border-color:#ccc;margin-left:0.75rem;"
               data-delete-url="{% url 'abfrage_delete' abfrage.pk %}"
-              data-delete-label="{{ abfrage|escapejs }}"
-              onclick="openListDeleteDialog(this)">Löschen</button>
+              data-delete-label="{{ abfrage|escapejs }}">Löschen</button>
           {% endif %}
         </td>
       </tr>
@@ -75,13 +74,16 @@
     {% csrf_token %}
     <input type="text" id="list-delete-input" class="input" style="margin-bottom:1rem;" placeholder="" autocomplete="off">
     <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-      <button type="button" class="ca-button-outline" onclick="closeListDeleteDialog()">Abbrechen</button>
+      <button type="button" class="ca-button-outline" data-close-dialog>Abbrechen</button>
       <button type="submit" id="list-delete-btn" class="ca-logout" style="color:#B61B29;border-color:#B61B29;opacity:0.4;cursor:not-allowed;" disabled>Endgültig löschen</button>
     </div>
   </form>
 </dialog>
-<script>
+<script nonce="{{ csp_nonce }}">
   var _listDeleteExpected = '';
+  document.querySelectorAll('[data-delete-url]').forEach(function(btn) {
+    btn.addEventListener('click', function() { openListDeleteDialog(btn); });
+  });
   function openListDeleteDialog(btn) {
     _listDeleteExpected = btn.getAttribute('data-delete-label');
     document.getElementById('list-delete-form').action = btn.getAttribute('data-delete-url');
@@ -93,14 +95,6 @@
     confirmBtn.style.opacity = '0.4';
     confirmBtn.style.cursor = 'not-allowed';
     document.getElementById('list-delete-dialog').showModal();
-  }
-  function closeListDeleteDialog() {
-    document.getElementById('list-delete-dialog').close();
-    document.getElementById('list-delete-input').value = '';
-    var confirmBtn = document.getElementById('list-delete-btn');
-    confirmBtn.disabled = true;
-    confirmBtn.style.opacity = '0.4';
-    confirmBtn.style.cursor = 'not-allowed';
   }
   document.getElementById('list-delete-input').addEventListener('input', function() {
     var ok = this.value === _listDeleteExpected;

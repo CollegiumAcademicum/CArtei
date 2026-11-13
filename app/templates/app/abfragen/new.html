@@ -27,7 +27,7 @@
     </div>
   </form>
 </div>
-<script>
+<script nonce="{{ csp_nonce }}">
   function isoDate(d) { return d.toISOString().slice(0, 10); }
   var today = new Date();
   var ends = new Date(today); ends.setDate(ends.getDate() + 14);
