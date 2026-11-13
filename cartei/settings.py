@@ -251,6 +251,11 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "false").lower() == "true"
 _https = os.environ.get("HTTPS_ENABLED", "false").lower() == "true"
 SESSION_COOKIE_SECURE = _https
+# Shared devices: the cookie dies with the browser, and the server-side session
+# expires after SESSION_COOKIE_AGE regardless (browsers that restore tabs also
+# restore session cookies). Re-login is usually a silent Keycloak SSO redirect.
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", str(12 * 60 * 60)))
 CSRF_COOKIE_SECURE = _https
 _csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins.split(",") if o.strip()]

@@ -90,3 +90,22 @@ def test_invalidate_all_sessions_of_user():
     assert not UserSession.objects.filter(username="alice").exists()
     assert not Session.objects.filter(session_key__in=["k1", "k2"]).exists()
     assert UserSession.objects.filter(username="bob").exists()  # untouched
+
+
+@pytest.mark.django_db
+def test_session_cookie_dies_with_browser_and_server_side_after_12h():
+    from django.contrib.sessions.middleware import SessionMiddleware
+    from django.http import HttpResponse
+    from django.test import RequestFactory
+
+    def view(request):
+        request.session["touched"] = True
+        return HttpResponse()
+
+    request = RequestFactory().get("/")
+    response = SessionMiddleware(view)(request)
+    cookie = response.cookies["sessionid"]
+    # No max-age/expires: a browser-session cookie.
+    assert cookie["max-age"] == "" and cookie["expires"] == ""
+    expire = Session.objects.get(session_key=cookie.value).expire_date
+    assert abs(expire - (timezone.now() + timedelta(hours=12))) < timedelta(minutes=1)

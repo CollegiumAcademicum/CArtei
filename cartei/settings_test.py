@@ -61,6 +61,8 @@ OIDC_STORE_ID_TOKEN = True
 # SessionRefresh (MIDDLEWARE): after this long, the next page load silently
 # re-checks with Keycloak, re-syncing groups/clearance; refused -> logged out.
 OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 15 * 60
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 12 * 60 * 60
 # Mirrors settings.SECURE_CSP (form-action points at the test Keycloak).
 SECURE_CSP = {
     "default-src": [CSP.SELF],
