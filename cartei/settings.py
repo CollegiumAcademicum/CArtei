@@ -252,8 +252,9 @@ CSRF_COOKIE_SECURE = _https
 _csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins.split(",") if o.strip()]
 SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0"))
-SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0
-SECURE_HSTS_PRELOAD = SECURE_HSTS_SECONDS > 0
+# Opt-in: subdomains/preload pin every *.ca-hd.de host to HTTPS and are hard to undo.
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", "false").lower() == "true"
+SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD", "false").lower() == "true"
 SECURE_REFERRER_POLICY = "same-origin"
 
 LOGGING = {
