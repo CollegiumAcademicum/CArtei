@@ -138,11 +138,12 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
 
     if not is_privileged and not is_member:
         raise PermissionDenied
-    # Admins edit any AG any time; members their own AG while the check runs.
-    # Cluster only views other AGs' submissions (editing them was a bug, #36).
-    can_edit = is_admin or (is_member and abfrage.can_ag_edit())
-    readonly = not can_edit and "gr.cluster" in user_groups
-    can_manage = can_edit and is_self_service(ag_name) and abfrage.can_ag_edit()
+    # Only while the check runs, and only admins or the AG's members; a closed
+    # check is closed for everyone. Cluster only views other AGs' submissions
+    # (editing them was a bug, #36); admins view closed checks read-only.
+    can_edit = abfrage.can_ag_edit() and (is_admin or is_member)
+    readonly = not can_edit and (is_admin or "gr.cluster" in user_groups)
+    can_manage = can_edit and is_self_service(ag_name)
     if request.method == "POST" and not can_edit:
         raise PermissionDenied
 

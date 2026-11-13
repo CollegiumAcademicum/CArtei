@@ -318,7 +318,8 @@ def test_cluster_cannot_edit_closed_abfrage():
 
 
 @pytest.mark.django_db
-def test_admin_can_edit_closed_abfrage():
+def test_admin_cannot_edit_closed_abfrage():
+    # Closed means closed: nobody edits, not even admins. Admins view read-only.
     from app.models import AGAbfrageResult
     abfrage = _closed_abfrage()
     t = _rated(abfrage)
@@ -326,5 +327,8 @@ def test_admin_can_edit_closed_abfrage():
     client.force_login(_user_in_group("adm_closed", "admins"))
     with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=[]):
         r = client.post(f"/abfragen/{abfrage.pk}/ag/ag.garten/", {f"status_{t.pk}": "AKTIV"})
-    assert r.status_code == 302
-    assert AGAbfrageResult.objects.get(tenant=t).status == "AKTIV"
+        get = client.get(f"/abfragen/{abfrage.pk}/ag/ag.garten/")
+    assert r.status_code == 403
+    assert AGAbfrageResult.objects.get(tenant=t).status == "NICHT_AUSREICHEND"
+    html = get.content.decode()
+    assert 'id="ag-edit-form"' not in html and "Rita Rated" in html

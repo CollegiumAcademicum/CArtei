@@ -135,9 +135,8 @@ def test_closed_abfrage_admin_no_member_changes(client, monkeypatch):
     max_ = _tenant("max_muster", "Max", "Muster")
     ipa = FakeIPA(monkeypatch, "ag.garten", [_member("max_muster")])
     client.force_login(_user("adm", "admins"))
-    client.post(_url(a), {f"status_{max_.pk}": "AKTIV", "remove_max_muster": "1"})
-    assert ipa.calls == []
-    assert AGAbfrageResult.objects.get(tenant=max_).status == "AKTIV"
+    assert client.post(_url(a), {f"status_{max_.pk}": "AKTIV", "remove_max_muster": "1"}).status_code == 403
+    assert ipa.calls == [] and not AGAbfrageResult.objects.exists()
     assert 'class="remove-btn"' not in client.get(_url(a)).content.decode()
 
 
@@ -253,7 +252,7 @@ def test_extra_row_tagged_not_in_ag(client, lea, monkeypatch):
     FakeIPA(monkeypatch, "ag.garten", [_member("lea")])
     client.force_login(lea)
     html = client.get(_url(a)).content.decode()
-    assert "nicht mehr in der AG" in html
+    assert "nicht in der AG" in html and "nicht mehr" not in html
     assert 'class="remove-btn" data-uid="gone"' not in html
 
 

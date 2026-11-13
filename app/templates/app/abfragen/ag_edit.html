@@ -27,7 +27,7 @@
   {% if closed %}
   <div class="ca-message warning">Diese Abfrage ist geschlossen. Bearbeitungen sind nicht mehr möglich.</div>
   {% elif readonly %}
-  <div class="ca-message info">Nur Ansicht: Bewertungen trägt die AG selbst ein.</div>
+  <div class="ca-message info">{% if abfrage.can_ag_edit %}Nur Ansicht: Bewertungen trägt die AG selbst ein.{% else %}Diese Abfrage ist geschlossen – nur Ansicht.{% endif %}</div>
   <p style="margin-bottom:1rem;"><strong>Gesamtzustand:</strong> {{ health_label|default:"nicht angegeben" }}{% if health.note %} – {{ health.note }}{% endif %}</p>
   <table class="table is-fullwidth is-striped" style="font-size:0.9rem;">
     <thead><tr><th>Bewohner:in</th><th>Status</th><th>Notiz</th></tr></thead>
@@ -68,7 +68,7 @@
           <td>
             <span class="ag-row-name">{% if row.tenant %}{% tenant_link row.tenant %}{% else %}{{ row.name }}{% endif %}</span>
             {% if not row.tenant %}<br><em style="color:#999;font-size:0.8rem;">(kein Eintrag im System)</em>{% endif %}
-            {% if can_manage and not row.member %}<span class="ag-row-tag ag-row-tag-out">nicht mehr in der AG</span>{% endif %}
+            {% if can_manage and not row.member %}<span class="ag-row-tag ag-row-tag-out">nicht in der AG</span>{% endif %}
           </td>
           {% if row.tenant %}
           <td>
