@@ -26,6 +26,23 @@
 
   {% if closed %}
   <div class="ca-message warning">Diese Abfrage ist geschlossen. Bearbeitungen sind nicht mehr möglich.</div>
+  {% elif readonly %}
+  <div class="ca-message info">Nur Ansicht: Bewertungen trägt die AG selbst ein.</div>
+  <p style="margin-bottom:1rem;"><strong>Gesamtzustand:</strong> {{ health_label|default:"nicht angegeben" }}{% if health.note %} – {{ health.note }}{% endif %}</p>
+  <table class="table is-fullwidth is-striped" style="font-size:0.9rem;">
+    <thead><tr><th>Bewohner:in</th><th>Status</th><th>Notiz</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{% if row.tenant %}{% tenant_link row.tenant %}{% else %}{{ row.name }}{% endif %}</td>
+      <td>{{ row.status_label|default:"—" }}</td>
+      <td>{{ row.result.note|default:"" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3" style="color:#7a7a7a;">Keine Mitglieder in LDAP gefunden.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
   {% else %}
   <form id="ag-edit-form" method="post">
     {% csrf_token %}

@@ -254,3 +254,77 @@ def test_tenants_view_requires_privileged():
     client.force_login(user)
     response = client.get(f"/abfragen/{abfrage.pk}/tenants/")
     assert response.status_code == 403
+
+
+# --- Cluster is read-only on AGs it isn't in (CArtei#36) ----------------------
+
+def _rated(abfrage, ag_name="ag.garten"):
+    from app.models import AGAbfrageResult, Tenant
+    t = Tenant.objects.create(
+        first_name="Rita", last_name="Rated", email="rr@ca.de",
+        intranet_username="rita_rated", intranet_uuid=uuid.uuid4(),
+    )
+    AGAbfrageResult.objects.create(abfrage=abfrage, ag_name=ag_name, tenant=t,
+                                   status="NICHT_AUSREICHEND", note="selten da")
+    return t
+
+
+@pytest.mark.django_db
+def test_cluster_non_member_sees_readonly():
+    abfrage = _open_abfrage()
+    _rated(abfrage)
+    client = Client()
+    client.force_login(_user_in_group("cl_ro", "gr.cluster"))
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=[]):
+        r = client.get(f"/abfragen/{abfrage.pk}/ag/ag.garten/")
+    html = r.content.decode()
+    assert r.status_code == 200
+    assert 'id="ag-edit-form"' not in html
+    assert "Rita Rated" in html and "nicht ausreichend" in html and "selten da" in html
+
+
+@pytest.mark.django_db
+def test_cluster_non_member_post_forbidden():
+    from app.models import AGAbfrageResult
+    abfrage = _open_abfrage()
+    t = _rated(abfrage)
+    client = Client()
+    client.force_login(_user_in_group("cl_post", "gr.cluster"))
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=[]):
+        r = client.post(f"/abfragen/{abfrage.pk}/ag/ag.garten/", {f"status_{t.pk}": "AKTIV"})
+    assert r.status_code == 403
+    assert AGAbfrageResult.objects.get(tenant=t).status == "NICHT_AUSREICHEND"
+
+
+@pytest.mark.django_db
+def test_cluster_member_of_ag_can_edit():
+    abfrage = _open_abfrage()
+    client = Client()
+    client.force_login(_user_in_group("cl_mem", "gr.cluster", "ag.garten"))
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=[]):
+        r = client.get(f"/abfragen/{abfrage.pk}/ag/ag.garten/")
+    assert 'id="ag-edit-form"' in r.content.decode()
+
+
+@pytest.mark.django_db
+def test_cluster_cannot_edit_closed_abfrage():
+    abfrage = _closed_abfrage()
+    t = _rated(abfrage)
+    client = Client()
+    client.force_login(_user_in_group("cl_closed", "gr.cluster"))
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=[]):
+        r = client.post(f"/abfragen/{abfrage.pk}/ag/ag.garten/", {f"status_{t.pk}": "AKTIV"})
+    assert r.status_code == 403
+
+
+@pytest.mark.django_db
+def test_admin_can_edit_closed_abfrage():
+    from app.models import AGAbfrageResult
+    abfrage = _closed_abfrage()
+    t = _rated(abfrage)
+    client = Client()
+    client.force_login(_user_in_group("adm_closed", "admins"))
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=[]):
+        r = client.post(f"/abfragen/{abfrage.pk}/ag/ag.garten/", {f"status_{t.pk}": "AKTIV"})
+    assert r.status_code == 302
+    assert AGAbfrageResult.objects.get(tenant=t).status == "AKTIV"

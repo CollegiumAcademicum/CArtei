@@ -82,11 +82,19 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
     abfrage = get_object_or_404(AGAbfrage, pk=pk)
     user_groups = set(request.user.groups.values_list("name", flat=True))
     is_privileged = bool(user_groups & {"admins", "gr.cluster"})
+    is_admin = "admins" in user_groups
+    is_member = ag_name in user_groups
 
-    if not is_privileged and ag_name not in user_groups:
+    if not is_privileged and not is_member:
+        raise PermissionDenied
+    # Admins edit any AG any time; members their own AG while the check runs.
+    # Cluster only views other AGs' submissions (editing them was a bug, #36).
+    can_edit = is_admin or (is_member and abfrage.can_ag_edit())
+    readonly = not can_edit and "gr.cluster" in user_groups
+    if request.method == "POST" and not can_edit:
         raise PermissionDenied
 
-    if not is_privileged and not abfrage.can_ag_edit():
+    if not can_edit and not readonly:
         return render(request, "app/abfragen/ag_edit.html", {
             "abfrage": abfrage,
             "ag_name": ag_name,
@@ -136,6 +144,7 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
         for r in AGAbfrageResult.objects.filter(abfrage=abfrage, ag_name=ag_name)
     }
     health = AGAbfrageHealth.objects.filter(abfrage=abfrage, ag_name=ag_name).first()
+    status_labels = dict(_STATUS_CHOICES)
     rows = [
         {
             "name": f"{m['first_name']} {m['last_name']}",
@@ -152,6 +161,8 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
         {"name": f"{t.first_name} {t.last_name}", "member": None, "tenant": t, "result": existing[t.pk]}
         for t in extra
     ]
+    for row in rows:
+        row["status_label"] = status_labels.get(row["result"].status) if row["result"] else None
     return render(request, "app/abfragen/ag_edit.html", {
         "abfrage": abfrage,
         "ag_name": ag_name,
@@ -160,6 +171,8 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
         "status_choices": _STATUS_CHOICES,
         "health_choices": _HEALTH_CHOICES,
         "health": health,
+        "health_label": dict(_HEALTH_CHOICES).get(health.health) if health else None,
+        "readonly": readonly,
         "closed": False,
         "is_privileged": is_privileged,
     })
