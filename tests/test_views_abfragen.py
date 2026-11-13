@@ -332,3 +332,18 @@ def test_admin_cannot_edit_closed_abfrage():
     assert AGAbfrageResult.objects.get(tenant=t).status == "NICHT_AUSREICHEND"
     html = get.content.decode()
     assert 'id="ag-edit-form"' not in html and "Rita Rated" in html
+
+
+@pytest.mark.django_db
+def test_delete_confirmation_label_is_not_js_escaped():
+    # escapejs belongs in JS strings only; in an HTML attribute "-" would show
+    # (and have to be typed) as -.
+    abfrage = _open_abfrage()
+    abfrage.label = "Demo-Abfrage"
+    abfrage.save()
+    client = Client()
+    client.force_login(_user_in_group("admin_escape", "admins"))
+    listing = client.get("/abfragen/").content.decode()
+    detail = client.get(f"/abfragen/{abfrage.pk}/").content.decode()
+    assert 'data-delete-label="Demo-Abfrage"' in listing
+    assert 'placeholder="Demo-Abfrage"' in detail
