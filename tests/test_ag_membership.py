@@ -64,7 +64,8 @@ def test_join(client, user, monkeypatch):
     assert ipa.calls == [("add", "ag.garten", "lea_test")]
     assert set(user.groups.values_list("name", flat=True)) == {"ag.garten", "gr.vorstand"}
     ev = AGMembershipEvent.objects.get()
-    assert (ev.group_cn, ev.uid, ev.action) == ("ag.garten", "lea_test", AGMembershipAction.JOIN)
+    assert (ev.group_cn, ev.uid, ev.action, ev.actor_username) == (
+        "ag.garten", "lea_test", AGMembershipAction.JOIN, "lea_test")
     assert 'data-cn="ag.garten"' in d["html"] and "ag.garten verlassen" in d["html"]
     assert "gr.vorstand verlassen" not in d["html"]
 
@@ -105,7 +106,7 @@ def test_unknown_action_refused(client, user, monkeypatch):
     assert ipa.calls == []
 
 
-def test_impersonation_refused(client, user, monkeypatch):
+def test_impersonation_allowed_logs_impersonator(client, user, monkeypatch):
     ipa = FakeIPA(monkeypatch)
     admin = User.objects.create_user(username="imp", password="x")
     admin.groups.add(Group.objects.get_or_create(name=IMPERSONATION_GROUP)[0])
@@ -113,10 +114,11 @@ def test_impersonation_refused(client, user, monkeypatch):
     session = client.session
     session[IMPERSONATED_USER_SESSION_KEY] = user.pk
     session.save()
-    assert _post(client, "ag.garten", "join").status_code == 403
-    assert ipa.calls == []
-    html = client.get(reverse("dashboard")).content.decode()
-    assert 'id="ag-tags"' in html and "ag-tags-add" not in html and "ag-chip-x" not in html
+    assert _post(client, "ag.garten", "join").json()["ok"]
+    assert ipa.calls == [("add", "ag.garten", "lea_test")]
+    assert user.groups.filter(name="ag.garten").exists()
+    assert AGMembershipEvent.objects.get().actor_username == "imp"
+    assert "ag-tags-add" in client.get(reverse("dashboard")).content.decode()
 
 
 def test_no_intranet_account(client, db, monkeypatch):

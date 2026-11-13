@@ -312,11 +312,14 @@ class AGMembershipAction(models.TextChoices):
 
 
 class AGMembershipEvent(models.Model):
-    """Append-only log of AG/INI self-service joins/leaves in FreeIPA."""
-    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, related_name="ag_membership_events")
+    """Append-only log of AG/INI joins/leaves in FreeIPA (dashboard or engagement
+    check). tenant NULL = LDAP member without a tenant row; actor_username = who
+    acted (the real person when impersonating)."""
+    tenant = models.ForeignKey(Tenant, on_delete=models.DO_NOTHING, db_constraint=False, null=True, blank=True, related_name="ag_membership_events")
     uid = models.TextField()
     group_cn = models.TextField()
     action = models.CharField(max_length=10, choices=AGMembershipAction.choices)
+    actor_username = models.TextField()
     created_at = models.DateTimeField()
 
     class Meta:
