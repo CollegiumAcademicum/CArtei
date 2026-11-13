@@ -126,7 +126,7 @@ def test_non_self_service_group_ignores_member_fields(client, monkeypatch, ag):
     client.force_login(_user("lea2", ag))
     client.post(_url(a, ag), {"remove_max_muster": "1", f"add_{sam.pk}": "1"})
     assert ipa.calls == []
-    assert "remove-btn" not in client.get(_url(a, ag)).content.decode()
+    assert 'class="remove-btn"' not in client.get(_url(a, ag)).content.decode()
 
 
 @pytest.mark.django_db
@@ -138,7 +138,7 @@ def test_closed_abfrage_admin_no_member_changes(client, monkeypatch):
     client.post(_url(a), {f"status_{max_.pk}": "AKTIV", "remove_max_muster": "1"})
     assert ipa.calls == []
     assert AGAbfrageResult.objects.get(tenant=max_).status == "AKTIV"
-    assert "remove-btn" not in client.get(_url(a)).content.decode()
+    assert 'class="remove-btn"' not in client.get(_url(a)).content.decode()
 
 
 @pytest.mark.django_db
@@ -230,3 +230,28 @@ def test_admin_removes_ldap_member_without_tenant(client, monkeypatch):
     assert ipa.calls == [("remove", "ag.garten", "ghost")]
     ev = AGMembershipEvent.objects.get()
     assert (ev.tenant_id, ev.actor_username) == (None, "adm")
+
+
+@pytest.mark.django_db
+def test_manage_buttons_rendered(client, lea, monkeypatch):
+    a = _abfrage()
+    _tenant("max_muster", "Max", "Muster")
+    _tenant("sam_neu", "Sam", "Neu")
+    FakeIPA(monkeypatch, "ag.garten", [_member("lea"), _member("max_muster", "Max", "Muster")])
+    client.force_login(lea)
+    html = client.get(_url(a)).content.decode()
+    assert 'class="remove-btn"' in html and 'data-uid="max_muster"' in html
+    assert 'id="ag-member-summary"' in html
+    assert 'data-uid="sam_neu"' in html  # picker option carries the uid for add_<pk>
+
+
+@pytest.mark.django_db
+def test_extra_row_tagged_not_in_ag(client, lea, monkeypatch):
+    a = _abfrage()
+    gone = _tenant("gone", "Gone", "Away")
+    AGAbfrageResult.objects.create(abfrage=a, ag_name="ag.garten", tenant=gone, status="INAKTIV")
+    FakeIPA(monkeypatch, "ag.garten", [_member("lea")])
+    client.force_login(lea)
+    html = client.get(_url(a)).content.decode()
+    assert "nicht mehr in der AG" in html
+    assert 'data-uid="gone"' not in html.split('id="add-tenant-select"')[0]

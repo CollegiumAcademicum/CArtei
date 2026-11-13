@@ -234,6 +234,7 @@ def ag_edit(request: HttpRequest, pk: int, ag_name: str):
         "health": health,
         "health_label": dict(_HEALTH_CHOICES).get(health.health) if health else None,
         "readonly": readonly,
+        "can_manage": can_manage,
         "closed": False,
         "is_privileged": is_privileged,
     })
