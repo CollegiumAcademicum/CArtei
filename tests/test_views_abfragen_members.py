@@ -254,4 +254,35 @@ def test_extra_row_tagged_not_in_ag(client, lea, monkeypatch):
     client.force_login(lea)
     html = client.get(_url(a)).content.decode()
     assert "nicht mehr in der AG" in html
-    assert 'data-uid="gone"' not in html.split('id="add-tenant-select"')[0]
+    assert 'class="remove-btn" data-uid="gone"' not in html
+
+
+@pytest.mark.django_db
+def test_self_removal_submits_natively_so_messages_reach_dashboard(client, lea, monkeypatch):
+    # base.html's AJAX swap pre-fetches a cross-page redirect and then navigates
+    # again, eating the messages. The form names the viewer's uid so the JS can
+    # opt out of the swap (data-no-swap) when they mark themselves.
+    a = _abfrage()
+    FakeIPA(monkeypatch, "ag.garten", [_member("lea")])
+    client.force_login(lea)
+    html = client.get(_url(a)).content.decode()
+    assert 'data-self-uid="lea"' in html
+    assert "dataset.noSwap" in html  # base.html honours the opt-out
+    r = client.post(_url(a), {"remove_lea": "1"}, follow=True)
+    assert "Aus ag.garten entfernt" in r.content.decode()
+
+
+@pytest.mark.django_db
+def test_extra_row_can_be_readded(client, lea, monkeypatch):
+    a = _abfrage()
+    gone = _tenant("gone", "Gone", "Away")
+    noacc = _tenant("noacc", "No", "Account", intranet=False)
+    for t in (gone, noacc):
+        AGAbfrageResult.objects.create(abfrage=a, ag_name="ag.garten", tenant=t, status="INAKTIV")
+    ipa = FakeIPA(monkeypatch, "ag.garten", [_member("lea")])
+    client.force_login(lea)
+    html = client.get(_url(a)).content.decode()
+    assert f'class="readd-btn" data-pk="{gone.pk}"' in html
+    assert f'data-pk="{noacc.pk}"' not in html
+    client.post(_url(a), {f"add_{gone.pk}": "1"})
+    assert ipa.calls == [("add", "ag.garten", "gone")]

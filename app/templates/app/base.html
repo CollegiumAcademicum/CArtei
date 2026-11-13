@@ -78,6 +78,10 @@
 document.addEventListener('submit', function(e) {
   var f = e.target;
   if (!f.closest('.ca-main') || f.method.toLowerCase() !== 'post') return;
+  // Opt-out for a submit that redirects to another page with messages (e.g.
+  // leaving your own AG): the swap would pre-fetch that page, eat the messages,
+  // then navigate again. A native submit carries them.
+  if (f.dataset.noSwap !== undefined) return;
   e.preventDefault();
   if (f.dataset.confirm && !confirm(f.dataset.confirm)) return;
   // Busy state: disable the submit button (blocks the double-submit that would

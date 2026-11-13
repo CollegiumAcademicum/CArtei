@@ -44,7 +44,7 @@
     </tbody>
   </table>
   {% else %}
-  <form id="ag-edit-form" method="post">
+  <form id="ag-edit-form" method="post" data-self-uid="{{ request.user.username }}">
     {% csrf_token %}
 
     <div style="margin-bottom:1.5rem;padding:1rem;background:#fafafa;border-radius:6px;">
@@ -85,7 +85,7 @@
           <td colspan="2" style="color:#7a7a7a;font-size:0.85rem;">Nicht im System — bitte LDAP-Sync durchführen</td>
           {% endif %}
           {% if can_manage %}
-          <td>{% if row.member %}<button type="button" class="remove-btn" data-uid="{{ row.member.username }}" data-name="{{ row.name }}">Entfernen</button>{% endif %}</td>
+          <td>{% if row.member %}<button type="button" class="remove-btn" data-uid="{{ row.member.username }}" data-name="{{ row.name }}">Entfernen</button>{% elif row.tenant.intranet_username %}<button type="button" class="readd-btn" data-pk="{{ row.tenant.pk }}" data-name="{{ row.name }}" data-uid="{{ row.tenant.intranet_username }}">Wieder hinzufügen</button>{% endif %}</td>
           {% endif %}
         </tr>
         {% empty %}
@@ -238,7 +238,7 @@
       form.querySelectorAll('input[type=text]').forEach(function (t) {
         if (t.value !== (t.dataset.orig || '')) dirty = true;
       });
-      if (form.querySelector('#ag-rows tr[data-added], #ag-rows tr.ag-removing')) dirty = true;
+      if (form.querySelector('#ag-rows tr[data-added], #ag-rows tr.ag-removing, #ag-rows tr.ag-adding')) dirty = true;
       updateSummary();
       if (card) card.classList.toggle('is-dirty', dirty);
       actions.style.display = dirty ? 'flex' : 'none';
@@ -261,6 +261,33 @@
         if (mark) mark.remove();
         if (tag) tag.remove();
       }
+      // Leaving the AG yourself redirects to the dashboard: submit natively so
+      // the messages survive (see base.html).
+      if (btn.dataset.uid === form.dataset.selfUid) {
+        if (on) form.dataset.noSwap = ''; else delete form.dataset.noSwap;
+      }
+    }
+
+    // An extra row (rated, not a member) can be put back into the group, e.g.
+    // after a removal saved by mistake.
+    function setReadding(tr, on) {
+      var btn = tr.querySelector('.readd-btn');
+      tr.classList.toggle('ag-adding', on);
+      tr.dataset.name = btn.dataset.name;
+      tr.dataset.uid = btn.dataset.uid;
+      btn.textContent = on ? 'Rückgängig' : 'Wieder hinzufügen';
+      var mark = tr.querySelector('input.ag-add-mark');
+      if (on && !mark) {
+        mark = document.createElement('input');
+        mark.type = 'hidden'; mark.className = 'ag-add-mark';
+        mark.name = 'add_' + btn.dataset.pk; mark.value = '1';
+        btn.parentNode.appendChild(mark);
+        addTag(tr, 'wird hinzugefügt').classList.add('ag-row-tag-add');
+      } else if (!on) {
+        if (mark) mark.remove();
+        var tag = tr.querySelector('.ag-row-tag-add');
+        if (tag) tag.remove();
+      }
     }
 
     tbody.addEventListener('click', function (e) {
@@ -268,11 +295,14 @@
       if (rm) { var tr = rm.closest('tr'); setRemoving(tr, !tr.classList.contains('ag-removing')); }
       var undo = e.target.closest('.ag-undo-add');
       if (undo) undo.closest('tr').remove();
-      if (rm || undo) checkDirty();
+      var re = e.target.closest('.readd-btn');
+      if (re) { var row = re.closest('tr'); setReadding(row, !row.classList.contains('ag-adding')); }
+      if (rm || undo || re) checkDirty();
     });
 
     document.getElementById('ag-revert').addEventListener('click', function () {
       form.querySelectorAll('#ag-rows tr.ag-removing').forEach(function (tr) { setRemoving(tr, false); });
+      form.querySelectorAll('#ag-rows tr.ag-adding:not([data-added])').forEach(function (tr) { setReadding(tr, false); });
       form.querySelectorAll('#ag-rows tr[data-added]').forEach(function (tr) { tr.remove(); });
       form.querySelectorAll('input[type=text]').forEach(function (t) { t.value = t.dataset.orig || ''; });
       form.querySelectorAll('.ca-slider').forEach(initSlider);

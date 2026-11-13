@@ -584,7 +584,7 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 }
 .ag-row-tag-rm { background: #f7d4d4; color: #B61B29; }
 .ag-row-tag-out { background: #eee; color: #555; }
-.remove-btn, .ag-undo-add {
+.remove-btn, .ag-undo-add, .readd-btn {
   border: 1px solid #e3b3b3; background: #fff; color: #B61B29; border-radius: 4px;
   padding: 2px 8px; font: inherit; font-size: 0.8rem; cursor: pointer; white-space: nowrap;
 }
