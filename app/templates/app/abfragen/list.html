@@ -51,7 +51,7 @@
             <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Details</a>
             <button type="button" class="ca-logout" style="color:#999;border-color:#ccc;margin-left:0.75rem;"
               data-delete-url="{% url 'abfrage_delete' abfrage.pk %}"
-              data-delete-label="{{ abfrage|escapejs }}">Löschen</button>
+              data-delete-label="{{ abfrage }}">Löschen</button>
           {% endif %}
         </td>
       </tr>
