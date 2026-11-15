@@ -507,11 +507,26 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   .lp-hero h1 { font-size: 2.2rem; }
 }
 
-/* ── Mobile ── */
-@media (max-width: 600px) {
+/* ── Dashboard ── */
+.ca-dash { display: flex; gap: 1.5rem; align-items: flex-start; }
+.ca-dash-profile { width: 260px; flex-shrink: 0; }
+.ca-dash-main { flex: 1; min-width: 0; margin-top: 1.5rem; }
+.ca-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; }
+
+/* ── Mobile (phones + small tablets) ── */
+@media (max-width: 768px) {
   .ca-main { padding: 0 0.75rem 2rem; }
   .ca-card { padding: 1rem; }
   .ca-card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* Hint bubbles centred on an icon near the edge would spill off-screen:
+     pin them to the bottom of the viewport like a toast instead. */
+  .ca-hint-bubble { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; top: auto;
+    width: auto !important; transform: none; font-size: 0.9rem; }
+  .ca-hint-bubble::after { display: none; }
+
+  .ca-dash { flex-direction: column; align-items: stretch; gap: 0; }
+  .ca-dash-profile { width: auto; }
+  .ca-stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* Tenant list interactive table */
