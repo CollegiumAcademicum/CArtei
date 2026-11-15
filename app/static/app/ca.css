@@ -16,18 +16,25 @@ body {
 }
 
 /* ── Navbar ── */
+/* Bulma navbar (burger below 1024px), restyled to the CA look. */
 .ca-navbar {
-  background: white;
   border-bottom: 3px solid var(--ca-teal);
   padding: 0 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 64px;
+  min-height: 64px;
 }
-.ca-navbar-logo img { height: 36px; display: block; }
-.ca-navbar-right { display: flex; align-items: center; gap: 1rem; }
+.ca-navbar .navbar-brand { min-height: 61px; }
+.ca-navbar-logo img { max-height: 36px; }
+.ca-navbar .navbar-item { padding: 0.5rem; }
+.ca-navbar a.navbar-item:hover, .ca-navbar a.navbar-item:focus,
+.ca-navbar a.navbar-item:focus-within { background: none; color: var(--ca-teal); }
 .ca-navbar-user { font-size: 0.9rem; color: #7a7a7a; }
+.ca-navbar .navbar-burger { color: var(--ca-teal); height: 61px; width: 61px; }
+.ca-navbar .navbar-burger:hover, .ca-navbar .navbar-burger.is-active { background: none; }
+@media (max-width: 1023px) {
+  .ca-navbar { padding: 0 0.5rem; }
+  .ca-navbar .navbar-menu { box-shadow: none; padding: 0 0 0.5rem; }
+  .ca-navbar .navbar-menu .navbar-item { padding: 0.75rem 1rem; font-size: 1rem; }
+}
 .ca-logout {
   font-size: 0.85rem; color: var(--ca-teal); border: 1px solid var(--ca-teal);
   border-radius: 4px; padding: 4px 12px; cursor: pointer; background: white;
@@ -188,7 +195,7 @@ body {
   margin-top: 0.75rem; border: 1px solid #e2e2e2; border-radius: 6px;
   padding: 0.5rem 0.75rem;
 }
-.ca-doc-card-head { display: flex; align-items: center; gap: 0.5rem; }
+.ca-doc-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .ca-doc-status { font-size: 0.8rem; }
 .ca-doc-status--active { color: #0a0; }
 .ca-doc-status--missing { color: #b26a00; }
@@ -501,13 +508,68 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   .lp-hero h1 { font-size: 2.2rem; }
 }
 
+/* ── Dashboard ── */
+.ca-dash { display: flex; gap: 1.5rem; align-items: flex-start; }
+.ca-dash-profile { width: 260px; flex-shrink: 0; }
+.ca-dash-main { flex: 1; min-width: 0; margin-top: 1.5rem; }
+.ca-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; }
+
+/* ── Tenant detail header ── */
+.ca-td-header { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+.ca-link-uid { width: 13rem; }
+.ca-hint-bubble-wide { width: 320px; }
+.ca-proof-table td { padding: .25rem .5rem; }
+
 /* ── Mobile ── */
+/* Wide Bulma tables scroll inside their card on phones only: display:block
+   breaks is-fullwidth, so tablets keep the normal table. */
 @media (max-width: 600px) {
-  .ca-navbar { height: auto; flex-wrap: wrap; padding: 0.5rem 1rem; gap: 0.5rem; }
-  .ca-navbar-right { flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; }
+  .ca-card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* Phones + small tablets */
+@media (max-width: 768px) {
   .ca-main { padding: 0 0.75rem 2rem; }
   .ca-card { padding: 1rem; }
-  .ca-card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* Hint bubbles centred on an icon near the edge would spill off-screen:
+     pin them to the bottom of the viewport like a toast instead. */
+  .ca-hint-bubble { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; top: auto;
+    width: auto !important; transform: none; font-size: 0.9rem; }
+  .ca-hint-bubble::after { display: none; }
+
+  .ca-dash { flex-direction: column; align-items: stretch; gap: 0; }
+  .ca-dash-profile { width: auto; }
+  .ca-stat-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* .ca-stack-table: one card per row; td[data-label] shows its column name. */
+  .ca-stack-table thead { display: none; }
+  .ca-stack-table, .ca-stack-table tbody, .ca-stack-table tr, .ca-stack-table td { display: block; width: 100%; }
+  /* Rows and cells fill as blocks: width:100% plus border/padding would overflow. */
+  .ca-stack-table tr, .ca-stack-table td { width: auto; box-sizing: border-box; }
+  .ca-card .table.ca-stack-table { overflow: visible; }
+  .ca-stack-table tr {
+    position: relative; margin-bottom: 0.75rem; border: 1px solid #e5e5e5;
+    border-radius: 6px; overflow: hidden; background-color: #fff;
+  }
+  .ca-stack-table tr[hidden] { display: none; }
+  .ca-stack-table th { display: block; }
+  .ca-stack-table td { border: none !important; padding: 0.35rem 0.75rem; }
+  .ca-stack-table td:first-child { padding-top: 0.6rem; font-weight: 600; }
+  .ca-stack-table td:last-child { padding-bottom: 0.6rem; }
+  .ca-stack-table td[data-label]::before {
+    content: attr(data-label); display: block; margin-bottom: 0.15rem;
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #7a7a7a;
+  }
+  .ca-stack-table td.ca-stack-actions { position: absolute; top: 0.35rem; right: 0; width: auto; padding: 0.25rem 0.75rem; }
+  .ca-stack-table td:empty { display: none; }
+  .ca-stack-table tr:has(.ca-stack-actions button) td:first-child { padding-right: 9rem; }
+  .ca-slider input[type=range] { max-width: none; height: 8px; }
+  .ca-slider input[type=range]::-webkit-slider-thumb { width: 26px; height: 26px; }
+  .ca-slider input[type=range]::-moz-range-thumb { width: 26px; height: 26px; }
+  .ca-stack-table .ca-slider-out { min-width: 0; }
+  .ca-mobile-full { width: 100%; max-width: none !important; }
+  .ca-link-uid { width: 100%; }
 }
 
 /* Tenant list interactive table */

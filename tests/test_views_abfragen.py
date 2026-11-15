@@ -347,3 +347,43 @@ def test_delete_confirmation_label_is_not_js_escaped():
     detail = client.get(f"/abfragen/{abfrage.pk}/").content.decode()
     assert 'data-delete-label="Demo-Abfrage"' in listing
     assert 'placeholder="Demo-Abfrage"' in detail
+
+
+@pytest.mark.django_db
+def test_list_renders_stack_table_with_labels():
+    _open_abfrage()
+    client = Client()
+    client.force_login(_user_in_group("stack_list", "ag.kueche"))
+    html = client.get("/abfragen/").content.decode()
+    assert "ca-stack-table" in html
+    assert 'data-label="Status"' in html
+
+
+@pytest.mark.django_db
+def test_ag_edit_rows_and_template_are_stack_cards():
+    # Rows added client-side from #ag-row-tpl must get the same mobile card
+    # layout as the server-rendered ones.
+    from app.models import Tenant
+    abfrage = _open_abfrage()
+    Tenant.objects.create(first_name="K", last_name="U", email="k@ca.de",
+                          intranet_username="stack_user", intranet_uuid=uuid.uuid4())
+    client = Client()
+    client.force_login(_user_in_group("stack_user", "ag.kueche"))
+    fake_members = [{"username": "stack_user", "first_name": "K", "last_name": "U", "email": "k@ca.de", "uuid": str(uuid.uuid4())}]
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=fake_members):
+        html = client.get(f"/abfragen/{abfrage.pk}/ag/ag.kueche/").content.decode()
+    rows, tpl = html.split('id="ag-row-tpl"', 1)
+    assert "ca-stack-table" in rows
+    assert 'data-label="Status"' in rows.split('id="ag-rows"', 1)[1]
+    assert 'data-label="Status"' in tpl.split("</template>", 1)[0]
+
+
+@pytest.mark.django_db
+def test_ag_edit_readonly_is_stack_table():
+    abfrage = _open_abfrage()
+    client = Client()
+    client.force_login(_user_in_group("stack_cluster", "gr.cluster"))
+    with patch("app.views.abfragen.ldap_utils.get_ag_members", return_value=[]):
+        html = client.get(f"/abfragen/{abfrage.pk}/ag/ag.kueche/").content.decode()
+    assert "Nur Ansicht" in html
+    assert "ca-stack-table" in html

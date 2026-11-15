@@ -2,9 +2,9 @@
 {% load static tenant_extras %}
 {% block title %}Dashboard — CArtei{% endblock %}
 {% block content %}
-<div style="display:flex;gap:1.5rem;align-items:flex-start;">
+<div class="ca-dash">
 
-  <div class="ca-card" style="width:260px;flex-shrink:0;">
+  <div class="ca-card ca-dash-profile">
     <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">
       {% if tenant %}<a href="{% url 'tenant_detail' tenant.pk %}" style="color:var(--ca-teal);">Mein Profil</a>{% else %}Mein Profil{% endif %}
     </h2>
@@ -22,8 +22,8 @@
     <script src="{% static 'app/ag_tags.js' %}"></script>
   </div>
 
-  <div style="flex:1;margin-top:1.5rem;">
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;">
+  <div class="ca-dash-main">
+    <div class="ca-stat-grid">
       <div class="ca-stat-card">
         <div class="ca-stat-value">{{ flinta_quote }}%</div>
         <div class="ca-stat-label">FLINTA-Quote

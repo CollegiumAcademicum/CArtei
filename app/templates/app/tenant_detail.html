@@ -5,9 +5,9 @@
 {% block title %}{{ display_name }} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card" style="max-width:1100px;margin:1.5rem auto;">
-  <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
+  <div class="ca-td-header">
     <h1 style="font-size:1.4rem;font-weight:700;margin:0;">{{ display_name }}</h1>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:.4rem;">
+    <div style="margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;">
       {% if tenant.intranet_username %}
         <span style="font-size:.85rem;color:#7a7a7a;">Intranet: <strong style="color:#555;">{{ tenant.intranet_username }}</strong></span>
         {% if can_link %}
@@ -21,7 +21,7 @@
         {% if can_link %}
           <form method="post" action="{% url 'tenant_link' tenant.pk %}" style="margin:0;display:flex;align-items:center;gap:.4rem;">
             {% csrf_token %}
-            <input class="ca-input ca-input-sm" name="uid" placeholder="Intranet-Account suchen" required style="width:13rem;"
+            <input class="ca-input ca-input-sm ca-link-uid" name="uid" placeholder="Intranet-Account suchen" required
                    list="link-accounts" autocomplete="off" data-search-url="{% url 'tenant_link_search' %}">
             <datalist id="link-accounts"></datalist>
             <button type="submit" class="ca-button ca-button-sm">Verknüpfen</button>
@@ -55,7 +55,7 @@
 
   {% for section in sections %}
   <details id="section-{{ section.key }}" {% if section.key == "personal" %}open {% endif %}class="ca-section ca-collapse" style="margin-bottom:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
+    <summary style="font-weight:600;cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;">
       <span>{{ section.title }}</span>
       <span style="margin-left:auto;display:flex;gap:.4rem;align-items:center;">
         {% if section.key == "housing" and can_write_mv %}
@@ -241,14 +241,14 @@
 
   {% if can_see_proofs %}
   <details id="section-proofs" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
+    <summary style="font-weight:600;cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;">
       <span>Ausbildungsnachweis</span>
     </summary>
 
     <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Ausstehend</p>
     {% if pending_proofs %}
     <div style="overflow-x:auto;">
-    <table style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
+    <table class="ca-stack-table ca-proof-table" style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
       <thead>
         <tr>
           <th style="text-align:left;padding:.25rem .5rem;">Datei</th>
@@ -264,15 +264,15 @@
       <tbody>
         {% for p in pending_proofs %}
         <tr style="{% if p.needs_human_review %}background:#fff8e1;{% endif %}">
-          <td style="padding:.25rem .5rem;"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}">{{ p.file_name|middle_truncate }}</a></td>
-          <td style="padding:.25rem .5rem;">{{ p.get_enrollment_type_display }}</td>
-          <td style="padding:.25rem .5rem;">{{ p.field_of_study|default:"—" }}</td>
-          <td style="padding:.25rem .5rem;">{{ p.educational_institution|default:"—" }}</td>
-          <td style="padding:.25rem .5rem;">{{ p.valid_until }}</td>
-          <td style="padding:.25rem .5rem;">{{ p.uploaded_at|date:"d.m.Y" }}</td>
-          <td style="padding:.25rem .5rem;">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% if p.review_reason %}<br><small style="color:#a15c00;">{{ p.review_reason }}</small>{% endif %}{% else %}Ausstehend{% endif %}</td>
+          <td data-label="Datei"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}">{{ p.file_name|middle_truncate }}</a></td>
+          <td data-label="Typ">{{ p.get_enrollment_type_display }}</td>
+          <td data-label="Fach / Bereich">{{ p.field_of_study|default:"—" }}</td>
+          <td data-label="Einrichtung">{{ p.educational_institution|default:"—" }}</td>
+          <td data-label="Gültig bis">{{ p.valid_until }}</td>
+          <td data-label="Hochgeladen">{{ p.uploaded_at|date:"d.m.Y" }}</td>
+          <td data-label="Status">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% if p.review_reason %}<br><small style="color:#a15c00;">{{ p.review_reason }}</small>{% endif %}{% else %}Ausstehend{% endif %}</td>
           {% if can_write_mv %}
-          <td style="padding:.25rem .5rem;white-space:nowrap;">
+          <td class="ca-stack-actions" style="white-space:nowrap;">
             <button type="button" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;" data-toggle-hidden="verify-form-{{ p.pk }}">Verifizieren</button>
             <form method="post" action="{% url 'enrollment_proof_reject' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="Diesen Nachweis ablehnen und löschen?">
               {% csrf_token %}
@@ -312,7 +312,7 @@
     <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Verifiziert</p>
     {% if verified_proofs %}
     <div style="overflow-x:auto;">
-    <table style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
+    <table class="ca-stack-table ca-proof-table" style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
       <thead>
         <tr>
           <th style="text-align:left;padding:.25rem .5rem;">Datei</th>
@@ -328,15 +328,15 @@
       <tbody>
         {% for p in verified_proofs %}
         <tr>
-          <td style="padding:.25rem .5rem;"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}">{{ p.file_name|middle_truncate }}</a></td>
-          <td style="padding:.25rem .5rem;">{{ p.get_enrollment_type_display }}</td>
-          <td style="padding:.25rem .5rem;">{{ p.field_of_study|default:"—" }}</td>
-          <td style="padding:.25rem .5rem;">{{ p.educational_institution|default:"—" }}</td>
-          <td style="padding:.25rem .5rem;">{{ p.valid_until }}</td>
-          <td style="padding:.25rem .5rem;">{{ p.uploaded_at|date:"d.m.Y" }}</td>
-          <td style="padding:.25rem .5rem;">{{ p.verified_at|date:"d.m.Y" }}</td>
+          <td data-label="Datei"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}">{{ p.file_name|middle_truncate }}</a></td>
+          <td data-label="Typ">{{ p.get_enrollment_type_display }}</td>
+          <td data-label="Fach / Bereich">{{ p.field_of_study|default:"—" }}</td>
+          <td data-label="Einrichtung">{{ p.educational_institution|default:"—" }}</td>
+          <td data-label="Gültig bis">{{ p.valid_until }}</td>
+          <td data-label="Hochgeladen">{{ p.uploaded_at|date:"d.m.Y" }}</td>
+          <td data-label="Verifiziert am">{{ p.verified_at|date:"d.m.Y" }}</td>
           {% if can_write_mv %}
-          <td style="padding:.25rem .5rem;">
+          <td class="ca-stack-actions">
             <form method="post" action="{% url 'enrollment_proof_revert' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="Verifizierung aufheben? Der Nachweis wird erneut automatisch geprüft.">
               {% csrf_token %}
               <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;" title="Verifizierung aufheben – erneut automatisch prüfen">Aufheben</button>
@@ -384,11 +384,11 @@
 
     {% for g in document_groups %}
     <div class="ca-doc-card" style="margin-top:.75rem;border:1px solid #e2e2e2;border-radius:6px;padding:.5rem .75rem;">
-      <div style="display:flex;align-items:center;gap:.5rem;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;">
         <strong>{{ g.label }}</strong>
         {% if g.type == "vertraulichkeitserklaerung" %}
         <span class="ca-pill ca-pill-{{ clearance.color }}">{% if clearance.color == "green" %}Freigegeben{% elif clearance.color == "yellow" %}Wartet auf Bestätigung{% elif clearance.color == "red" %}Keine Freigabe{% elif clearance.color == "black" %}Inkonsistent{% else %}Gruppenstatus unbekannt{% endif %}</span>
-        <span class="ca-hint" tabindex="0" role="button" aria-label="Was bedeuten die Farben?">i<span class="ca-hint-bubble" style="width:320px;">{% for name, text in clearance.legend %}<strong style="color:inherit;">{{ name }}:</strong> {{ text }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</span></span>
+        <span class="ca-hint" tabindex="0" role="button" aria-label="Was bedeuten die Farben?">i<span class="ca-hint-bubble ca-hint-bubble-wide">{% for name, text in clearance.legend %}<strong style="color:inherit;">{{ name }}:</strong> {{ text }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</span></span>
         {% if clearance.is_granter %}<span style="font-size:.85rem;">Name: {{ clearance.full_name }}</span>{% endif %}
         {% elif g.has_active %}
         <span style="color:#0a0;font-size:.8rem;">● Aktiv</span>
@@ -500,7 +500,7 @@
 
   {% if engagement or can_write_cluster %}
   <details id="section-engagement" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.75rem;">
+    <summary style="font-weight:600;cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;">
       <span>Engagement</span>
       {% if can_write_cluster %}
       <button type="button" class="ca-notes-toggle" data-notes="cluster-notes" style="margin-left:auto;">🗒 Notizen {{ cluster_notes|length }}</button>
@@ -544,7 +544,7 @@
 
     {% if engagement %}
     <div style="overflow-x:auto;margin-top:.5rem;">
-      <table class="table is-fullwidth is-striped is-hoverable" style="font-size:.9rem;">
+      <table class="table is-fullwidth is-striped is-hoverable ca-stack-table" style="font-size:.9rem;">
         <thead>
           <tr><th>AG</th><th>Status</th><th>Notiz</th></tr>
         </thead>
@@ -557,8 +557,8 @@
           {% for r in survey.list %}
           <tr>
             <td>{{ r.ag_name }}</td>
-            <td><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
-            <td style="color:#7a7a7a;">{{ r.note|default:"—" }}</td>
+            <td data-label="Status"><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
+            <td data-label="Notiz" style="color:#7a7a7a;">{{ r.note|default:"—" }}</td>
           </tr>
           {% endfor %}
           {% empty %}

@@ -215,6 +215,17 @@ def test_public_info_and_logout_remain_available_during_setup(room):
 
 
 @pytest.mark.django_db
+def test_setup_page_burger_reveals_logout(room):
+    _tenant("resident", room)
+    client = Client()
+    client.force_login(User.objects.create_user("resident", password="pw"))
+    html = client.get(reverse("profile_setup")).content.decode()
+    menu = html.split('id="ca-navbar-menu"', 1)[1]
+    assert "data-navbar-burger" in html
+    assert f'action="{reverse("logout")}"' in menu
+
+
+@pytest.mark.django_db
 def test_staff_can_reset_profile_setup_keeping_data(room):
     tenant = _tenant(
         "resident", room, profile_setup_completed_at=timezone.now(),

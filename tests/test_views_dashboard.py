@@ -194,3 +194,16 @@ def test_dashboard_shows_all_org_groups_but_not_rights_markers():
     assert b"gr.cluster" in response.content
     assert b"in.finanzen" in response.content
     assert b"admins" not in response.content
+
+
+@pytest.mark.django_db
+def test_dashboard_uses_responsive_layout_classes():
+    # Layout lives in ca.css classes (not inline styles) so the mobile media
+    # query can stack the columns and reflow the stat tiles.
+    client = Client()
+    client.force_login(User.objects.create_user(username="viewer"))
+    html = client.get("/dashboard/").content.decode()
+    assert 'class="ca-dash"' in html
+    assert "ca-dash-profile" in html
+    assert "ca-stat-grid" in html
+    assert "grid-template-columns:repeat(4" not in html

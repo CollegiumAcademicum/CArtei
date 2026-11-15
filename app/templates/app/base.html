@@ -12,25 +12,36 @@
 </head>
 <body>
 
-<nav class="ca-navbar">
-  <a class="ca-navbar-logo" href="{% url 'dashboard' %}">
-    <img src="https://collegiumacademicum.de/img/logo-small.png" alt="Collegium Academicum">
-  </a>
-  {% if request.user.is_authenticated %}
-  <div class="ca-navbar-right">
-    {% if not request.profile_setup_required %}
-    <a href="{% url 'dashboard' %}" class="ca-navbar-admin">Dashboard</a>
-    <a href="{% url 'tenant_list' %}" class="ca-navbar-admin">Bewohner*innen</a>
-    <a href="{% url 'wg_list' %}" class="ca-navbar-admin">WGs</a>
-    <a href="{% url 'document_list' %}" class="ca-navbar-admin">Dokumente</a>
-    <a href="{% url 'abfragen_list' %}" class="ca-navbar-admin">Abfragen</a>
-    <a href="{% url 'admin_portal' %}" class="ca-navbar-admin">Admin</a>
+<nav class="navbar ca-navbar" aria-label="Hauptnavigation">
+  <div class="navbar-brand">
+    <a class="navbar-item ca-navbar-logo" href="{% url 'dashboard' %}">
+      <img src="https://collegiumacademicum.de/img/logo-small.png" alt="Collegium Academicum">
+    </a>
+    {% if request.user.is_authenticated %}
+    <button type="button" class="navbar-burger" data-navbar-burger aria-controls="ca-navbar-menu" aria-expanded="false" aria-label="Menü">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
     {% endif %}
-    {% if current_tenant and not request.profile_setup_required %}<a href="{% url 'tenant_detail' current_tenant.pk %}" class="ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</a>{% else %}<span class="ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</span>{% endif %}
-    <form method="post" action="{% url 'logout' %}">
-      {% csrf_token %}
-      <button type="submit" class="ca-logout">Abmelden</button>
-    </form>
+  </div>
+  {% if request.user.is_authenticated %}
+  <div id="ca-navbar-menu" class="navbar-menu">
+    <div class="navbar-end">
+      {% if not request.profile_setup_required %}
+      <a href="{% url 'dashboard' %}" class="navbar-item ca-navbar-admin">Dashboard</a>
+      <a href="{% url 'tenant_list' %}" class="navbar-item ca-navbar-admin">Bewohner*innen</a>
+      <a href="{% url 'wg_list' %}" class="navbar-item ca-navbar-admin">WGs</a>
+      <a href="{% url 'document_list' %}" class="navbar-item ca-navbar-admin">Dokumente</a>
+      <a href="{% url 'abfragen_list' %}" class="navbar-item ca-navbar-admin">Abfragen</a>
+      <a href="{% url 'admin_portal' %}" class="navbar-item ca-navbar-admin">Admin</a>
+      {% endif %}
+      {% if current_tenant and not request.profile_setup_required %}<a href="{% url 'tenant_detail' current_tenant.pk %}" class="navbar-item ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</a>{% else %}<span class="navbar-item ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</span>{% endif %}
+      <div class="navbar-item">
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="ca-logout">Abmelden</button>
+        </form>
+      </div>
+    </div>
   </div>
   {% endif %}
 </nav>

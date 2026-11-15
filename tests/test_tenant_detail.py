@@ -406,3 +406,27 @@ def test_room_renters_endpoint_lists_only_active_and_gates_access(settings):
     c2 = Client()
     _login(c2, "nobody", groups=[])
     assert c2.get(f"/rooms/{room.pk}/renters/").json() == []
+
+
+@pytest.mark.django_db
+def test_own_profile_mobile_classes():
+    # Header row and proof tables carry the classes the ≤768px media query
+    # reflows; fixed pixel widths that overflow a phone are gone.
+    import datetime
+    from pathlib import Path
+    from app.models import EnrollmentProof
+    t = _tenant("owner")
+    EnrollmentProof.objects.create(
+        tenant=t, enrollment_type="STUDY", file_name="i.pdf", file_data=b"%PDF",
+        uploaded_at=datetime.datetime(2026, 8, 15, tzinfo=datetime.timezone.utc),
+        valid_until=datetime.date(2026, 9, 30),
+    )
+    c = Client()
+    _login(c, "owner")
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert "ca-td-header" in body
+    assert "ca-stack-table" in body
+    assert 'data-label="Gültig bis"' in body
+    src = Path("app/templates/app/tenant_detail.html").read_text()
+    assert "width:13rem" not in src
+    assert "width:320px" not in src
