@@ -527,6 +527,31 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   .ca-dash { flex-direction: column; align-items: stretch; gap: 0; }
   .ca-dash-profile { width: auto; }
   .ca-stat-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* .ca-stack-table: one card per row; td[data-label] shows its column name. */
+  .ca-stack-table thead { display: none; }
+  .ca-stack-table, .ca-stack-table tbody, .ca-stack-table tr, .ca-stack-table td { display: block; width: 100%; }
+  .ca-card .table.ca-stack-table { overflow: visible; }
+  .ca-stack-table tr {
+    position: relative; margin-bottom: 0.75rem; border: 1px solid #e5e5e5;
+    border-radius: 6px; overflow: hidden; background: #fff !important;
+  }
+  .ca-stack-table td { border: none !important; padding: 0.35rem 0.75rem; }
+  .ca-stack-table td:first-child { padding-top: 0.6rem; font-weight: 600; }
+  .ca-stack-table td:last-child { padding-bottom: 0.6rem; }
+  .ca-stack-table td[data-label]::before {
+    content: attr(data-label); display: block; margin-bottom: 0.15rem;
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #7a7a7a;
+  }
+  .ca-stack-table td.ca-stack-actions { position: absolute; top: 0.35rem; right: 0; width: auto; padding: 0.25rem 0.75rem; }
+  .ca-stack-table td:empty { display: none; }
+  .ca-stack-table tr:has(.ca-stack-actions button) td:first-child { padding-right: 9rem; }
+  .ca-slider input[type=range] { max-width: none; height: 8px; }
+  .ca-slider input[type=range]::-webkit-slider-thumb { width: 26px; height: 26px; }
+  .ca-slider input[type=range]::-moz-range-thumb { width: 26px; height: 26px; }
+  .ca-stack-table .ca-slider-out { min-width: 0; }
+  .ca-mobile-full { width: 100%; max-width: none !important; }
 }
 
 /* Tenant list interactive table */
