@@ -11,6 +11,8 @@ from app.views.ag_membership import ag_tags_html
 
 # Worst first, so struggling AGs surface at the top of the widget.
 _HEALTH_RANK = {"TOT": 0, "KRITISCH": 1, "KERNAUFGABEN": 2, "GESUND": 3}
+# AG-Status widget sub-headings, in display order.
+_GROUP_TYPES = (("ag.", "AGs"), ("in.", "Initiativen"), ("gr.", "Gremien"))
 
 
 @login_required
@@ -48,6 +50,14 @@ def dashboard(request):
             ),
             key=lambda a: (_HEALTH_RANK[a["health"]], a["ag_name"]),
         )
+    ag_status_groups = [
+        {"label": label, "items": items}
+        for prefix, label in _GROUP_TYPES
+        if (items := [a for a in ag_status if a["ag_name"].startswith(prefix)])
+    ]
+    # Health rows hold free-text names; keep any without a known prefix visible.
+    if other := [a for a in ag_status if not a["ag_name"].startswith(GROUP_PREFIXES)]:
+        ag_status_groups.append({"label": "Sonstige", "items": other})
 
     total = Tenant.objects.count()
     living = Tenant.objects.filter(has_active_assignment(date.today()))
@@ -62,7 +72,7 @@ def dashboard(request):
         "user_groups": user_groups,
         "ag_tags_html": ag_tags_html(request),
         "active_abfragen": active_abfragen,
-        "ag_status": ag_status,
+        "ag_status_groups": ag_status_groups,
         "current_tenants": current,
         "total_tenants": total,
         "flinta_quote": round(flinta / current * 100, 1) if current else 0,
