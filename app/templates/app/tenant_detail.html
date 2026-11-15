@@ -248,7 +248,7 @@
     <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Ausstehend</p>
     {% if pending_proofs %}
     <div style="overflow-x:auto;">
-    <table class="ca-stack-table" style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
+    <table class="ca-stack-table ca-proof-table" style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
       <thead>
         <tr>
           <th style="text-align:left;padding:.25rem .5rem;">Datei</th>
@@ -264,15 +264,15 @@
       <tbody>
         {% for p in pending_proofs %}
         <tr style="{% if p.needs_human_review %}background:#fff8e1;{% endif %}">
-          <td data-label="Datei" style="padding:.25rem .5rem;"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}">{{ p.file_name|middle_truncate }}</a></td>
-          <td data-label="Typ" style="padding:.25rem .5rem;">{{ p.get_enrollment_type_display }}</td>
-          <td data-label="Fach / Bereich" style="padding:.25rem .5rem;">{{ p.field_of_study|default:"—" }}</td>
-          <td data-label="Einrichtung" style="padding:.25rem .5rem;">{{ p.educational_institution|default:"—" }}</td>
-          <td data-label="Gültig bis" style="padding:.25rem .5rem;">{{ p.valid_until }}</td>
-          <td data-label="Hochgeladen" style="padding:.25rem .5rem;">{{ p.uploaded_at|date:"d.m.Y" }}</td>
-          <td data-label="Status" style="padding:.25rem .5rem;">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% if p.review_reason %}<br><small style="color:#a15c00;">{{ p.review_reason }}</small>{% endif %}{% else %}Ausstehend{% endif %}</td>
+          <td data-label="Datei"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}">{{ p.file_name|middle_truncate }}</a></td>
+          <td data-label="Typ">{{ p.get_enrollment_type_display }}</td>
+          <td data-label="Fach / Bereich">{{ p.field_of_study|default:"—" }}</td>
+          <td data-label="Einrichtung">{{ p.educational_institution|default:"—" }}</td>
+          <td data-label="Gültig bis">{{ p.valid_until }}</td>
+          <td data-label="Hochgeladen">{{ p.uploaded_at|date:"d.m.Y" }}</td>
+          <td data-label="Status">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% if p.review_reason %}<br><small style="color:#a15c00;">{{ p.review_reason }}</small>{% endif %}{% else %}Ausstehend{% endif %}</td>
           {% if can_write_mv %}
-          <td class="ca-stack-actions" style="padding:.25rem .5rem;white-space:nowrap;">
+          <td class="ca-stack-actions" style="white-space:nowrap;">
             <button type="button" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;" data-toggle-hidden="verify-form-{{ p.pk }}">Verifizieren</button>
             <form method="post" action="{% url 'enrollment_proof_reject' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="Diesen Nachweis ablehnen und löschen?">
               {% csrf_token %}
@@ -312,7 +312,7 @@
     <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Verifiziert</p>
     {% if verified_proofs %}
     <div style="overflow-x:auto;">
-    <table class="ca-stack-table" style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
+    <table class="ca-stack-table ca-proof-table" style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
       <thead>
         <tr>
           <th style="text-align:left;padding:.25rem .5rem;">Datei</th>
@@ -328,15 +328,15 @@
       <tbody>
         {% for p in verified_proofs %}
         <tr>
-          <td data-label="Datei" style="padding:.25rem .5rem;"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}">{{ p.file_name|middle_truncate }}</a></td>
-          <td data-label="Typ" style="padding:.25rem .5rem;">{{ p.get_enrollment_type_display }}</td>
-          <td data-label="Fach / Bereich" style="padding:.25rem .5rem;">{{ p.field_of_study|default:"—" }}</td>
-          <td data-label="Einrichtung" style="padding:.25rem .5rem;">{{ p.educational_institution|default:"—" }}</td>
-          <td data-label="Gültig bis" style="padding:.25rem .5rem;">{{ p.valid_until }}</td>
-          <td data-label="Hochgeladen" style="padding:.25rem .5rem;">{{ p.uploaded_at|date:"d.m.Y" }}</td>
-          <td data-label="Verifiziert am" style="padding:.25rem .5rem;">{{ p.verified_at|date:"d.m.Y" }}</td>
+          <td data-label="Datei"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}">{{ p.file_name|middle_truncate }}</a></td>
+          <td data-label="Typ">{{ p.get_enrollment_type_display }}</td>
+          <td data-label="Fach / Bereich">{{ p.field_of_study|default:"—" }}</td>
+          <td data-label="Einrichtung">{{ p.educational_institution|default:"—" }}</td>
+          <td data-label="Gültig bis">{{ p.valid_until }}</td>
+          <td data-label="Hochgeladen">{{ p.uploaded_at|date:"d.m.Y" }}</td>
+          <td data-label="Verifiziert am">{{ p.verified_at|date:"d.m.Y" }}</td>
           {% if can_write_mv %}
-          <td class="ca-stack-actions" style="padding:.25rem .5rem;">
+          <td class="ca-stack-actions">
             <form method="post" action="{% url 'enrollment_proof_revert' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="Verifizierung aufheben? Der Nachweis wird erneut automatisch geprüft.">
               {% csrf_token %}
               <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;" title="Verifizierung aufheben – erneut automatisch prüfen">Aufheben</button>

@@ -25,7 +25,8 @@ body {
 .ca-navbar .navbar-brand { min-height: 61px; }
 .ca-navbar-logo img { max-height: 36px; }
 .ca-navbar .navbar-item { padding: 0.5rem; }
-.ca-navbar a.navbar-item:hover { background: none; color: var(--ca-teal); }
+.ca-navbar a.navbar-item:hover, .ca-navbar a.navbar-item:focus,
+.ca-navbar a.navbar-item:focus-within { background: none; color: var(--ca-teal); }
 .ca-navbar-user { font-size: 0.9rem; color: #7a7a7a; }
 .ca-navbar .navbar-burger { color: var(--ca-teal); height: 61px; width: 61px; }
 .ca-navbar .navbar-burger:hover, .ca-navbar .navbar-burger.is-active { background: none; }
@@ -517,12 +518,19 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ca-td-header { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: 1rem; }
 .ca-link-uid { width: 13rem; }
 .ca-hint-bubble-wide { width: 320px; }
+.ca-proof-table td { padding: .25rem .5rem; }
 
-/* ── Mobile (phones + small tablets) ── */
+/* ── Mobile ── */
+/* Wide Bulma tables scroll inside their card on phones only: display:block
+   breaks is-fullwidth, so tablets keep the normal table. */
+@media (max-width: 600px) {
+  .ca-card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* Phones + small tablets */
 @media (max-width: 768px) {
   .ca-main { padding: 0 0.75rem 2rem; }
   .ca-card { padding: 1rem; }
-  .ca-card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   /* Hint bubbles centred on an icon near the edge would spill off-screen:
      pin them to the bottom of the viewport like a toast instead. */
   .ca-hint-bubble { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; top: auto;
@@ -536,7 +544,8 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   /* .ca-stack-table: one card per row; td[data-label] shows its column name. */
   .ca-stack-table thead { display: none; }
   .ca-stack-table, .ca-stack-table tbody, .ca-stack-table tr, .ca-stack-table td { display: block; width: 100%; }
-  .ca-stack-table tr { width: auto; }  /* block fills; 100% + border would overflow */
+  /* Rows and cells fill as blocks: width:100% plus border/padding would overflow. */
+  .ca-stack-table tr, .ca-stack-table td { width: auto; box-sizing: border-box; }
   .ca-card .table.ca-stack-table { overflow: visible; }
   .ca-stack-table tr {
     position: relative; margin-bottom: 0.75rem; border: 1px solid #e5e5e5;
