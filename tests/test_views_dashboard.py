@@ -207,3 +207,49 @@ def test_dashboard_uses_responsive_layout_classes():
     assert "ca-dash-profile" in html
     assert "ca-stat-grid" in html
     assert "grid-template-columns:repeat(4" not in html
+
+
+@pytest.mark.django_db
+def test_ag_status_grouped_by_type():
+    # AGs, Initiativen, Gremien each get their own sub-heading (in that order);
+    # worst health still sorts first inside a group; empty groups are omitted.
+    from app.models import AGAbfrageHealth
+    abfrage = _open_abfrage()
+    for name in ("ag.kueche", "ag.garten", "in.repair", "gr.cluster"):
+        Group.objects.get_or_create(name=name)
+    AGAbfrageHealth.objects.create(abfrage=abfrage, ag_name="ag.kueche", health="GESUND")
+
+    client = Client()
+    client.force_login(User.objects.create_user(username="grouped"))
+    resp = client.get("/dashboard/")
+    groups = [(g["label"], [a["ag_name"] for a in g["items"]]) for g in resp.context["ag_status_groups"]]
+    assert groups == [
+        ("AGs", ["ag.garten", "ag.kueche"]),
+        ("Initiativen", ["in.repair"]),
+        ("Gremien", ["gr.cluster"]),
+    ]
+    html = resp.content.decode()
+    assert html.index("AGs") < html.index("ag.garten") < html.index("Initiativen") < html.index("in.repair") < html.index("Gremien") < html.index("gr.cluster")
+
+
+@pytest.mark.django_db
+def test_ag_status_omits_empty_groups():
+    Group.objects.get_or_create(name="ag.kueche")
+    client = Client()
+    client.force_login(User.objects.create_user(username="only_ag"))
+    resp = client.get("/dashboard/")
+    assert [g["label"] for g in resp.context["ag_status_groups"]] == ["AGs"]
+
+
+@pytest.mark.django_db
+def test_ag_status_keeps_unprefixed_names():
+    # Health rows store the AG name as text; one without a known prefix must
+    # not vanish from the widget.
+    from app.models import AGAbfrageHealth
+    AGAbfrageHealth.objects.create(abfrage=_open_abfrage(), ag_name="altlast", health="GESUND")
+    client = Client()
+    client.force_login(User.objects.create_user(username="legacy"))
+    resp = client.get("/dashboard/")
+    assert ("Sonstige", ["altlast"]) in [
+        (g["label"], [a["ag_name"] for a in g["items"]]) for g in resp.context["ag_status_groups"]
+    ]

@@ -513,6 +513,11 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ca-dash-profile { width: 260px; flex-shrink: 0; }
 .ca-dash-main { flex: 1; min-width: 0; margin-top: 1.5rem; }
 .ca-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; }
+.ca-ag-status-group {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: #7a7a7a; margin: 0.9rem 0 0.4rem;
+}
+.ca-ag-status-group:first-of-type { margin-top: 0; }
 
 /* ── Tenant detail header ── */
 .ca-td-header { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: 1rem; }
