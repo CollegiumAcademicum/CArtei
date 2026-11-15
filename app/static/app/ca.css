@@ -194,7 +194,7 @@ body {
   margin-top: 0.75rem; border: 1px solid #e2e2e2; border-radius: 6px;
   padding: 0.5rem 0.75rem;
 }
-.ca-doc-card-head { display: flex; align-items: center; gap: 0.5rem; }
+.ca-doc-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .ca-doc-status { font-size: 0.8rem; }
 .ca-doc-status--active { color: #0a0; }
 .ca-doc-status--missing { color: #b26a00; }
@@ -513,6 +513,11 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ca-dash-main { flex: 1; min-width: 0; margin-top: 1.5rem; }
 .ca-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; }
 
+/* ── Tenant detail header ── */
+.ca-td-header { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+.ca-link-uid { width: 13rem; }
+.ca-hint-bubble-wide { width: 320px; }
+
 /* ── Mobile (phones + small tablets) ── */
 @media (max-width: 768px) {
   .ca-main { padding: 0 0.75rem 2rem; }
@@ -531,11 +536,14 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   /* .ca-stack-table: one card per row; td[data-label] shows its column name. */
   .ca-stack-table thead { display: none; }
   .ca-stack-table, .ca-stack-table tbody, .ca-stack-table tr, .ca-stack-table td { display: block; width: 100%; }
+  .ca-stack-table tr { width: auto; }  /* block fills; 100% + border would overflow */
   .ca-card .table.ca-stack-table { overflow: visible; }
   .ca-stack-table tr {
     position: relative; margin-bottom: 0.75rem; border: 1px solid #e5e5e5;
-    border-radius: 6px; overflow: hidden; background: #fff !important;
+    border-radius: 6px; overflow: hidden; background-color: #fff;
   }
+  .ca-stack-table tr[hidden] { display: none; }
+  .ca-stack-table th { display: block; }
   .ca-stack-table td { border: none !important; padding: 0.35rem 0.75rem; }
   .ca-stack-table td:first-child { padding-top: 0.6rem; font-weight: 600; }
   .ca-stack-table td:last-child { padding-bottom: 0.6rem; }
@@ -552,6 +560,7 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   .ca-slider input[type=range]::-moz-range-thumb { width: 26px; height: 26px; }
   .ca-stack-table .ca-slider-out { min-width: 0; }
   .ca-mobile-full { width: 100%; max-width: none !important; }
+  .ca-link-uid { width: 100%; }
 }
 
 /* Tenant list interactive table */
