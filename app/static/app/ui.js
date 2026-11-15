@@ -24,6 +24,12 @@
     if ((el = e.target.closest("[data-close-dialog]"))) {
       el.closest("dialog").close();
     }
+    // data-navbar-burger: open/close the Bulma navbar menu it controls (mobile).
+    if ((el = e.target.closest("[data-navbar-burger]"))) {
+      var open = el.classList.toggle("is-active");
+      document.getElementById(el.getAttribute("aria-controls")).classList.toggle("is-active", open);
+      el.setAttribute("aria-expanded", open);
+    }
     // data-toggle-password="id": reveal/hide a password input.
     if ((el = e.target.closest("[data-toggle-password]"))) {
       var input = document.getElementById(el.dataset.togglePassword);

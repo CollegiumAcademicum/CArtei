@@ -1,6 +1,10 @@
 import re
 from pathlib import Path
 
+import pytest
+from django.contrib.auth.models import User
+from django.test import Client
+
 
 def test_no_inline_submit_confirms():
     # base.html's capture-phase form handler POSTs before an inline onsubmit
@@ -30,3 +34,20 @@ def test_inline_scripts_carry_csp_nonce():
         if "src=" not in tag and 'nonce="{{ csp_nonce }}"' not in tag
     ]
     assert offenders == []
+
+
+@pytest.mark.django_db
+def test_navbar_has_burger_for_authenticated_user():
+    c = Client()
+    c.force_login(User.objects.create_user(username="nav"))
+    html = c.get("/dashboard/").content.decode()
+    assert "data-navbar-burger" in html
+    assert 'aria-controls="ca-navbar-menu"' in html
+    assert 'id="ca-navbar-menu"' in html
+
+
+def test_burger_toggle_wired_in_ui_js():
+    # The navbar sits outside .ca-main, but the toggle must be delegated on
+    # document like the other ui.js behaviors.
+    js = Path("app/static/app/ui.js").read_text()
+    assert "[data-navbar-burger]" in js and "is-active" in js and "aria-expanded" in js

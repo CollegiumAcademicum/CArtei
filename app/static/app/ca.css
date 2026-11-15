@@ -16,18 +16,24 @@ body {
 }
 
 /* ── Navbar ── */
+/* Bulma navbar (burger below 1024px), restyled to the CA look. */
 .ca-navbar {
-  background: white;
   border-bottom: 3px solid var(--ca-teal);
   padding: 0 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 64px;
+  min-height: 64px;
 }
-.ca-navbar-logo img { height: 36px; display: block; }
-.ca-navbar-right { display: flex; align-items: center; gap: 1rem; }
+.ca-navbar .navbar-brand { min-height: 61px; }
+.ca-navbar-logo img { max-height: 36px; }
+.ca-navbar .navbar-item { padding: 0.5rem; }
+.ca-navbar a.navbar-item:hover { background: none; color: var(--ca-teal); }
 .ca-navbar-user { font-size: 0.9rem; color: #7a7a7a; }
+.ca-navbar .navbar-burger { color: var(--ca-teal); height: 61px; width: 61px; }
+.ca-navbar .navbar-burger:hover, .ca-navbar .navbar-burger.is-active { background: none; }
+@media (max-width: 1023px) {
+  .ca-navbar { padding: 0 0.5rem; }
+  .ca-navbar .navbar-menu { box-shadow: none; padding: 0 0 0.5rem; }
+  .ca-navbar .navbar-menu .navbar-item { padding: 0.75rem 1rem; font-size: 1rem; }
+}
 .ca-logout {
   font-size: 0.85rem; color: var(--ca-teal); border: 1px solid var(--ca-teal);
   border-radius: 4px; padding: 4px 12px; cursor: pointer; background: white;
@@ -503,8 +509,6 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 
 /* ── Mobile ── */
 @media (max-width: 600px) {
-  .ca-navbar { height: auto; flex-wrap: wrap; padding: 0.5rem 1rem; gap: 0.5rem; }
-  .ca-navbar-right { flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; }
   .ca-main { padding: 0 0.75rem 2rem; }
   .ca-card { padding: 1rem; }
   .ca-card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
