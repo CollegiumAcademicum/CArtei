@@ -532,6 +532,7 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ca-link-uid { width: 13rem; }
 .ca-hint-bubble-wide { width: 320px; }
 .ca-proof-table td { padding: .25rem .5rem; }
+.ca-fn-full { display: none; }
 
 /* ── Mobile ── */
 /* Wide Bulma tables scroll inside their card on phones only: display:block
@@ -594,6 +595,19 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   .ca-slider input[type=range]::-webkit-slider-thumb { width: 26px; height: 26px; }
   .ca-slider input[type=range]::-moz-range-thumb { width: 26px; height: 26px; }
   .ca-stack-table .ca-slider-out { min-width: 0; }
+  /* Proof cards: full filename (wrapping), then one line per field like the
+     profile rows above them. */
+  .ca-proof-table .ca-fn-short { display: none; }
+  .ca-proof-table .ca-fn-full { display: inline; overflow-wrap: anywhere; }
+  .ca-proof-table td[data-label]:not(:first-child) {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem;
+    padding-top: 0.2rem; padding-bottom: 0.2rem; text-align: right;
+  }
+  .ca-proof-table td[data-label]:not(:first-child)::before { margin-bottom: 0; text-align: left; flex-shrink: 0; }
+  .ca-proof-table td:last-child { padding-bottom: 0.6rem; }
+  /* Buttons share the "Datei" label line; the name gets the full card width below. */
+  .ca-proof-table tr:has(.ca-stack-actions button) td:first-child { padding-right: 0.75rem; }
+  .ca-proof-table tr:has(.ca-stack-actions button) td:first-child::before { padding-right: 9rem; min-height: 1.7rem; }
   .ca-mobile-full { width: 100%; max-width: none !important; }
   .ca-link-uid { width: 100%; }
 }
