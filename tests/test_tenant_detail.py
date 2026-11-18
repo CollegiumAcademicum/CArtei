@@ -521,3 +521,19 @@ def test_mv_save_keeps_unknown_locale(settings):
     assert _mv_post(t, locale="fr", phone="0621").status_code in (200, 302)
     t.refresh_from_db()
     assert t.locale == "fr" and t.phone == "0621"
+
+
+@pytest.mark.django_db
+def test_short_fields_render_as_one_line_rows_on_mobile():
+    # ca-field-row = label left, value right on phones: read-only values,
+    # toggles, selects and dates. Text inputs keep the label above.
+    import re
+    t = _tenant("owner")
+    c = Client()
+    _login(c, "owner")
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    classes = {name: cls for cls, name in re.findall(r'<div class="([^"]*)" data-field="(\w+)"', body)}
+    for name in ["first_name", "is_flinta", "mailbox_list_opt_in", "date_of_birth", "ersteinzug"]:
+        assert "ca-field-row" in classes[name], name
+    for name in ["email", "phone", "preferred_name"]:
+        assert "ca-field-row" not in classes[name], name
