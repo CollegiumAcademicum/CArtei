@@ -45,6 +45,13 @@ class Tenant(models.Model):
     intranet_uuid = models.UUIDField(unique=True, null=True, blank=True)
     preferred_name = models.CharField(max_length=255, null=True, blank=True)
     pronouns = models.CharField(max_length=255, null=True, blank=True)
+    # Cache of the Keycloak `locale` claim, refreshed at login (app/auth). Unknown
+    # codes from Keycloak are kept as-is. See cartei_db Tenant.locale.
+    locale = models.CharField(
+        max_length=35, null=True, blank=True,
+        choices=[("de", "Deutsch"), ("en", "English")],
+        help_text="Wird bei der nächsten Anmeldung mit der Sprache aus Keycloak überschrieben.",
+    )
     date_of_birth = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
     is_flinta = models.BooleanField(default=False)

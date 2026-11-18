@@ -168,9 +168,11 @@ class KeycloakOIDCBackend(OIDCAuthenticationBackend):
 
     def _link_tenant(self, intranet_uuid, username, claims) -> None:
         """Find the tenant by uuid (create on first login); follow uid renames and
-        refresh the email cache from the claim (FreeIPA mail is the SSOT)."""
+        refresh the email and locale caches from the claims (FreeIPA/Keycloak are the
+        SSOT). An absent locale claim keeps the last known (or hand-set) value."""
         from app.models import Tenant
         email = claims.get("email", "")
+        locale = claims.get("locale") or None
         refreshed_at = timezone.now() if email else None
         tenant = Tenant.objects.filter(intranet_uuid=intranet_uuid).first()
         if tenant is None:
@@ -183,6 +185,7 @@ class KeycloakOIDCBackend(OIDCAuthenticationBackend):
                 last_name=claims.get("family_name", ""),
                 email=email,
                 email_refreshed_at=refreshed_at,
+                locale=locale,
                 intranet_username=username,
                 intranet_uuid=intranet_uuid,
             )
@@ -198,6 +201,9 @@ class KeycloakOIDCBackend(OIDCAuthenticationBackend):
         if email:
             tenant.email, tenant.email_refreshed_at = email, refreshed_at
             fields += ["email", "email_refreshed_at"]
+        if locale:
+            tenant.locale = locale
+            fields.append("locale")
         if fields:
             tenant.save(update_fields=fields)
 

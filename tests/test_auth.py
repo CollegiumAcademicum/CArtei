@@ -148,6 +148,42 @@ def test_login_refreshes_email_cache():
 
 
 @pytest.mark.django_db
+def test_first_login_stores_locale():
+    login(claims(locale="en"))
+    assert Tenant.objects.get(intranet_uuid=UUID_A).locale == "en"
+
+
+@pytest.mark.django_db
+def test_login_overwrites_manual_locale():
+    # Keycloak is the SSOT: a hand-set value only lasts until the next sync.
+    login(claims())
+    Tenant.objects.filter(intranet_uuid=UUID_A).update(locale="de")
+    login(claims(locale="en"))
+    assert Tenant.objects.get(intranet_uuid=UUID_A).locale == "en"
+
+
+@pytest.mark.django_db
+def test_absent_locale_claim_keeps_cache():
+    login(claims())
+    Tenant.objects.filter(intranet_uuid=UUID_A).update(locale="de")
+    login(claims())
+    assert Tenant.objects.get(intranet_uuid=UUID_A).locale == "de"
+
+
+@pytest.mark.django_db
+def test_empty_locale_claim_keeps_cache():
+    login(claims(locale="en"))
+    login(claims(locale=""))
+    assert Tenant.objects.get(intranet_uuid=UUID_A).locale == "en"
+
+
+@pytest.mark.django_db
+def test_login_stores_unknown_locale_raw():
+    login(claims(locale="fr"))
+    assert Tenant.objects.get(intranet_uuid=UUID_A).locale == "fr"
+
+
+@pytest.mark.django_db
 def test_uid_rename_follows_uuid():
     login(claims(username="alice"))
     user = login(claims(username="alice.new"))
