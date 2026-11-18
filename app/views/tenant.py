@@ -10,6 +10,7 @@ from django.db.models import Min, Q
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.translation import gettext
 
 from django.core.exceptions import PermissionDenied
 
@@ -293,21 +294,21 @@ def tenant_create(request: HttpRequest):
                         logger.error("Failed to provision account during tenant creation: %s", exc)
                         err_msg = str(exc)
                         if "mail" in err_msg.lower() and ("unique" in err_msg.lower() or "already" in err_msg.lower()):
-                            form.add_error("email", "Diese E-Mail-Adresse wird bereits im Intranet verwendet.")
+                            form.add_error("email", gettext("Diese E-Mail-Adresse wird bereits im Intranet verwendet."))
                         else:
-                            form.add_error("email", f"Intranet-Account konnte nicht angelegt werden: {exc}")
+                            form.add_error("email", gettext("Intranet-Account konnte nicht angelegt werden: %(exc)s") % {"exc": exc})
                         return render(request, "app/tenant_create.html", {"form": form})
 
                 try:
                     send_welcome_email(tenant, result.uid, result.temp_password)
-                    messages.success(request, f"Bewohner:in angelegt: {result.uid} — Willkommens-E-Mail an {tenant.email}")
+                    messages.success(request, gettext("Bewohner:in angelegt: %(uid)s — Willkommens-E-Mail an %(email)s") % {"uid": result.uid, "email": tenant.email})
                 except Exception as exc:
                     logger.error("Welcome email failed for tenant %s: %s", tenant.pk, exc)
-                    messages.warning(request, f"Account {result.uid} angelegt, aber Willkommens-E-Mail fehlgeschlagen.")
+                    messages.warning(request, gettext("Account %(uid)s angelegt, aber Willkommens-E-Mail fehlgeschlagen.") % {"uid": result.uid})
                 return redirect("tenant_detail", pk=tenant.pk)
             else:
                 tenant = form.save()
-                messages.success(request, "Bewohner:in angelegt.")
+                messages.success(request, gettext("Bewohner:in angelegt."))
                 return redirect("tenant_detail", pk=tenant.pk)
     else:
         form = TenantCreateForm()
@@ -356,27 +357,27 @@ def tenant_link(request: HttpRequest, pk: int):
     if not uid:
         tenant.intranet_username = tenant.intranet_uuid = None
         tenant.save(update_fields=["intranet_username", "intranet_uuid"])
-        messages.success(request, "Intranet-Verknüpfung entfernt.")
+        messages.success(request, gettext("Intranet-Verknüpfung entfernt."))
         return redirect("tenant_detail", pk=pk)
     if tenant.intranet_username:
-        messages.error(request, "Bereits verknüpft — erst die Verknüpfung entfernen.")
+        messages.error(request, gettext("Bereits verknüpft — erst die Verknüpfung entfernen."))
         return redirect("tenant_detail", pk=pk)
     try:
         member = get_member(uid)
     except Exception as exc:
-        messages.error(request, f"LDAP-Abfrage fehlgeschlagen: {exc}")
+        messages.error(request, gettext("LDAP-Abfrage fehlgeschlagen: %(exc)s") % {"exc": exc})
         return redirect("tenant_detail", pk=pk)
     if not member or not member["uuid"]:
-        messages.error(request, f"Kein Intranet-Account {uid!r} gefunden.")
+        messages.error(request, gettext("Kein Intranet-Account %(uid)r gefunden.") % {"uid": uid})
         return redirect("tenant_detail", pk=pk)
     tenant.intranet_username = member["username"]
     tenant.intranet_uuid = member["uuid"]
     try:
         tenant.save(update_fields=["intranet_username", "intranet_uuid"])
     except IntegrityError:
-        messages.error(request, f"{uid!r} ist bereits mit einer anderen Person verknüpft.")
+        messages.error(request, gettext("%(uid)r ist bereits mit einer anderen Person verknüpft.") % {"uid": uid})
         return redirect("tenant_detail", pk=pk)
-    messages.success(request, f"Mit Intranet-Account {member['username']} verknüpft.")
+    messages.success(request, gettext("Mit Intranet-Account %(uid)s verknüpft.") % {"uid": member["username"]})
     return redirect("tenant_detail", pk=pk)
 
 
@@ -391,7 +392,7 @@ def tenant_reset_profile_setup(request: HttpRequest, pk: int):
     tenant = get_object_or_404(Tenant, pk=pk)
     tenant.profile_setup_completed_at = None
     tenant.save(update_fields=["profile_setup_completed_at"])
-    messages.success(request, "Profil-Einrichtung zurückgesetzt — wird beim nächsten Login erneut abgefragt.")
+    messages.success(request, gettext("Profil-Einrichtung zurückgesetzt — wird beim nächsten Login erneut abgefragt."))
     return redirect("tenant_detail", pk=pk)
 
 
@@ -405,14 +406,14 @@ def _provision_and_notify(request, tenant):
     try:
         result = provision_ldap_account(tenant)
     except Exception as exc:
-        messages.error(request, f"Account konnte nicht angelegt werden: {exc}")
+        messages.error(request, gettext("Account konnte nicht angelegt werden: %(exc)s") % {"exc": exc})
         return
     try:
         send_welcome_email(tenant, result.uid, result.temp_password)
-        messages.success(request, f"Account angelegt: {result.uid} — Willkommens-E-Mail an {tenant.email}")
+        messages.success(request, gettext("Account angelegt: %(uid)s — Willkommens-E-Mail an %(email)s") % {"uid": result.uid, "email": tenant.email})
     except Exception as exc:
         logger.error("Welcome email failed for tenant %s: %s", tenant.pk, exc)
-        messages.warning(request, f"Account {result.uid} angelegt, aber Willkommens-E-Mail fehlgeschlagen.")
+        messages.warning(request, gettext("Account %(uid)s angelegt, aber Willkommens-E-Mail fehlgeschlagen.") % {"uid": result.uid})
 
 
 def _current_tenant(request):
@@ -472,7 +473,7 @@ def tenant_detail(request: HttpRequest, pk: int):
         # it's still submittable to manage room assignments.
         housing_room_edit = section_key == "housing" and can_edit_rooms
         if not allowed and not housing_room_edit:
-            messages.error(request, "Keine Berechtigung zum Bearbeiten.")
+            messages.error(request, gettext("Keine Berechtigung zum Bearbeiten."))
             return redirect("tenant_detail", pk=pk)
 
         form = TenantForm(request.POST, instance=tenant, allowed_fields=allowed)
@@ -494,7 +495,7 @@ def tenant_detail(request: HttpRequest, pk: int):
         if (new_room_selected and new_rf_ok and "belegium" in roles
                 and not {"mietverwaltung", "admin"} & roles
                 and new_rf.cleaned_data["moved_in"] < today - BELEGIUM_EDIT_WINDOW):
-            new_rf.add_error("moved_in", "Belegium darf Zimmer nur ab zwei Wochen vor Einzug zuordnen.")
+            new_rf.add_error("moved_in", gettext("Belegium darf Zimmer nur ab zwei Wochen vor Einzug zuordnen."))
             new_rf_ok = False
 
         if (form.is_valid() and all(rf.is_valid() for _, rf in a_forms) and new_rf_ok
@@ -506,7 +507,7 @@ def tenant_detail(request: HttpRequest, pk: int):
                 obj = new_rf.save(commit=False)
                 obj.tenant = tenant
                 obj.save()
-            messages.success(request, "Gespeichert.")
+            messages.success(request, gettext("Gespeichert."))
             return redirect("tenant_detail", pk=pk)
 
         failed_assignment_forms = a_forms
@@ -692,7 +693,7 @@ def _clearance_ctx(request, tenant, docs, roles):
     ctx = {
         "color": (color := clearance.clearance_color(in_group, approved, pending)),
         "tooltip": clearance.tooltip(color),
-        "legend": clearance.LEGEND,
+        "legend": clearance.legend(),
         "group": _dn_to_cn(settings.LDAP_REQUIRE_GROUP),
         "can_grant": can_grant,
         "can_revoke_ve": bool({"mietverwaltung", "admin"} & roles) or is_granter,

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CArtei\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 22:09+0100\n"
+"POT-Creation-Date: 2026-11-18 22:18+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -17,6 +17,43 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Freigegeben: in Gruppe confidentiality_clearance, Erklärung bestätigt"
+msgstr "Cleared: in group confidentiality_clearance, agreement confirmed"
+
+msgid "Erklärung liegt vor, wartet auf Bestätigung"
+msgstr "Agreement submitted, waiting for confirmation"
+
+msgid "Keine Freigabe: weder Gruppe noch Erklärung"
+msgstr "Not cleared: neither group nor agreement"
+
+msgid ""
+"Inkonsistent: Gruppe ohne bestätigte Erklärung oder bestätigte Erklärung "
+"ohne Gruppe"
+msgstr ""
+"Inconsistent: group without a confirmed agreement, or confirmed agreement "
+"without group"
+
+msgid "Gruppenstatus unbekannt (LDAP nicht erreichbar)"
+msgstr "Group status unknown (LDAP unreachable)"
+
+msgid "Grün"
+msgstr "Green"
+
+msgid "Gelb"
+msgstr "Yellow"
+
+msgid "Rot"
+msgstr "Red"
+
+msgid "Schwarz"
+msgstr "Black"
+
+msgid "Grau"
+msgstr "Grey"
+
+msgid "Vertraulichkeitserklärung"
+msgstr "Confidentiality agreement"
 
 msgid "Diese E-Mail-Adresse wird bereits verwendet."
 msgstr "This email address is already in use."
@@ -63,7 +100,6 @@ msgstr "Cluster speakers"
 msgid "Belegung"
 msgstr "Room allocation"
 
-#| msgid "Bewohner*innen"
 msgid "Bewohner:in"
 msgstr "Resident"
 
@@ -78,8 +114,7 @@ msgstr "Room assignment"
 
 msgid ""
 "Wird bei der nächsten Anmeldung mit der Sprache aus Keycloak überschrieben."
-msgstr ""
-"Will be overwritten with the language from Keycloak at the next login."
+msgstr "Will be overwritten with the language from Keycloak at the next login."
 
 msgid "Studium"
 msgstr "Studies"
@@ -99,13 +134,9 @@ msgstr "Data protection"
 msgid "Fotoerlaubnis"
 msgstr "Photo permission"
 
-msgid "Vertraulichkeitserklärung"
-msgstr "Confidentiality agreement"
-
 msgid "Mietvertrag"
 msgstr "Rental contract"
 
-#| msgid "Aktuelle Mieter*innen"
 msgid "Allgemeine Mietbedingungen"
 msgstr "General rental terms"
 
@@ -175,7 +206,6 @@ msgstr "Wardrobe – stains"
 msgid "Schrank – Löcher"
 msgstr "Wardrobe – holes"
 
-#| msgid "Sonstige"
 msgid "Sonstiges"
 msgstr "Other"
 
@@ -188,7 +218,6 @@ msgstr "Bathroom – hole"
 msgid "Bad – Kleberückstände"
 msgstr "Bathroom – adhesive residue"
 
-#| msgid "Sonstige"
 msgid "Bad – Sonstiges"
 msgstr "Bathroom – other"
 
@@ -240,6 +269,139 @@ msgid ""
 "erscheinen oder verschwinden."
 msgstr ""
 "After a change, Nextcloud folders can take a while to appear or disappear."
+
+msgid "● Aktiv"
+msgstr "● Active"
+
+msgid "○ Noch nicht unterschrieben"
+msgstr "○ Not signed yet"
+
+msgid "Dokument widerrufen? Dies kann nicht rückgängig gemacht werden."
+msgstr "Revoke document? This cannot be undone."
+
+msgid "Grund des Widerrufs"
+msgstr "Reason for revocation"
+
+msgid "Widerrufen"
+msgstr "Revoked"
+
+msgid "Unterschrieben am"
+msgstr "Signed on"
+
+msgid "Für die GmbH"
+msgstr "For the GmbH"
+
+msgid "Hochladen"
+msgstr "Upload"
+
+msgid "🗒 Interne Notizen (Belegung)"
+msgstr "🗒 Internal notes (Belegung)"
+
+msgid "Wer kann diese Notizen sehen?"
+msgstr "Who can see these notes?"
+
+msgid "Für Mietverwaltung und Belegium (und Admins) sichtbar."
+msgstr "Visible to Mietverwaltung and Belegium (and admins)."
+
+msgid "Keine Notizen."
+msgstr "No notes."
+
+msgid "Notiz hinzufügen…"
+msgstr "Add note…"
+
+msgid "· offen"
+msgstr "· open"
+
+msgid "gemeldet von"
+msgstr "reported by"
+
+msgid "als behoben markieren"
+msgstr "mark as fixed"
+
+msgid "Keine offenen Schäden."
+msgstr "No open damages."
+
+msgid "Behobene Schäden"
+msgstr "Fixed damages"
+
+#, python-format
+msgid "behoben von %(first)s %(last)s am %(at)s"
+msgstr "fixed by %(first)s %(last)s on %(at)s"
+
+msgid "wieder öffnen"
+msgstr "reopen"
+
+msgid "– Größe –"
+msgstr "– Size –"
+
+msgid "Notiz (optional)"
+msgstr "Note (optional)"
+
+msgid "Foto (optional)"
+msgstr "Photo (optional)"
+
+msgid "Schaden erfassen"
+msgstr "Record damage"
+
+msgid "Eingezogen"
+msgstr "Moved in"
+
+msgid "Ausgezogen"
+msgstr "Moved out"
+
+msgid "aktuell"
+msgstr "current"
+
+msgid "Untermiete"
+msgstr "Sublet"
+
+msgid "von"
+msgstr "from"
+
+msgid "Briefkastenschlüssel erhalten"
+msgstr "Mailbox key received"
+
+msgid "Briefkastenschlüssel abgegeben"
+msgstr "Mailbox key returned"
+
+msgid "Schlüssel erhalten"
+msgstr "Key received"
+
+msgid "Schlüssel abgegeben"
+msgstr "Key returned"
+
+msgid "✎ Bearbeiten"
+msgstr "✎ Edit"
+
+msgid "Speichern"
+msgstr "Save"
+
+msgid "Zurücksetzen"
+msgstr "Reset"
+
+msgid "Zimmer"
+msgstr "Room"
+
+msgid "Schlüssel wieder abgegeben"
+msgstr "Key returned"
+
+msgid "Untervermietet von"
+msgstr "Sublet from"
+
+msgid "Kaution IBAN"
+msgstr "Deposit IBAN"
+
+msgid "Schäden am Zimmer"
+msgstr "Room damages"
+
+msgid "offen"
+msgstr "open"
+
+msgid "behoben"
+msgstr "fixed"
+
+msgid "Schäden an Gemeinschaftsflächen (WG)"
+msgstr "Common area damages (WG)"
 
 msgid "Hauptnavigation"
 msgstr "Main navigation"
@@ -344,6 +506,317 @@ msgstr "Fill in %(g)s"
 msgid "Keine aktive Abfrage."
 msgstr "No active survey."
 
+msgid "Intranet:"
+msgstr "Intranet:"
+
+#, python-format
+msgid "Verknüpfung mit %(uid)s entfernen?"
+msgstr "Remove link to %(uid)s?"
+
+msgid "Verknüpfung entfernen"
+msgstr "Remove link"
+
+msgid "Intranet-Account suchen"
+msgstr "Search intranet account"
+
+msgid "Verknüpfen"
+msgstr "Link"
+
+#, python-format
+msgid "FreeIPA-Account für %(name)s anlegen?"
+msgstr "Create FreeIPA account for %(name)s?"
+
+msgid "Wird angelegt…"
+msgstr "Creating…"
+
+msgid "Intranet-Account anlegen"
+msgstr "Create intranet account"
+
+msgid "Was passiert beim Anlegen?"
+msgstr "What happens on creation?"
+
+msgid ""
+"Legt den Intranet-Account an und sendet die Zugangsdaten automatisch per E-"
+"Mail an die Bewohner:in."
+msgstr ""
+"Creates the intranet account and automatically emails the login details to "
+"the resident."
+
+msgid "kein Intranet-Account"
+msgstr "no intranet account"
+
+#, python-format
+msgid ""
+"Profil-Einrichtung für %(name)s zurücksetzen? Die Daten bleiben erhalten, "
+"werden beim nächsten Login aber erneut abgefragt."
+msgstr ""
+"Reset profile setup for %(name)s? The data is kept but will be asked for "
+"again at the next login."
+
+msgid "Wird zurückgesetzt…"
+msgstr "Resetting…"
+
+msgid "Profil-Einrichtung zurücksetzen"
+msgstr "Reset profile setup"
+
+msgid "Verlauf"
+msgstr "History"
+
+msgid "Notizen"
+msgstr "Notes"
+
+msgid "Interne Notizen (Mietverwaltung)"
+msgstr "Internal notes (Mietverwaltung)"
+
+msgid "Nur für die Mietverwaltung (und Admins) sichtbar."
+msgstr "Only visible to the Mietverwaltung (and admins)."
+
+msgid "Aktuelle Zimmer"
+msgstr "Current rooms"
+
+msgid "Wer kann Zimmerbelegungen bearbeiten?"
+msgstr "Who can edit room assignments?"
+
+msgid ""
+"Die Mietverwaltung kann Zimmerbelegungen jederzeit bearbeiten. Die Belegium "
+"nur bei zukünftigen Einzügen und in den ersten zwei Wochen nach Einzug – "
+"danach nur Lesezugriff. Notizen bleiben für beide immer bearbeitbar."
+msgstr ""
+"The Mietverwaltung can edit room assignments at any time. The Belegium only "
+"for future move-ins and in the first two weeks after move-in – read-only "
+"after that. Notes stay editable for both."
+
+msgid "Kein aktuelles Zimmer."
+msgstr "No current room."
+
+msgid "Frühere Zimmer"
+msgstr "Previous rooms"
+
+msgid "Zimmer zuordnen"
+msgstr "Assign room"
+
+msgid "Es können nur Mieter:innen des gewählten Zimmers ausgewählt werden."
+msgstr "Only tenants of the selected room can be chosen."
+
+msgid "Ausstehend"
+msgstr "Pending"
+
+msgid "Untervermietet an"
+msgstr "Sublet to"
+
+#, python-format
+msgid "seit %(from)s bis %(to)s"
+msgstr "from %(from)s to %(to)s"
+
+#, python-format
+msgid "seit %(from)s"
+msgstr "since %(from)s"
+
+msgid "Ausbildungsnachweis"
+msgstr "Proof of enrollment"
+
+msgid "Datei"
+msgstr "File"
+
+msgid "Typ"
+msgstr "Type"
+
+msgid "Fach / Bereich"
+msgstr "Subject / field"
+
+msgid "Einrichtung"
+msgstr "Institution"
+
+msgid "Gültig bis"
+msgstr "Valid until"
+
+msgid "Hochgeladen"
+msgstr "Uploaded"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Prüfung erforderlich"
+msgstr "Review required"
+
+msgid "Verifizieren"
+msgstr "Verify"
+
+msgid "Diesen Nachweis ablehnen und löschen?"
+msgstr "Reject and delete this proof?"
+
+msgid "Ablehnen"
+msgstr "Reject"
+
+msgid "FSJ"
+msgstr "FSJ"
+
+msgid "Bildungseinrichtung"
+msgstr "Educational institution"
+
+msgid "Bestätigen"
+msgstr "Confirm"
+
+msgid "Abbrechen"
+msgstr "Cancel"
+
+msgid "Keine ausstehenden Nachweise."
+msgstr "No pending proofs."
+
+msgid "Verifiziert"
+msgstr "Verified"
+
+msgid "Verifiziert am"
+msgstr "Verified on"
+
+msgid "Verifizierung aufheben? Der Nachweis wird erneut automatisch geprüft."
+msgstr "Undo verification? The proof will be checked automatically again."
+
+msgid "Verifizierung aufheben – erneut automatisch prüfen"
+msgstr "Undo verification – check automatically again"
+
+msgid "Aufheben"
+msgstr "Undo"
+
+msgid "Noch keine verifizierten Nachweise."
+msgstr "No verified proofs yet."
+
+msgid "Nachweis hochladen"
+msgstr "Upload proof"
+
+msgid "— Typ wählen —"
+msgstr "— Choose type —"
+
+msgid "Fach / Bereich (optional)"
+msgstr "Subject / field (optional)"
+
+msgid "Bildungseinrichtung (optional)"
+msgstr "Educational institution (optional)"
+
+msgid "PDF, JPG oder PNG, max. 10 MB"
+msgstr "PDF, JPG or PNG, max. 10 MB"
+
+msgid "Rechtsdokumente"
+msgstr "Legal documents"
+
+msgid "noch nicht unterschrieben"
+msgstr "not signed yet"
+
+msgid "Freigegeben"
+msgstr "Cleared"
+
+msgid "Wartet auf Bestätigung"
+msgstr "Waiting for confirmation"
+
+msgid "Keine Freigabe"
+msgstr "Not cleared"
+
+msgid "Inkonsistent"
+msgstr "Inconsistent"
+
+msgid "Gruppenstatus unbekannt"
+msgstr "Group status unknown"
+
+msgid "Was bedeuten die Farben?"
+msgstr "What do the colours mean?"
+
+msgid "Name:"
+msgstr "Name:"
+
+msgid "Mieter*in"
+msgstr "Tenant"
+
+msgid "Mandat"
+msgstr "Mandate"
+
+msgid "hochgeladen von"
+msgstr "uploaded by"
+
+msgid "Bestätigt"
+msgstr "Confirmed"
+
+msgid "Prüfen"
+msgstr "Review"
+
+msgid "Noch kein Intranet-Account – zuerst provisionieren"
+msgstr "No intranet account yet – create one first"
+
+msgid "Erneut gewähren"
+msgstr "Grant again"
+
+#, python-format
+msgid ""
+"Erklärung widerrufen? Dies entzieht %(group)s und beendet den Zugang zu "
+"allen internen Plattformen (und CArtei). Dies kann nicht rückgängig gemacht "
+"werden."
+msgstr ""
+"Revoke agreement? This removes %(group)s and ends access to all internal "
+"platforms (and CArtei). This cannot be undone."
+
+msgid "Mieter*in unterschrieben"
+msgstr "Signed by tenant"
+
+msgid "GmbH unterschrieben"
+msgstr "Signed by GmbH"
+
+msgid "Unterschrieben von"
+msgstr "Signed by"
+
+msgid "Mandatsreferenz"
+msgstr "Mandate reference"
+
+msgid "Kontoinhaber*in"
+msgstr "Account holder"
+
+msgid "Name der Bank"
+msgstr "Bank name"
+
+msgid "IBAN"
+msgstr "IBAN"
+
+msgid "BIC"
+msgstr "BIC"
+
+msgid "Vertraulichkeitsfreigabe gewähren"
+msgstr "Grant confidentiality clearance"
+
+#, python-format
+msgid ""
+"Ich habe die Vertraulichkeitserklärung und ihre Metadaten (Name, Datum, "
+"Unterschrift) geprüft. Mit „Gewähren“ erhält <strong>%(name)s</strong> die "
+"Gruppe <code>%(group)s</code> und damit Zugang zu allen internen Plattformen "
+"des Collegiums."
+msgstr ""
+"I have checked the confidentiality agreement and its metadata (name, date, "
+"signature). With “Grant”, <strong>%(name)s</strong> gets the group "
+"<code>%(group)s</code> and with it access to all internal platforms of the "
+"Collegium."
+
+#, python-format
+msgid "Zur Bestätigung bitte <strong>%(name)s</strong> eintippen:"
+msgstr "To confirm, please type <strong>%(name)s</strong>:"
+
+msgid "Gewähren"
+msgstr "Grant"
+
+msgid "Engagement"
+msgstr "Engagement"
+
+msgid "Interne Notizen (Clustersprechende)"
+msgstr "Internal notes (Cluster speakers)"
+
+msgid "Nur für die Clustersprechenden (und Admins) sichtbar."
+msgstr "Only visible to the Cluster speakers (and admins)."
+
+msgid "AG"
+msgstr "AG"
+
+msgid "Notiz"
+msgstr "Note"
+
+msgid "Kein Engagement erfasst."
+msgstr "No engagement recorded."
+
 msgid "Persönliche Informationen"
 msgstr "Personal information"
 
@@ -371,7 +844,6 @@ msgstr "Phone"
 msgid "Keine Telefonnummer vorhanden"
 msgstr "No phone number"
 
-#| msgid "FLINTA-Quote"
 msgid "FLINTA"
 msgstr "FLINTA"
 
@@ -415,8 +887,8 @@ msgid "Zimmerbelegung-Notizen (Belegung)"
 msgstr "Room assignment notes (Belegung)"
 
 msgid ""
-"Vertraulichkeitserklärung prüfen & confidentiality_clearance gewähren (inkl."
-" Klarname)"
+"Vertraulichkeitserklärung prüfen & confidentiality_clearance gewähren (inkl. "
+"Klarname)"
 msgstr ""
 "Review confidentiality agreement & grant confidentiality_clearance (incl. "
 "legal name)"
@@ -429,6 +901,19 @@ msgstr "AG survey results"
 
 msgid "Cluster-Notizen"
 msgstr "Cluster notes"
+
+msgid "Die Datei ist zu groß (max. 10 MB)."
+msgstr "The file is too large (max. 10 MB)."
+
+msgid "Ungültiger Dateityp (erlaubt: PDF, JPG, PNG)."
+msgstr "Invalid file type (allowed: PDF, JPG, PNG)."
+
+msgid "Dateiinhalt passt nicht zum Dateityp (erlaubt: PDF, JPG, PNG)."
+msgstr "File content does not match the file type (allowed: PDF, JPG, PNG)."
+
+msgid ""
+"Konnte nicht ins Intranet (FreeIPA) übernommen werden — nicht gespeichert."
+msgstr "Could not be written to the intranet (FreeIPA) — not saved."
 
 msgid "Gruppenliste aus LDAP nicht lesbar."
 msgstr "Could not read the group list from LDAP."
@@ -515,3 +1000,88 @@ msgstr "Gremien"
 
 msgid "Sonstige"
 msgstr "Other"
+
+#, python-format
+msgid "Entzug fehlgeschlagen: %(exc)s"
+msgstr "Revocation failed: %(exc)s"
+
+msgid ""
+"Es gibt noch eine weitere bestätigte Vertraulichkeitserklärung – Gruppe "
+"wurde trotzdem entzogen. Bitte prüfen."
+msgstr ""
+"There is another confirmed confidentiality agreement – the group was removed "
+"anyway. Please check."
+
+msgid "Die Erklärung ist widerrufen."
+msgstr "The agreement is revoked."
+
+msgid "Kein Intranet-Account vorhanden."
+msgstr "No intranet account."
+
+msgid "Name stimmt nicht überein"
+msgstr "Name does not match"
+
+#, python-format
+msgid "Freigabe fehlgeschlagen: %(exc)s"
+msgstr "Clearance failed: %(exc)s"
+
+msgid "Vertraulichkeitsfreigabe erteilt."
+msgstr "Confidentiality clearance granted."
+
+#, python-format
+msgid "Intranet-Account konnte nicht angelegt werden: %(exc)s"
+msgstr "Could not create the intranet account: %(exc)s"
+
+#, python-format
+msgid "Bewohner:in angelegt: %(uid)s — Willkommens-E-Mail an %(email)s"
+msgstr "Resident created: %(uid)s — welcome email sent to %(email)s"
+
+#, python-format
+msgid "Account %(uid)s angelegt, aber Willkommens-E-Mail fehlgeschlagen."
+msgstr "Account %(uid)s created, but the welcome email failed."
+
+msgid "Bewohner:in angelegt."
+msgstr "Resident created."
+
+msgid "Intranet-Verknüpfung entfernt."
+msgstr "Intranet link removed."
+
+msgid "Bereits verknüpft — erst die Verknüpfung entfernen."
+msgstr "Already linked — remove the link first."
+
+#, python-format
+msgid "LDAP-Abfrage fehlgeschlagen: %(exc)s"
+msgstr "LDAP lookup failed: %(exc)s"
+
+#, python-format
+msgid "Kein Intranet-Account %(uid)r gefunden."
+msgstr "No intranet account %(uid)r found."
+
+#, python-format
+msgid "%(uid)r ist bereits mit einer anderen Person verknüpft."
+msgstr "%(uid)r is already linked to another person."
+
+#, python-format
+msgid "Mit Intranet-Account %(uid)s verknüpft."
+msgstr "Linked to intranet account %(uid)s."
+
+msgid ""
+"Profil-Einrichtung zurückgesetzt — wird beim nächsten Login erneut abgefragt."
+msgstr "Profile setup reset — it will be asked for again at the next login."
+
+#, python-format
+msgid "Account konnte nicht angelegt werden: %(exc)s"
+msgstr "Could not create the account: %(exc)s"
+
+#, python-format
+msgid "Account angelegt: %(uid)s — Willkommens-E-Mail an %(email)s"
+msgstr "Account created: %(uid)s — welcome email sent to %(email)s"
+
+msgid "Keine Berechtigung zum Bearbeiten."
+msgstr "No permission to edit."
+
+msgid "Belegium darf Zimmer nur ab zwei Wochen vor Einzug zuordnen."
+msgstr "Belegium may only assign rooms from two weeks before move-in."
+
+msgid "Gespeichert."
+msgstr "Saved."

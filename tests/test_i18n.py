@@ -185,3 +185,56 @@ def test_form_email_error_english():
         form = TenantForm(data={"email": "taken@b.de"}, instance=t2, allowed_fields={"email"})
         assert not form.is_valid()
         assert "This email address is already in use." in form.errors["email"]
+
+
+# --- tenant detail ------------------------------------------------------------
+
+_MV_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
+
+
+@pytest.mark.django_db
+def test_tenant_detail_english(client):
+    t, _u = _login(client, "ada", "en")
+    body = client.get(f"/tenants/{t.pk}/").content.decode()
+    assert "Personal information" in body and "Preferred name" in body
+    assert "Persönliche Informationen" not in body and "Rufname" not in body
+
+
+@pytest.mark.django_db
+def test_tenant_detail_german(client):
+    t, _u = _login(client, "ada", "de")
+    body = client.get(f"/tenants/{t.pk}/").content.decode()
+    assert "Persönliche Informationen" in body and "Rufname" in body
+
+
+@pytest.mark.django_db
+def test_mv_viewer_language_not_profile_language(client, settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _make_tenant("eng", "en")
+    _make_tenant("mv", "de")
+    mv = User.objects.create_user(username="mv")
+    mv.groups.add(Group.objects.get_or_create(name="ag.mietverwaltung")[0])
+    client.force_login(mv)
+    body = client.get(f"/tenants/{t.pk}/").content.decode()
+    assert "Persönliche Informationen" in body and "Personal information" not in body
+
+
+@pytest.mark.django_db
+def test_save_message_english(client):
+    t, _u = _login(client, "ada", "en")
+    r = client.post(f"/tenants/{t.pk}/", {
+        "section": "personal", "email": "ada@ca.de", "phone": "123", "preferred_name": "Ada",
+        "pronouns": "", "is_flinta": "", "mailbox_list_opt_in": "", "soli_miete_wunsch": "150",
+    }, follow=True)
+    assert "Saved." in r.content.decode()
+
+
+@pytest.mark.django_db
+def test_welcome_email_stays_german(mailoutbox, settings):
+    from django.utils import translation
+    from app.emails import send_welcome_email
+    settings.DEFAULT_FROM_EMAIL = "noreply@ca-hd.de"
+    t = Tenant.objects.create(first_name="Mara", last_name="Test", email="mara@x.de")
+    with translation.override("en"):
+        send_welcome_email(t, "mara_test", "OneTime-9")
+    assert "Deine Zugangsdaten lauten wie folgt" in mailoutbox[0].body
