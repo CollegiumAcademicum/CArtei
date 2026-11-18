@@ -37,6 +37,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "mozilla_django_oidc.middleware.SessionRefresh",
     "app.middleware.ImpersonationMiddleware",
+    "app.middleware.TenantLocaleMiddleware",
     "app.middleware.RequiredProfileSetupMiddleware",
     "app.middleware.AuditActorMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -81,6 +82,9 @@ DATABASES = {
 LANGUAGE_CODE = "de-de"
 TIME_ZONE = "Europe/Berlin"
 USE_I18N = True
+# UI language per request: tenant.locale -> browser -> German (TenantLocaleMiddleware).
+LANGUAGES = [("de", "Deutsch"), ("en", "English")]
+LOCALE_PATHS = [BASE_DIR / "locale"]
 USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"

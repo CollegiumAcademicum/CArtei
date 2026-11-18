@@ -5,7 +5,10 @@ from django.contrib.auth import get_user_model
 from django.db import connection, transaction
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils import translation
+from django.utils.cache import patch_vary_headers
 
+from app.models import Tenant
 from app.profile_setup import profile_setup_required, resident_for_user
 
 
@@ -99,3 +102,29 @@ class AuditActorMiddleware:
             )
             _set_audit_actor(connection, actor)
             return self.get_response(request)
+
+
+def tenant_language(user) -> str | None:
+    """The viewer's supported tenant.locale ("en-GB" -> "en"), or None."""
+    if not user.is_authenticated:
+        return None
+    locale = Tenant.objects.filter(intranet_username=user.username).values_list("locale", flat=True).first()
+    lang = (locale or "").split("-")[0].lower()
+    return lang if lang in dict(settings.LANGUAGES) else None
+
+
+class TenantLocaleMiddleware:
+    """UI language: viewer's tenant.locale, else Accept-Language, else German.
+    After ImpersonationMiddleware, so admins see the impersonated user's language."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        lang = tenant_language(request.user) or translation.get_language_from_request(request)
+        translation.activate(lang)
+        request.LANGUAGE_CODE = translation.get_language()
+        response = self.get_response(request)
+        patch_vary_headers(response, ("Accept-Language",))
+        response.headers.setdefault("Content-Language", request.LANGUAGE_CODE)
+        return response
