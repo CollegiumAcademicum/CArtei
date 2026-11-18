@@ -554,6 +554,19 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   .ca-dash-profile { width: auto; }
   .ca-stat-grid { grid-template-columns: repeat(2, 1fr); }
 
+  /* Tenant profile: a dense list instead of one tall tile per field. Short
+     fields (.ca-field-row) sit on one line, label left and value right. */
+  .ca-field-grid { gap: 0; margin-top: 0.4rem; }
+  .ca-field-grid > .ca-field { margin-bottom: 0; padding: 0.45rem 0; border-bottom: 1px solid #f0f0f0; }
+  .ca-field-grid input:not([type="checkbox"]), .ca-field-grid select { padding: 0.35rem 0.5rem; }
+  .ca-field-grid > .ca-field:last-child { border-bottom: none; }
+  .ca-field-row { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.75rem; }
+  .ca-field-row .ca-field-label { margin-bottom: 0; }
+  .ca-field-row .ca-field-value { text-align: right; }
+  .ca-field-row input:not([type="checkbox"]), .ca-field-row select { width: auto; max-width: 60%; }
+  .ca-field-row input[type="checkbox"] { flex-shrink: 0; }
+  .ca-field-grid textarea { height: 6rem; min-height: 0; }
+
   /* .ca-stack-table: one card per row; td[data-label] shows its column name. */
   .ca-stack-table thead { display: none; }
   .ca-stack-table, .ca-stack-table tbody, .ca-stack-table tr, .ca-stack-table td { display: block; width: 100%; }
