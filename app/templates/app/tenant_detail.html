@@ -208,7 +208,7 @@
       <div class="ca-field-grid">
         {% for row in section.rows %}
         <div class="ca-field" data-field="{{ row.name }}">
-          <span class="ca-field-label">{{ row.label }}{% if row.field.help_text %} <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble" id="{{ row.field.auto_id }}_helptext">{{ row.field.help_text }}</span></span>{% endif %}</span>
+          <span class="ca-field-label">{{ row.label }}{% if row.field.help_text %} <span class="ca-hint ca-hint-below" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble" id="{{ row.field.auto_id }}_helptext">{{ row.field.help_text }}</span></span>{% endif %}</span>
           {% if row.name == "mailbox_list_opt_in" and not tenant.profile_setup_completed_at and not tenant.mailbox_list_opt_in %}<span class="ca-pill ca-pill-amber">Ausstehend</span>{% endif %}
           {% if row.field %}
             {{ row.field }}

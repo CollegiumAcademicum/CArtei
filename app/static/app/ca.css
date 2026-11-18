@@ -78,7 +78,7 @@ body {
   gap: 1rem 1.25rem;
   margin-top: 0.85rem;
 }
-.ca-field { display: flex; flex-direction: column; min-width: 0; }
+.ca-field { display: flex; flex-direction: column; min-width: 0; position: relative; }
 .ca-field-label {
   font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.06em; color: #7a7a7a; margin-bottom: 0.3rem;
@@ -101,6 +101,14 @@ body {
 .ca-hint-bubble::after {
   content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
   border: 6px solid transparent; border-top-color: var(--ca-text);
+}
+/* Profile sections are <details> with overflow:hidden (.ca-collapse), which clips a
+   bubble opening upwards: drop it below the label, spanning the field instead.
+   Phones keep the viewport-pinned toast (max-width: 768px rule below). */
+@media (min-width: 769px) {
+  .ca-hint-below { position: static; }
+  .ca-hint-below .ca-hint-bubble { top: 1.6rem; bottom: auto; left: 0; right: 0; width: auto; transform: none; }
+  .ca-hint-below .ca-hint-bubble::after { display: none; }
 }
 .ca-field input, .ca-field select, .ca-field textarea {
   width: 100%; box-sizing: border-box; border: 1px solid #dbdbdb; border-radius: 4px;
