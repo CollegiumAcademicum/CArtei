@@ -265,7 +265,7 @@
       <tbody>
         {% for p in pending_proofs %}
         <tr style="{% if p.needs_human_review %}background:#fff8e1;{% endif %}">
-          <td data-label="Datei"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}">{{ p.file_name|middle_truncate }}</a></td>
+          <td data-label="Datei"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}"><span class="ca-fn-short">{{ p.file_name|middle_truncate }}</span><span class="ca-fn-full">{{ p.file_name }}</span></a></td>
           <td data-label="Typ">{{ p.get_enrollment_type_display }}</td>
           <td data-label="Fach / Bereich">{{ p.field_of_study|default:"—" }}</td>
           <td data-label="Einrichtung">{{ p.educational_institution|default:"—" }}</td>
@@ -329,7 +329,7 @@
       <tbody>
         {% for p in verified_proofs %}
         <tr>
-          <td data-label="Datei"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}">{{ p.file_name|middle_truncate }}</a></td>
+          <td data-label="Datei"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}"><span class="ca-fn-short">{{ p.file_name|middle_truncate }}</span><span class="ca-fn-full">{{ p.file_name }}</span></a></td>
           <td data-label="Typ">{{ p.get_enrollment_type_display }}</td>
           <td data-label="Fach / Bereich">{{ p.field_of_study|default:"—" }}</td>
           <td data-label="Einrichtung">{{ p.educational_institution|default:"—" }}</td>

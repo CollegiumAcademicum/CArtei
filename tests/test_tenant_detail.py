@@ -537,3 +537,22 @@ def test_short_fields_render_as_one_line_rows_on_mobile():
         assert "ca-field-row" in classes[name], name
     for name in ["email", "phone", "preferred_name"]:
         assert "ca-field-row" not in classes[name], name
+
+
+@pytest.mark.django_db
+def test_proof_filename_full_on_mobile_truncated_on_desktop():
+    # Desktop table keeps the middle-truncated name; the phone card shows it in full.
+    import datetime
+    from app.models import EnrollmentProof
+    t = _tenant("owner")
+    name = "Immatrikulationsbescheinigung_Wintersemester_2026_Muster.pdf"
+    EnrollmentProof.objects.create(
+        tenant=t, enrollment_type="STUDY", file_name=name, file_data=b"%PDF",
+        uploaded_at=datetime.datetime(2026, 8, 15, tzinfo=datetime.timezone.utc),
+        valid_until=datetime.date(2026, 9, 30),
+    )
+    c = Client()
+    _login(c, "owner")
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert f'<span class="ca-fn-full">{name}</span>' in body
+    assert '<span class="ca-fn-short">Immatrikulatio…26_Muster.pdf</span>' in body
