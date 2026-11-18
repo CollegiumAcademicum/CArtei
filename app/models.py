@@ -2,35 +2,36 @@ from decimal import Decimal
 
 from django.db import models
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 
 class AGStatus(models.TextChoices):
-    ZU_AKTIV = "ZU_AKTIV", "zu aktiv"
-    AKTIV = "AKTIV", "aktiv"
-    NICHT_AUSREICHEND = "NICHT_AUSREICHEND", "nicht ausreichend"
-    IM_GESPRAECH = "IM_GESPRAECH", "im Gespräch"
-    INAKTIV = "INAKTIV", "inaktiv"
+    ZU_AKTIV = "ZU_AKTIV", _("zu aktiv")
+    AKTIV = "AKTIV", _("aktiv")
+    NICHT_AUSREICHEND = "NICHT_AUSREICHEND", _("nicht ausreichend")
+    IM_GESPRAECH = "IM_GESPRAECH", _("im Gespräch")
+    INAKTIV = "INAKTIV", _("inaktiv")
 
 
 class AGHealth(models.TextChoices):
-    GESUND = "GESUND", "gesund"
-    KERNAUFGABEN = "KERNAUFGABEN", "nur Kernaufgaben"
-    KRITISCH = "KRITISCH", "kritisch"
-    TOT = "TOT", "tot"
+    GESUND = "GESUND", _("gesund")
+    KERNAUFGABEN = "KERNAUFGABEN", _("nur Kernaufgaben")
+    KRITISCH = "KRITISCH", _("kritisch")
+    TOT = "TOT", _("tot")
 
 
 class NoteSourceGroup(models.TextChoices):
-    MIETVERWALTUNG = "mietverwaltung", "Mietverwaltung"
-    CLUSTERSPRECHENDE = "clustersprechende", "Clustersprechende"
+    MIETVERWALTUNG = "mietverwaltung", _("Mietverwaltung")
+    CLUSTERSPRECHENDE = "clustersprechende", _("Clustersprechende")
     # Shared thread on room assignments — written by Mietverwaltung *and* Belegium.
-    BELEGUNG = "belegung", "Belegung"
+    BELEGUNG = "belegung", _("Belegung")
 
 
 class NoteSubjectType(models.TextChoices):
-    TENANT = "tenant", "Bewohner:in"
-    CLUSTER = "cluster", "Cluster"
-    WG = "wg", "WG"
-    ROOM_ASSIGNMENT = "room_assignment", "Zimmerbelegung"
+    TENANT = "tenant", _("Bewohner:in")
+    CLUSTER = "cluster", _("Cluster")
+    WG = "wg", _("WG")
+    ROOM_ASSIGNMENT = "room_assignment", _("Zimmerbelegung")
 
 
 LOCALE_CHOICES = [("de", "Deutsch"), ("en", "English")]
@@ -53,7 +54,7 @@ class Tenant(models.Model):
     # fail validation); the form offers LOCALE_CHOICES. See cartei_db Tenant.locale.
     locale = models.CharField(
         max_length=35, null=True, blank=True,
-        help_text="Wird bei der nächsten Anmeldung mit der Sprache aus Keycloak überschrieben.",
+        help_text=_("Wird bei der nächsten Anmeldung mit der Sprache aus Keycloak überschrieben."),
     )
     date_of_birth = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
@@ -218,10 +219,10 @@ class TenantRoomAssignment(models.Model):
 
 
 class EnrollmentType(models.TextChoices):
-    STUDY = "STUDY", "Studium"
-    APPRENTICESHIP = "APPRENTICESHIP", "Ausbildung"
-    SCHUELER = "SCHUELER", "Schüler*in"
-    FSJ = "FSJ", "Freiwilliges Soziales Jahr"
+    STUDY = "STUDY", _("Studium")
+    APPRENTICESHIP = "APPRENTICESHIP", _("Ausbildung")
+    SCHUELER = "SCHUELER", _("Schüler*in")
+    FSJ = "FSJ", _("Freiwilliges Soziales Jahr")
 
 
 class EnrollmentProof(models.Model):
@@ -247,14 +248,14 @@ class EnrollmentProof(models.Model):
 
 
 class DocumentType(models.TextChoices):
-    DATENSCHUTZ = "datenschutz", "Datenschutz"
-    PHOTOERLAUBNIS = "photoerlaubnis", "Fotoerlaubnis"
-    VERTRAULICHKEITSERKLAERUNG = "vertraulichkeitserklaerung", "Vertraulichkeitserklärung"
-    MIETVERTRAG = "mietvertrag", "Mietvertrag"
-    MIETBEDINGUNGEN = "mietbedingungen", "Allgemeine Mietbedingungen"
-    SEPA_LASTSCHRIFTMANDAT = "sepa_lastschriftmandat", "SEPA-Lastschriftmandat"
-    BESCHEID_AUSBILDUNGSSTELLE = "bescheid_ausbildungsstelle", "Bescheid für Ausbildungsstellen"
-    SELBSTVERPFLICHTUNG_ENGAGEMENT = "selbstverpflichtung_engagement", "Selbstverpflichtung Engagement"
+    DATENSCHUTZ = "datenschutz", _("Datenschutz")
+    PHOTOERLAUBNIS = "photoerlaubnis", _("Fotoerlaubnis")
+    VERTRAULICHKEITSERKLAERUNG = "vertraulichkeitserklaerung", _("Vertraulichkeitserklärung")
+    MIETVERTRAG = "mietvertrag", _("Mietvertrag")
+    MIETBEDINGUNGEN = "mietbedingungen", _("Allgemeine Mietbedingungen")
+    SEPA_LASTSCHRIFTMANDAT = "sepa_lastschriftmandat", _("SEPA-Lastschriftmandat")
+    BESCHEID_AUSBILDUNGSSTELLE = "bescheid_ausbildungsstelle", _("Bescheid für Ausbildungsstellen")
+    SELBSTVERPFLICHTUNG_ENGAGEMENT = "selbstverpflichtung_engagement", _("Selbstverpflichtung Engagement")
 
 
 class TenantDocumentBase(models.Model):
@@ -353,7 +354,7 @@ class DocumentSigner(models.Model):
 
 
 class AssignmentDocumentType(models.TextChoices):
-    WOHNUNGSGEBERBESCHEINIGUNG = "wohnungsgeberbescheinigung", "Wohnungsgeberbescheinigung"
+    WOHNUNGSGEBERBESCHEINIGUNG = "wohnungsgeberbescheinigung", _("Wohnungsgeberbescheinigung")
 
 
 class RoomAssignmentDocumentBase(models.Model):
@@ -486,40 +487,40 @@ class DamageSize(models.TextChoices):
 
 
 class RoomDamageLine(models.TextChoices):
-    BODEN_FLECKEN = "BODEN_FLECKEN", "Boden – Flecken"
-    BODEN_LOECHER = "BODEN_LOECHER", "Boden – Löcher"
-    FUSSLEISTE_FLECKEN = "FUSSLEISTE_FLECKEN", "Fußleiste – Flecken"
-    WAND_FLECKEN = "WAND_FLECKEN", "Wände – Flecken"
-    WAND_LOECHER = "WAND_LOECHER", "Wände – Löcher"
-    WAND_KLEBER = "WAND_KLEBER", "Wände – Kleberückstände"
-    TUER_FLECKEN = "TUER_FLECKEN", "Tür – Flecken"
-    TUER_LOECHER = "TUER_LOECHER", "Tür – Löcher"
-    FENSTER_RAHMEN_FLECKEN = "FENSTER_RAHMEN_FLECKEN", "Fenster – Flecken Rahmen"
-    FENSTER_BANK_FLECKEN = "FENSTER_BANK_FLECKEN", "Fenster – Flecken Fensterbank"
-    FENSTER_KLEBER = "FENSTER_KLEBER", "Fenster – Kleberückstände"
-    BETT_FLECKEN = "BETT_FLECKEN", "Bett – Flecken"
-    BETT_LOECHER = "BETT_LOECHER", "Bett – Löcher"
-    MATRATZE_FLECKEN = "MATRATZE_FLECKEN", "Matratze – Flecken"
-    SCHREIBTISCH_FLECKEN = "SCHREIBTISCH_FLECKEN", "Schreibtisch – Flecken"
-    SCHREIBTISCH_LOECHER = "SCHREIBTISCH_LOECHER", "Schreibtisch – Löcher"
-    SCHRANK_FLECKEN = "SCHRANK_FLECKEN", "Schrank – Flecken"
-    SCHRANK_LOECHER = "SCHRANK_LOECHER", "Schrank – Löcher"
-    SONSTIGES = "SONSTIGES", "Sonstiges"
+    BODEN_FLECKEN = "BODEN_FLECKEN", _("Boden – Flecken")
+    BODEN_LOECHER = "BODEN_LOECHER", _("Boden – Löcher")
+    FUSSLEISTE_FLECKEN = "FUSSLEISTE_FLECKEN", _("Fußleiste – Flecken")
+    WAND_FLECKEN = "WAND_FLECKEN", _("Wände – Flecken")
+    WAND_LOECHER = "WAND_LOECHER", _("Wände – Löcher")
+    WAND_KLEBER = "WAND_KLEBER", _("Wände – Kleberückstände")
+    TUER_FLECKEN = "TUER_FLECKEN", _("Tür – Flecken")
+    TUER_LOECHER = "TUER_LOECHER", _("Tür – Löcher")
+    FENSTER_RAHMEN_FLECKEN = "FENSTER_RAHMEN_FLECKEN", _("Fenster – Flecken Rahmen")
+    FENSTER_BANK_FLECKEN = "FENSTER_BANK_FLECKEN", _("Fenster – Flecken Fensterbank")
+    FENSTER_KLEBER = "FENSTER_KLEBER", _("Fenster – Kleberückstände")
+    BETT_FLECKEN = "BETT_FLECKEN", _("Bett – Flecken")
+    BETT_LOECHER = "BETT_LOECHER", _("Bett – Löcher")
+    MATRATZE_FLECKEN = "MATRATZE_FLECKEN", _("Matratze – Flecken")
+    SCHREIBTISCH_FLECKEN = "SCHREIBTISCH_FLECKEN", _("Schreibtisch – Flecken")
+    SCHREIBTISCH_LOECHER = "SCHREIBTISCH_LOECHER", _("Schreibtisch – Löcher")
+    SCHRANK_FLECKEN = "SCHRANK_FLECKEN", _("Schrank – Flecken")
+    SCHRANK_LOECHER = "SCHRANK_LOECHER", _("Schrank – Löcher")
+    SONSTIGES = "SONSTIGES", _("Sonstiges")
 
 
 class WGDamageLine(models.TextChoices):
-    BAD_FLECK = "BAD_FLECK", "Bad – Fleck"
-    BAD_LOCH = "BAD_LOCH", "Bad – Loch"
-    BAD_KLEBER = "BAD_KLEBER", "Bad – Kleberückstände"
-    BAD_SONSTIGES = "BAD_SONSTIGES", "Bad – Sonstiges"
-    KUECHE_FLECK = "KUECHE_FLECK", "Küche – Fleck"
-    KUECHE_LOCH = "KUECHE_LOCH", "Küche – Loch"
-    KUECHE_KLEBER = "KUECHE_KLEBER", "Küche – Kleberückstände"
-    KUECHE_SONSTIGES = "KUECHE_SONSTIGES", "Küche – Sonstiges"
-    GEMEINSCHAFT_FLECK = "GEMEINSCHAFT_FLECK", "Gemeinschaftsfläche – Fleck"
-    GEMEINSCHAFT_LOCH = "GEMEINSCHAFT_LOCH", "Gemeinschaftsfläche – Loch"
-    GEMEINSCHAFT_KLEBER = "GEMEINSCHAFT_KLEBER", "Gemeinschaftsfläche – Kleberückstände"
-    GEMEINSCHAFT_SONSTIGES = "GEMEINSCHAFT_SONSTIGES", "Gemeinschaftsfläche – Sonstiges"
+    BAD_FLECK = "BAD_FLECK", _("Bad – Fleck")
+    BAD_LOCH = "BAD_LOCH", _("Bad – Loch")
+    BAD_KLEBER = "BAD_KLEBER", _("Bad – Kleberückstände")
+    BAD_SONSTIGES = "BAD_SONSTIGES", _("Bad – Sonstiges")
+    KUECHE_FLECK = "KUECHE_FLECK", _("Küche – Fleck")
+    KUECHE_LOCH = "KUECHE_LOCH", _("Küche – Loch")
+    KUECHE_KLEBER = "KUECHE_KLEBER", _("Küche – Kleberückstände")
+    KUECHE_SONSTIGES = "KUECHE_SONSTIGES", _("Küche – Sonstiges")
+    GEMEINSCHAFT_FLECK = "GEMEINSCHAFT_FLECK", _("Gemeinschaftsfläche – Fleck")
+    GEMEINSCHAFT_LOCH = "GEMEINSCHAFT_LOCH", _("Gemeinschaftsfläche – Loch")
+    GEMEINSCHAFT_KLEBER = "GEMEINSCHAFT_KLEBER", _("Gemeinschaftsfläche – Kleberückstände")
+    GEMEINSCHAFT_SONSTIGES = "GEMEINSCHAFT_SONSTIGES", _("Gemeinschaftsfläche – Sonstiges")
 
 
 class DamageBase(models.Model):

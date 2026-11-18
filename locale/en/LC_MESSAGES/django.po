@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CArtei\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 22:06+0100\n"
+"POT-Creation-Date: 2026-11-18 22:09+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -17,6 +17,204 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Diese E-Mail-Adresse wird bereits verwendet."
+msgstr "This email address is already in use."
+
+msgid "Diese E-Mail-Adresse wird bereits im Intranet verwendet."
+msgstr "This email address is already used in the intranet."
+
+msgid "Bitte Telefonnummer oder „Keine Telefonnummer vorhanden“ wählen."
+msgstr "Please enter a phone number or choose “No phone number”."
+
+msgid "zu aktiv"
+msgstr "too active"
+
+msgid "aktiv"
+msgstr "active"
+
+msgid "nicht ausreichend"
+msgstr "not enough"
+
+msgid "im Gespräch"
+msgstr "in discussion"
+
+msgid "inaktiv"
+msgstr "inactive"
+
+msgid "gesund"
+msgstr "healthy"
+
+msgid "nur Kernaufgaben"
+msgstr "core tasks only"
+
+msgid "kritisch"
+msgstr "critical"
+
+msgid "tot"
+msgstr "dead"
+
+msgid "Mietverwaltung"
+msgstr "Mietverwaltung"
+
+msgid "Clustersprechende"
+msgstr "Cluster speakers"
+
+msgid "Belegung"
+msgstr "Room allocation"
+
+#| msgid "Bewohner*innen"
+msgid "Bewohner:in"
+msgstr "Resident"
+
+msgid "Cluster"
+msgstr "Cluster"
+
+msgid "WG"
+msgstr "WG"
+
+msgid "Zimmerbelegung"
+msgstr "Room assignment"
+
+msgid ""
+"Wird bei der nächsten Anmeldung mit der Sprache aus Keycloak überschrieben."
+msgstr ""
+"Will be overwritten with the language from Keycloak at the next login."
+
+msgid "Studium"
+msgstr "Studies"
+
+msgid "Ausbildung"
+msgstr "Apprenticeship"
+
+msgid "Schüler*in"
+msgstr "School student"
+
+msgid "Freiwilliges Soziales Jahr"
+msgstr "Voluntary social year (FSJ)"
+
+msgid "Datenschutz"
+msgstr "Data protection"
+
+msgid "Fotoerlaubnis"
+msgstr "Photo permission"
+
+msgid "Vertraulichkeitserklärung"
+msgstr "Confidentiality agreement"
+
+msgid "Mietvertrag"
+msgstr "Rental contract"
+
+#| msgid "Aktuelle Mieter*innen"
+msgid "Allgemeine Mietbedingungen"
+msgstr "General rental terms"
+
+msgid "SEPA-Lastschriftmandat"
+msgstr "SEPA direct debit mandate"
+
+msgid "Bescheid für Ausbildungsstellen"
+msgstr "Notice for training institutions"
+
+msgid "Selbstverpflichtung Engagement"
+msgstr "Engagement commitment"
+
+msgid "Wohnungsgeberbescheinigung"
+msgstr "Landlord confirmation (Wohnungsgeberbescheinigung)"
+
+msgid "Boden – Flecken"
+msgstr "Floor – stains"
+
+msgid "Boden – Löcher"
+msgstr "Floor – holes"
+
+msgid "Fußleiste – Flecken"
+msgstr "Skirting board – stains"
+
+msgid "Wände – Flecken"
+msgstr "Walls – stains"
+
+msgid "Wände – Löcher"
+msgstr "Walls – holes"
+
+msgid "Wände – Kleberückstände"
+msgstr "Walls – adhesive residue"
+
+msgid "Tür – Flecken"
+msgstr "Door – stains"
+
+msgid "Tür – Löcher"
+msgstr "Door – holes"
+
+msgid "Fenster – Flecken Rahmen"
+msgstr "Window – frame stains"
+
+msgid "Fenster – Flecken Fensterbank"
+msgstr "Window – windowsill stains"
+
+msgid "Fenster – Kleberückstände"
+msgstr "Window – adhesive residue"
+
+msgid "Bett – Flecken"
+msgstr "Bed – stains"
+
+msgid "Bett – Löcher"
+msgstr "Bed – holes"
+
+msgid "Matratze – Flecken"
+msgstr "Mattress – stains"
+
+msgid "Schreibtisch – Flecken"
+msgstr "Desk – stains"
+
+msgid "Schreibtisch – Löcher"
+msgstr "Desk – holes"
+
+msgid "Schrank – Flecken"
+msgstr "Wardrobe – stains"
+
+msgid "Schrank – Löcher"
+msgstr "Wardrobe – holes"
+
+#| msgid "Sonstige"
+msgid "Sonstiges"
+msgstr "Other"
+
+msgid "Bad – Fleck"
+msgstr "Bathroom – stain"
+
+msgid "Bad – Loch"
+msgstr "Bathroom – hole"
+
+msgid "Bad – Kleberückstände"
+msgstr "Bathroom – adhesive residue"
+
+#| msgid "Sonstige"
+msgid "Bad – Sonstiges"
+msgstr "Bathroom – other"
+
+msgid "Küche – Fleck"
+msgstr "Kitchen – stain"
+
+msgid "Küche – Loch"
+msgstr "Kitchen – hole"
+
+msgid "Küche – Kleberückstände"
+msgstr "Kitchen – adhesive residue"
+
+msgid "Küche – Sonstiges"
+msgstr "Kitchen – other"
+
+msgid "Gemeinschaftsfläche – Fleck"
+msgstr "Common area – stain"
+
+msgid "Gemeinschaftsfläche – Loch"
+msgstr "Common area – hole"
+
+msgid "Gemeinschaftsfläche – Kleberückstände"
+msgstr "Common area – adhesive residue"
+
+msgid "Gemeinschaftsfläche – Sonstiges"
+msgstr "Common area – other"
 
 msgid "Unerwarteter Fehler, Seite neu laden"
 msgstr "Unexpected error, please reload the page"
@@ -74,9 +272,6 @@ msgstr "Stop acting as user"
 
 msgid "Impressum"
 msgstr "Legal notice"
-
-msgid "Datenschutz"
-msgstr "Privacy"
 
 msgid "Kontakt"
 msgstr "Contact"
@@ -148,6 +343,92 @@ msgstr "Fill in %(g)s"
 
 msgid "Keine aktive Abfrage."
 msgstr "No active survey."
+
+msgid "Persönliche Informationen"
+msgstr "Personal information"
+
+msgid "Rufname"
+msgstr "Preferred name"
+
+msgid "Pronomen"
+msgstr "Pronouns"
+
+msgid "Sprache"
+msgstr "Language"
+
+msgid "Vorname"
+msgstr "First name"
+
+msgid "Nachname"
+msgstr "Last name"
+
+msgid "E-Mail"
+msgstr "Email"
+
+msgid "Telefon"
+msgstr "Phone"
+
+msgid "Keine Telefonnummer vorhanden"
+msgstr "No phone number"
+
+#| msgid "FLINTA-Quote"
+msgid "FLINTA"
+msgstr "FLINTA"
+
+msgid "Ich möchte, dass mein Name bei den Briefkästen steht"
+msgstr "I want my name to be shown at the mailboxes"
+
+msgid "Geburtsdatum"
+msgstr "Date of birth"
+
+msgid "Barrierefreiheit benötigt"
+msgstr "Needs accessibility"
+
+msgid "Soli-Miete-Wunsch"
+msgstr "Soli-Miete request"
+
+msgid "Wohnen"
+msgstr "Housing"
+
+msgid "Ersteinzug"
+msgstr "First move-in"
+
+msgid "Auszug"
+msgstr "Move-out"
+
+msgid "Rechtliches"
+msgstr "Legal"
+
+msgid "Admin-Kommentare"
+msgstr "Admin comments"
+
+msgid "Zimmer & Mietverträge"
+msgstr "Rooms & rental contracts"
+
+msgid "Zimmer-Zuweisungen (aktuell + vergangen)"
+msgstr "Room assignments (current + past)"
+
+msgid "Neues Zimmer zuweisen"
+msgstr "Assign new room"
+
+msgid "Zimmerbelegung-Notizen (Belegung)"
+msgstr "Room assignment notes (Belegung)"
+
+msgid ""
+"Vertraulichkeitserklärung prüfen & confidentiality_clearance gewähren (inkl."
+" Klarname)"
+msgstr ""
+"Review confidentiality agreement & grant confidentiality_clearance (incl. "
+"legal name)"
+
+msgid "AG-Engagement & Cluster-Notizen"
+msgstr "AG engagement & Cluster notes"
+
+msgid "AG-Abfrage-Ergebnisse"
+msgstr "AG survey results"
+
+msgid "Cluster-Notizen"
+msgstr "Cluster notes"
 
 msgid "Gruppenliste aus LDAP nicht lesbar."
 msgstr "Could not read the group list from LDAP."

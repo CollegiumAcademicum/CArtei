@@ -152,3 +152,36 @@ def test_ag_membership_error_language(client, loc, error):
     _login(client, "ada", loc)
     r = client.post("/ags/", {"group": "ag.x", "action": "bogus"})
     assert r.json()["error"] == error
+
+
+# --- shared labels ------------------------------------------------------------
+
+def test_access_labels_follow_active_language():
+    from django.utils import translation
+    from app import tenant_access
+    label = next(f.label for f in tenant_access._ALL_FIELDS if f.name == "preferred_name")
+    with translation.override("en"):
+        assert str(label) == "Preferred name"
+    with translation.override("de"):
+        assert str(label) == "Rufname"
+
+
+def test_choice_label_english():
+    from django.utils import translation
+    from app.models import EnrollmentType
+    with translation.override("en"):
+        assert str(EnrollmentType.STUDY.label) == "Studies"
+    with translation.override("de"):
+        assert str(EnrollmentType.STUDY.label) == "Studium"
+
+
+@pytest.mark.django_db
+def test_form_email_error_english():
+    from django.utils import translation
+    from app.forms import TenantForm
+    _make_tenant("t1", email="taken@b.de")
+    t2 = _make_tenant("t2")
+    with translation.override("en"):
+        form = TenantForm(data={"email": "taken@b.de"}, instance=t2, allowed_fields={"email"})
+        assert not form.is_valid()
+        assert "This email address is already in use." in form.errors["email"]
