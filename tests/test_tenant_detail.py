@@ -506,3 +506,18 @@ def test_detail_shows_raw_unknown_locale():
     _login(c, "stranger")
     resp = c.get(f"/tenants/{t.pk}/")
     assert resp.status_code == 200 and ">fr<" in resp.content.decode()
+
+
+@pytest.mark.django_db
+def test_mv_save_keeps_unknown_locale(settings):
+    # An unknown Keycloak code must round-trip through the MV select, not be wiped
+    # by an unrelated edit (it may be the only copy once the account is deleted).
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _tenant("someone")
+    Tenant.objects.filter(pk=t.pk).update(locale="fr")
+    c = Client()
+    _login(c, "mv2", groups=["ag.mietverwaltung"])
+    assert '<option value="fr" selected>fr</option>' in c.get(f"/tenants/{t.pk}/").content.decode()
+    assert _mv_post(t, locale="fr", phone="0621").status_code in (200, 302)
+    t.refresh_from_db()
+    assert t.locale == "fr" and t.phone == "0621"
