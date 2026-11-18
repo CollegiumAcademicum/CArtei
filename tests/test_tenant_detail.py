@@ -472,7 +472,7 @@ def test_mv_sees_locale_select_with_help_text(settings):
     _login(c, "mv", groups=["ag.mietverwaltung"])
     body = c.get(f"/tenants/{t.pk}/").content.decode()
     assert '<select name="locale"' in body
-    assert "mit der Sprache aus Keycloak überschrieben" in body
+    assert '<span class="ca-hint-bubble" id="id_locale_helptext">Wird bei der nächsten Anmeldung mit der Sprache aus Keycloak überschrieben.</span>' in body
 
 
 @pytest.mark.django_db
