@@ -430,3 +430,94 @@ def test_own_profile_mobile_classes():
     src = Path("app/templates/app/tenant_detail.html").read_text()
     assert "width:13rem" not in src
     assert "width:320px" not in src
+
+
+_MV_GROUPS = {"cluster": ["gr.cluster"], "mietverwaltung": ["ag.mietverwaltung"], "finanzierung": ["cartei_finanzierung"]}
+
+
+def _mv_post(t, **overrides):
+    data = {"section": "personal", "email": "owner@ca.de", "phone": "", "no_phone_number": "",
+            "is_flinta": "", "mailbox_list_opt_in": "", "date_of_birth": "",
+            "barrier_free_needed": "", "locale": ""}
+    data.update(overrides)
+    c = Client()
+    _login(c, "mv", groups=["ag.mietverwaltung"])
+    return c.post(f"/tenants/{t.pk}/", data)
+
+
+@pytest.mark.django_db
+def test_mv_can_set_locale(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _tenant("someone")
+    assert _mv_post(t, locale="en").status_code in (200, 302)
+    t.refresh_from_db()
+    assert t.locale == "en"
+
+
+@pytest.mark.django_db
+def test_mv_saves_blank_locale(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _tenant("someone")
+    Tenant.objects.filter(pk=t.pk).update(locale="de")
+    assert _mv_post(t, phone="0621").status_code in (200, 302)
+    t.refresh_from_db()
+    assert not t.locale and t.phone == "0621"
+
+
+@pytest.mark.django_db
+def test_mv_sees_locale_select_with_help_text(settings):
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _tenant("someone")
+    c = Client()
+    _login(c, "mv", groups=["ag.mietverwaltung"])
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert '<select name="locale"' in body
+    assert "mit der Sprache aus Keycloak überschrieben" in body
+
+
+@pytest.mark.django_db
+def test_owner_cannot_edit_locale():
+    t = _tenant("owner")
+    c = Client()
+    _login(c, "owner")
+    c.post(f"/tenants/{t.pk}/", {
+        "email": "owner@ca.de", "phone": "", "preferred_name": "Owzy",
+        "pronouns": "sie/ihr", "is_flinta": "", "mailbox_list_opt_in": "", "locale": "en",
+    })
+    t.refresh_from_db()
+    assert t.locale is None
+
+
+@pytest.mark.django_db
+def test_detail_shows_locale_label():
+    t = _tenant("owner")
+    Tenant.objects.filter(pk=t.pk).update(locale="en")
+    c = Client()
+    _login(c, "stranger")
+    body = c.get(f"/tenants/{t.pk}/").content.decode()
+    assert "Sprache" in body and "English" in body
+
+
+@pytest.mark.django_db
+def test_detail_shows_raw_unknown_locale():
+    t = _tenant("owner")
+    Tenant.objects.filter(pk=t.pk).update(locale="fr")
+    c = Client()
+    _login(c, "stranger")
+    resp = c.get(f"/tenants/{t.pk}/")
+    assert resp.status_code == 200 and ">fr<" in resp.content.decode()
+
+
+@pytest.mark.django_db
+def test_mv_save_keeps_unknown_locale(settings):
+    # An unknown Keycloak code must round-trip through the MV select, not be wiped
+    # by an unrelated edit (it may be the only copy once the account is deleted).
+    settings.TENANT_ROLE_GROUPS = _MV_GROUPS
+    t = _tenant("someone")
+    Tenant.objects.filter(pk=t.pk).update(locale="fr")
+    c = Client()
+    _login(c, "mv2", groups=["ag.mietverwaltung"])
+    assert '<option value="fr" selected>fr</option>' in c.get(f"/tenants/{t.pk}/").content.decode()
+    assert _mv_post(t, locale="fr", phone="0621").status_code in (200, 302)
+    t.refresh_from_db()
+    assert t.locale == "fr" and t.phone == "0621"

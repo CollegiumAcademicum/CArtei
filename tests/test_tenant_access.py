@@ -54,7 +54,12 @@ def test_owner_edits_exactly_eight():
 
 
 def test_stranger_sees_only_public_card():
-    assert visible_fields({"public"}) == {"preferred_name", "pronouns"}
+    assert visible_fields({"public"}) == {"preferred_name", "pronouns", "locale"}
+
+
+def test_locale_editable_by_mietverwaltung_only():
+    assert "locale" in editable_fields({"public", "mietverwaltung"})
+    assert "locale" not in editable_fields({"public", "owner"})
 
 
 def test_mietverwaltung_can_edit_dob_and_contact():

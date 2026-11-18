@@ -33,6 +33,9 @@ class NoteSubjectType(models.TextChoices):
     ROOM_ASSIGNMENT = "room_assignment", "Zimmerbelegung"
 
 
+LOCALE_CHOICES = [("de", "Deutsch"), ("en", "English")]
+
+
 class Tenant(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
@@ -45,6 +48,13 @@ class Tenant(models.Model):
     intranet_uuid = models.UUIDField(unique=True, null=True, blank=True)
     preferred_name = models.CharField(max_length=255, null=True, blank=True)
     pronouns = models.CharField(max_length=255, null=True, blank=True)
+    # Cache of the Keycloak `locale` claim, refreshed at login (app/auth). Unknown
+    # codes from Keycloak are kept as-is, so no model-level choices (they would
+    # fail validation); the form offers LOCALE_CHOICES. See cartei_db Tenant.locale.
+    locale = models.CharField(
+        max_length=35, null=True, blank=True,
+        help_text="Wird bei der nächsten Anmeldung mit der Sprache aus Keycloak überschrieben.",
+    )
     date_of_birth = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
     is_flinta = models.BooleanField(default=False)
@@ -61,6 +71,9 @@ class Tenant(models.Model):
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name} ({self.intranet_username or 'kein Account'})"
+
+    def get_locale_display(self) -> str | None:
+        return dict(LOCALE_CHOICES).get(self.locale, self.locale)
 
     def get_absolute_url(self) -> str:
         return reverse("tenant_detail", args=[self.pk])

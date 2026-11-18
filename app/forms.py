@@ -3,7 +3,7 @@ from datetime import date
 from django import forms
 from django.db.models import Q
 
-from app.models import Room, Tenant, TenantRoomAssignment
+from app.models import LOCALE_CHOICES, Room, Tenant, TenantRoomAssignment
 from app.tenant_access import EDITABLE_COLUMNS
 
 
@@ -49,6 +49,17 @@ class TenantForm(forms.ModelForm):
         for name in list(self.fields):
             if name not in allowed:
                 del self.fields[name]
+        if "locale" in self.fields:
+            # Select over LOCALE_CHOICES ("—" instead of Django's English blank label).
+            # An unknown Keycloak code stays selectable so an unrelated edit doesn't wipe it.
+            choices = [("", "—"), *LOCALE_CHOICES]
+            if (current := self.instance.locale) and current not in dict(choices):
+                choices.append((current, current))
+            model_field = self.fields["locale"]
+            self.fields["locale"] = forms.TypedChoiceField(
+                choices=choices, required=False, empty_value=None,
+                label=model_field.label, help_text=model_field.help_text,
+            )
 
     def clean_email(self):
         return validate_unique_email(self.cleaned_data["email"], current_tenant=self.instance)
