@@ -1,6 +1,7 @@
-{% load static %}
+{% load static i18n %}
 <!DOCTYPE html>
-<html lang="de">
+{% get_current_language as LANG %}
+<html lang="{{ LANG }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,13 +13,13 @@
 </head>
 <body>
 
-<nav class="navbar ca-navbar" aria-label="Hauptnavigation">
+<nav class="navbar ca-navbar" aria-label="{% translate 'Hauptnavigation' %}">
   <div class="navbar-brand">
     <a class="navbar-item ca-navbar-logo" href="{% url 'dashboard' %}">
       <img src="https://collegiumacademicum.de/img/logo-small.png" alt="Collegium Academicum">
     </a>
     {% if request.user.is_authenticated %}
-    <button type="button" class="navbar-burger" data-navbar-burger aria-controls="ca-navbar-menu" aria-expanded="false" aria-label="Menü">
+    <button type="button" class="navbar-burger" data-navbar-burger aria-controls="ca-navbar-menu" aria-expanded="false" aria-label="{% translate 'Menü' %}">
       <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
     </button>
     {% endif %}
@@ -28,17 +29,17 @@
     <div class="navbar-end">
       {% if not request.profile_setup_required %}
       <a href="{% url 'dashboard' %}" class="navbar-item ca-navbar-admin">Dashboard</a>
-      <a href="{% url 'tenant_list' %}" class="navbar-item ca-navbar-admin">Bewohner*innen</a>
+      <a href="{% url 'tenant_list' %}" class="navbar-item ca-navbar-admin">{% translate "Bewohner*innen" %}</a>
       <a href="{% url 'wg_list' %}" class="navbar-item ca-navbar-admin">WGs</a>
-      <a href="{% url 'document_list' %}" class="navbar-item ca-navbar-admin">Dokumente</a>
-      <a href="{% url 'abfragen_list' %}" class="navbar-item ca-navbar-admin">Abfragen</a>
+      <a href="{% url 'document_list' %}" class="navbar-item ca-navbar-admin">{% translate "Dokumente" %}</a>
+      <a href="{% url 'abfragen_list' %}" class="navbar-item ca-navbar-admin">{% translate "Abfragen" %}</a>
       <a href="{% url 'admin_portal' %}" class="navbar-item ca-navbar-admin">Admin</a>
       {% endif %}
       {% if current_tenant and not request.profile_setup_required %}<a href="{% url 'tenant_detail' current_tenant.pk %}" class="navbar-item ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</a>{% else %}<span class="navbar-item ca-navbar-user">{{ request.user.get_full_name|default:request.user.username }}</span>{% endif %}
       <div class="navbar-item">
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button type="submit" class="ca-logout">Abmelden</button>
+          <button type="submit" class="ca-logout">{% translate "Abmelden" %}</button>
         </form>
       </div>
     </div>
@@ -48,10 +49,10 @@
 
 {% if request.impersonator %}
 <div role="status" style="background:#fff2c7;padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;">
-  <span>Du arbeitest als <strong>{{ request.user.username }}</strong> (Superuser: <strong>{{ request.impersonator.username }}</strong>).</span>
+  <span>{% blocktranslate trimmed with user=request.user.username impersonator=request.impersonator.username %}Du arbeitest als <strong>{{ user }}</strong> (Superuser: <strong>{{ impersonator }}</strong>).{% endblocktranslate %}</span>
   <form method="post" action="{% url 'impersonation_stop' %}">
     {% csrf_token %}
-    <button type="submit" class="button is-small">Übernahme beenden</button>
+    <button type="submit" class="button is-small">{% translate "Übernahme beenden" %}</button>
   </form>
 </div>
 {% endif %}
@@ -74,14 +75,15 @@
   </div>
   <span class="ca-footer-email">kontakt@collegiumacademicum.de · Version {{ cartei_version }}</span>
   <div class="ca-footer-links">
-    <a href="https://collegiumacademicum.de/impressum" target="_blank">Impressum</a>
-    <a href="https://collegiumacademicum.de/datenschutz" target="_blank">Datenschutz</a>
-    <a href="https://collegiumacademicum.de/kontakt" target="_blank">Kontakt</a>
+    <a href="https://collegiumacademicum.de/impressum" target="_blank">{% translate "Impressum" %}</a>
+    <a href="https://collegiumacademicum.de/datenschutz" target="_blank">{% translate "Datenschutz" %}</a>
+    <a href="https://collegiumacademicum.de/kontakt" target="_blank">{% translate "Kontakt" %}</a>
   </div>
 </footer>
 
 <script src="{% static 'app/dragdrop.js' %}"></script>
 <script src="{% static 'app/ui.js' %}"></script>
+{% translate "Aktion fehlgeschlagen (HTTP %(status)s) – die Seite wird neu geladen." as msg_http %}{% translate "Aktion fehlgeschlagen – bitte erneut versuchen." as msg_retry %}
 <script nonce="{{ csp_nonce }}">
 // AJAX form swap: POST forms are submitted in place and only .ca-main is
 // replaced, so scroll position and open <details> survive with no reload — no
@@ -115,7 +117,7 @@ document.addEventListener('submit', function(e) {
       // Error page (e.g. 404: already deleted in another tab) has no .ca-main to
       // swap in — say so and reload so the page shows the current state.
       if (!r.ok) {
-        alert('Aktion fehlgeschlagen (HTTP ' + r.status + ') – die Seite wird neu geladen.');
+        alert('{{ msg_http|escapejs }}'.replace('%(status)s', r.status));
         location.reload();
         return null;
       }
@@ -171,7 +173,7 @@ document.addEventListener('submit', function(e) {
       // Network/abort — re-enable so the action can be retried (on success the
       // .ca-main swap replaces the button, so this only fires on failure).
       if (busyBtn) { busyBtn.disabled = false; if (busyBtn.dataset.orig) busyBtn.textContent = busyBtn.dataset.orig; }
-      alert('Aktion fehlgeschlagen – bitte erneut versuchen.');
+      alert('{{ msg_retry|escapejs }}');
     });
 }, true);
 </script>

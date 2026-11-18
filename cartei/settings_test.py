@@ -1,4 +1,6 @@
 """Test settings: no LDAP/Keycloak, SQLite in-memory, domain models temporarily managed."""
+from pathlib import Path
+
 from django.utils.csp import CSP
 
 AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
@@ -21,6 +23,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "mozilla_django_oidc.middleware.SessionRefresh",
     "app.middleware.ImpersonationMiddleware",
+    "app.middleware.TenantLocaleMiddleware",
     "app.middleware.RequiredProfileSetupMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
@@ -42,6 +45,10 @@ TEMPLATES = [
     }
 ]
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
+# Mirrors settings i18n (TenantLocaleMiddleware).
+LANGUAGE_CODE = "de-de"
+LANGUAGES = [("de", "Deutsch"), ("en", "English")]
+LOCALE_PATHS = [Path(__file__).resolve().parent.parent / "locale"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "/dashboard/"

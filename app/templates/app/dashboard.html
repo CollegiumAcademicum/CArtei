@@ -1,12 +1,12 @@
 {% extends "app/base.html" %}
-{% load static tenant_extras %}
-{% block title %}Dashboard — CArtei{% endblock %}
+{% load static tenant_extras i18n %}
+{% block title %}{% translate "Dashboard" %} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-dash">
 
   <div class="ca-card ca-dash-profile">
     <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">
-      {% if tenant %}<a href="{% url 'tenant_detail' tenant.pk %}" style="color:var(--ca-teal);">Mein Profil</a>{% else %}Mein Profil{% endif %}
+      {% if tenant %}<a href="{% url 'tenant_detail' tenant.pk %}" style="color:var(--ca-teal);">{% translate "Mein Profil" %}</a>{% else %}{% translate "Mein Profil" %}{% endif %}
     </h2>
     <p style="font-weight:600;">
       {% if tenant %}
@@ -26,32 +26,32 @@
     <div class="ca-stat-grid">
       <div class="ca-stat-card">
         <div class="ca-stat-value">{{ flinta_quote }}%</div>
-        <div class="ca-stat-label">FLINTA-Quote
-          <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Anteil FLINTA unter den aktuell im CA wohnenden Mieter:innen (mit laufender Zimmerbelegung).</span></span>
+        <div class="ca-stat-label">{% translate "FLINTA-Quote" %}
+          <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Hinweis anzeigen' %}">i<span class="ca-hint-bubble">{% translate "Anteil FLINTA unter den aktuell im CA wohnenden Mieter:innen (mit laufender Zimmerbelegung)." %}</span></span>
         </div>
       </div>
       <div class="ca-stat-card">
         <div class="ca-stat-value">{{ azubi_quote }}%</div>
-        <div class="ca-stat-label">Azubi-Quote
-          <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Anteil Azubis unter den aktuell im CA wohnenden Mieter:innen (mit laufender Zimmerbelegung).</span></span>
+        <div class="ca-stat-label">{% translate "Azubi-Quote" %}
+          <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Hinweis anzeigen' %}">i<span class="ca-hint-bubble">{% translate "Anteil Azubis unter den aktuell im CA wohnenden Mieter:innen (mit laufender Zimmerbelegung)." %}</span></span>
         </div>
       </div>
       <div class="ca-stat-card">
         <div class="ca-stat-value">{{ current_tenants }}</div>
-        <div class="ca-stat-label">Aktuelle Mieter*innen
-          <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Mieter:innen mit heute laufender Zimmerbelegung (eingezogen, nicht ausgezogen).</span></span>
+        <div class="ca-stat-label">{% translate "Aktuelle Mieter*innen" %}
+          <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Hinweis anzeigen' %}">i<span class="ca-hint-bubble">{% translate "Mieter:innen mit heute laufender Zimmerbelegung (eingezogen, nicht ausgezogen)." %}</span></span>
         </div>
       </div>
       <div class="ca-stat-card">
         <div class="ca-stat-value">{{ total_tenants }}</div>
-        <div class="ca-stat-label">All-Time Mietende
-          <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Alle je erfassten Mieter:innen, unabhängig von Ein- oder Auszug.</span></span>
+        <div class="ca-stat-label">{% translate "All-Time Mietende" %}
+          <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Hinweis anzeigen' %}">i<span class="ca-hint-bubble">{% translate "Alle je erfassten Mieter:innen, unabhängig von Ein- oder Auszug." %}</span></span>
         </div>
       </div>
     </div>
     {% if ag_status_groups %}
       <div class="ca-card">
-        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.6rem;">AG-Status</h2>
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.6rem;">{% translate "AG-Status" %}</h2>
         {% for group in ag_status_groups %}
         <h3 class="ca-ag-status-group">{{ group.label }}</h3>
         <div style="display:flex;flex-wrap:wrap;gap:0.35rem 0.9rem;">
@@ -67,14 +67,14 @@
     {% endif %}
     {% if active_abfragen %}
       <div class="ca-card">
-        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;"><a href="{% url 'abfragen_list' %}">Engagement-Abfragen</a></h2>
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;"><a href="{% url 'abfragen_list' %}">{% translate "Engagement-Abfragen" %}</a></h2>
         {% for abfrage in active_abfragen %}
           <div style="{% if not forloop.first %}margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;{% endif %}">
-            <p>{{ abfrage.label|default:abfrage.date }} — endet am {{ abfrage.ends_at }}</p>
+            <p>{{ abfrage.label|default:abfrage.date }} — {% blocktranslate trimmed with ends=abfrage.ends_at %}endet am {{ ends }}{% endblocktranslate %}</p>
             {% if user_groups %}
               <div style="margin-top:0.5rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
                 {% for g in user_groups %}
-                  <a href="{% url 'ag_edit' abfrage.pk g %}" class="ca-button" style="text-decoration:none;">{{ g }} ausfüllen</a>
+                  <a href="{% url 'ag_edit' abfrage.pk g %}" class="ca-button" style="text-decoration:none;">{% blocktranslate trimmed %}{{ g }} ausfüllen{% endblocktranslate %}</a>
                 {% endfor %}
               </div>
             {% endif %}
@@ -83,7 +83,7 @@
       </div>
     {% else %}
       <div class="ca-card" style="color:#7a7a7a;">
-        Keine aktive Abfrage.
+        {% translate "Keine aktive Abfrage." %}
       </div>
     {% endif %}
   </div>

@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.timezone import localdate, now
+from django.utils.translation import gettext
 from django.views.decorators.http import require_POST
 
 from app import clearance
@@ -263,14 +264,14 @@ def revoke_document(request, pk, document_type, doc_pk):
             others = clearance.revoke(doc.tenant, doc, caller, note)
         except clearance.ClearanceIPAError as exc:
             logger.exception("Clearance revoke failed for tenant %s", pk)
-            messages.error(request, f"Entzug fehlgeschlagen: {exc}")
+            messages.error(request, gettext("Entzug fehlgeschlagen: %(exc)s") % {"exc": exc})
             return redirect("tenant_detail", pk=pk)
         if others:
             logger.error("Tenant %s still has another approved VE after revoke", pk)
             messages.error(
                 request,
-                "Es gibt noch eine weitere bestätigte Vertraulichkeitserklärung – "
-                "Gruppe wurde trotzdem entzogen. Bitte prüfen.",
+                gettext("Es gibt noch eine weitere bestätigte Vertraulichkeitserklärung – "
+                        "Gruppe wurde trotzdem entzogen. Bitte prüfen."),
             )
         return redirect("tenant_detail", pk=pk)
     model.objects.filter(pk=doc.pk).update(
@@ -291,21 +292,21 @@ def grant_clearance(request, pk, doc_pk):
     tenant = doc.tenant
     back = redirect(reverse("tenant_detail", args=[pk]) + "#section-documents")
     if doc.revoked_at is not None:
-        messages.error(request, "Die Erklärung ist widerrufen.")
+        messages.error(request, gettext("Die Erklärung ist widerrufen."))
         return back
     if not tenant.intranet_username or not tenant.intranet_uuid:
-        messages.error(request, "Kein Intranet-Account vorhanden.")
+        messages.error(request, gettext("Kein Intranet-Account vorhanden."))
         return back
     if (request.POST.get("confirm_name") or "").strip() != clearance.confirm_name_for(tenant):
-        messages.error(request, "Name stimmt nicht überein")
+        messages.error(request, gettext("Name stimmt nicht überein"))
         return back
     try:
         clearance.grant(tenant, doc, caller)
     except clearance.ClearanceIPAError as exc:
         logger.exception("Clearance grant failed for tenant %s", pk)
-        messages.error(request, f"Freigabe fehlgeschlagen: {exc}")
+        messages.error(request, gettext("Freigabe fehlgeschlagen: %(exc)s") % {"exc": exc})
         return back
-    messages.success(request, "Vertraulichkeitsfreigabe erteilt.")
+    messages.success(request, gettext("Vertraulichkeitsfreigabe erteilt."))
     return back
 
 

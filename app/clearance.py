@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from django.conf import settings
 from django.db import transaction
 from django.utils.timezone import now
+from django.utils.translation import gettext, gettext_noop
 
 from app.ldap_utils import (  # noqa: F401  (single patch site for views/tests)
     ClearanceIPAError,
@@ -17,21 +18,25 @@ from app.models import ClearanceAction, ConfidentialityClearanceEvent, Tenant, V
 GREEN, YELLOW, RED, BLACK, UNKNOWN = "green", "yellow", "red", "black", "unknown"
 
 STATUS_TEXT = {
-    GREEN: "Freigegeben: in Gruppe confidentiality_clearance, Erklärung bestätigt",
-    YELLOW: "Erklärung liegt vor, wartet auf Bestätigung",
-    RED: "Keine Freigabe: weder Gruppe noch Erklärung",
-    BLACK: "Inkonsistent: Gruppe ohne bestätigte Erklärung oder bestätigte Erklärung ohne Gruppe",
-    UNKNOWN: "Gruppenstatus unbekannt (LDAP nicht erreichbar)",
+    GREEN: gettext_noop("Freigegeben: in Gruppe confidentiality_clearance, Erklärung bestätigt"),
+    YELLOW: gettext_noop("Erklärung liegt vor, wartet auf Bestätigung"),
+    RED: gettext_noop("Keine Freigabe: weder Gruppe noch Erklärung"),
+    BLACK: gettext_noop("Inkonsistent: Gruppe ohne bestätigte Erklärung oder bestätigte Erklärung ohne Gruppe"),
+    UNKNOWN: gettext_noop("Gruppenstatus unbekannt (LDAP nicht erreichbar)"),
 }
-_COLOUR_NAME = {GREEN: "Grün", YELLOW: "Gelb", RED: "Rot", BLACK: "Schwarz", UNKNOWN: "Grau"}
-# (colour name, meaning) per status, for the .ca-hint legend on the tenant page.
-LEGEND = [(_COLOUR_NAME[c], text) for c, text in STATUS_TEXT.items()]
+_COLOUR_NAME = {GREEN: gettext_noop("Grün"), YELLOW: gettext_noop("Gelb"), RED: gettext_noop("Rot"),
+                BLACK: gettext_noop("Schwarz"), UNKNOWN: gettext_noop("Grau")}
+
+
+def legend() -> list[tuple[str, str]]:
+    """(colour name, meaning) per status, for the .ca-hint legend on the tenant page."""
+    return [(gettext(_COLOUR_NAME[c]), gettext(text)) for c, text in STATUS_TEXT.items()]
 
 
 def tooltip(colour: str) -> str:
     """Hover text for the VE pill: current status first, then the full legend (one per line)."""
-    legend = "\n".join(f"{_COLOUR_NAME[c]}: {text}" for c, text in STATUS_TEXT.items())
-    return f"Vertraulichkeitserklärung – {STATUS_TEXT[colour]}\n\n{legend}"
+    lines = "\n".join(f"{name}: {text}" for name, text in legend())
+    return f"{gettext('Vertraulichkeitserklärung')} – {gettext(STATUS_TEXT[colour])}\n\n{lines}"
 
 
 def clearance_color(in_group: bool | None, approved: bool, pending: bool) -> str:

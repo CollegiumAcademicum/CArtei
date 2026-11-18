@@ -7,6 +7,7 @@ from datetime import timedelta
 from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.http import content_disposition_header
+from django.utils.translation import gettext
 
 from app.forms import TenantRoomAssignmentForm
 from app.ldap_utils import set_ldap_mail
@@ -29,9 +30,9 @@ def write_through_email(form, tenant) -> bool:
         logger.error("Email write-through failed for tenant %s: %s", tenant.pk, exc)
         err_msg = str(exc).lower()
         if "mail" in err_msg and ("unique" in err_msg or "already exists" in err_msg or "duplicate" in err_msg):
-            form.add_error("email", "Diese E-Mail-Adresse wird bereits im Intranet verwendet.")
+            form.add_error("email", gettext("Diese E-Mail-Adresse wird bereits im Intranet verwendet."))
         else:
-            form.add_error("email", "Konnte nicht ins Intranet (FreeIPA) übernommen werden — nicht gespeichert.")
+            form.add_error("email", gettext("Konnte nicht ins Intranet (FreeIPA) übernommen werden — nicht gespeichert."))
         return False
     tenant.email_refreshed_at = timezone.now()
     return True

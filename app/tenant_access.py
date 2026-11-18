@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 
 Field = namedtuple("Field", "name label visible_to editable_by")
 Section = namedtuple("Section", "key title fields")
@@ -21,30 +22,30 @@ def _f(name, label, visible_to, editable_by):
 
 
 SECTIONS = [
-    Section("personal", "Persönliche Informationen", [
-        _f("preferred_name", "Rufname", _PUBLIC, _OWNER),
-        _f("pronouns", "Pronomen", _PUBLIC, _OWNER),
+    Section("personal", _("Persönliche Informationen"), [
+        _f("preferred_name", _("Rufname"), _PUBLIC, _OWNER),
+        _f("pronouns", _("Pronomen"), _PUBLIC, _OWNER),
         # Keycloak `locale` cache; MV may seed it, the next login sync overwrites it.
-        _f("locale", "Sprache", _PUBLIC, _MV),
-        _f("first_name", "Vorname", _OWN_MV | {_HELPER}, _ADMIN),
-        _f("last_name", "Nachname", _OWN_MV | {_HELPER}, _ADMIN),
-        _f("email", "E-Mail", _OWN_MV, _OWN_MV),
-        _f("phone", "Telefon", _OWN_MV, _OWN_MV),
-        _f("no_phone_number", "Keine Telefonnummer vorhanden", _OWN_MV, _OWN_MV),
-        _f("is_flinta", "FLINTA", _OWN_MV, _OWN_MV),
-        _f("mailbox_list_opt_in", "Ich möchte, dass mein Name bei den Briefkästen steht", _OWN_MV, _OWN_MV),
-        _f("date_of_birth", "Geburtsdatum", _OWN_MV, _MV),
-        _f("barrier_free_needed", "Barrierefreiheit benötigt", _OWN_MV, _MV),
-        _f("soli_miete_wunsch", "Soli-Miete-Wunsch", _OWNER, _OWNER),
+        _f("locale", _("Sprache"), _PUBLIC, _MV),
+        _f("first_name", _("Vorname"), _OWN_MV | {_HELPER}, _ADMIN),
+        _f("last_name", _("Nachname"), _OWN_MV | {_HELPER}, _ADMIN),
+        _f("email", _("E-Mail"), _OWN_MV, _OWN_MV),
+        _f("phone", _("Telefon"), _OWN_MV, _OWN_MV),
+        _f("no_phone_number", _("Keine Telefonnummer vorhanden"), _OWN_MV, _OWN_MV),
+        _f("is_flinta", _("FLINTA"), _OWN_MV, _OWN_MV),
+        _f("mailbox_list_opt_in", _("Ich möchte, dass mein Name bei den Briefkästen steht"), _OWN_MV, _OWN_MV),
+        _f("date_of_birth", _("Geburtsdatum"), _OWN_MV, _MV),
+        _f("barrier_free_needed", _("Barrierefreiheit benötigt"), _OWN_MV, _MV),
+        _f("soli_miete_wunsch", _("Soli-Miete-Wunsch"), _OWNER, _OWNER),
     ]),
-    Section("housing", "Wohnen", [
+    Section("housing", _("Wohnen"), [
         # Computed from room assignments — view-only, no editors. Belegium sees these
         # (and the assignment cards live in this section) for room allocation.
-        _f("ersteinzug", "Ersteinzug", _OWN_MV_BELEGIUM | {_HELPER}, frozenset()),
-        _f("auszug", "Auszug", _OWN_MV_BELEGIUM | {_HELPER}, frozenset()),
+        _f("ersteinzug", _("Ersteinzug"), _OWN_MV_BELEGIUM | {_HELPER}, frozenset()),
+        _f("auszug", _("Auszug"), _OWN_MV_BELEGIUM | {_HELPER}, frozenset()),
     ]),
-    Section("legal", "Rechtliches", [
-        _f("comments", "Admin-Kommentare", _ADMIN, _ADMIN),
+    Section("legal", _("Rechtliches"), [
+        _f("comments", _("Admin-Kommentare"), _ADMIN, _ADMIN),
     ]),
 ]
 
@@ -58,17 +59,17 @@ _ROOM_STAFF = frozenset({"mietverwaltung", "admin", "belegium"})
 
 # Non-field access rules shown in the permission matrix (not form fields).
 RESOURCE_SECTIONS = [
-    Section("rooms", "Zimmer & Mietverträge", [
-        _f("room_assignments_view", "Zimmer-Zuweisungen (aktuell + vergangen)", _OWN_MV_ADMIN | {"belegium", _HELPER}, _ROOM_STAFF),
-        _f("room_assignments_new", "Neues Zimmer zuweisen", frozenset(), _ROOM_STAFF),
-        _f("room_assignment_notes", "Zimmerbelegung-Notizen (Belegung)", _ROOM_STAFF, _ROOM_STAFF),
+    Section("rooms", _("Zimmer & Mietverträge"), [
+        _f("room_assignments_view", _("Zimmer-Zuweisungen (aktuell + vergangen)"), _OWN_MV_ADMIN | {"belegium", _HELPER}, _ROOM_STAFF),
+        _f("room_assignments_new", _("Neues Zimmer zuweisen"), frozenset(), _ROOM_STAFF),
+        _f("room_assignment_notes", _("Zimmerbelegung-Notizen (Belegung)"), _ROOM_STAFF, _ROOM_STAFF),
     ]),
-    Section("clearance", "Vertraulichkeitserklärung", [
-        _f("clearance_grant", "Vertraulichkeitserklärung prüfen & confidentiality_clearance gewähren (inkl. Klarname)", {"mietverwaltung", "admin", "granter"}, {"granter"}),
+    Section("clearance", _("Vertraulichkeitserklärung"), [
+        _f("clearance_grant", _("Vertraulichkeitserklärung prüfen & confidentiality_clearance gewähren (inkl. Klarname)"), {"mietverwaltung", "admin", "granter"}, {"granter"}),
     ]),
-    Section("engagement", "AG-Engagement & Cluster-Notizen", [
-        _f("engagement_results", "AG-Abfrage-Ergebnisse", _OWN_CLUSTER_ADMIN, frozenset()),
-        _f("cluster_notes", "Cluster-Notizen", _CLUSTER_ADMIN, _CLUSTER_ADMIN),
+    Section("engagement", _("AG-Engagement & Cluster-Notizen"), [
+        _f("engagement_results", _("AG-Abfrage-Ergebnisse"), _OWN_CLUSTER_ADMIN, frozenset()),
+        _f("cluster_notes", _("Cluster-Notizen"), _CLUSTER_ADMIN, _CLUSTER_ADMIN),
     ]),
 ]
 

@@ -1,3 +1,4 @@
+{% load i18n %}
 {% comment %}
 Documents for one room assignment, rendered as cards matching the Rechtsdokumente
 section. Needs: assignment, mode ("status" | "edit"), can_manage_documents, all_tenants.
@@ -10,9 +11,9 @@ section. Needs: assignment, mode ("status" | "edit"), can_manage_documents, all_
     <div class="ca-doc-card-head">
       <strong>{{ g.label }}</strong>
       {% if g.active_doc %}
-      <span class="ca-doc-status ca-doc-status--active">● Aktiv</span>
+      <span class="ca-doc-status ca-doc-status--active">{% translate "● Aktiv" %}</span>
       {% else %}
-      <span class="ca-doc-status ca-doc-status--missing">○ Noch nicht unterschrieben</span>
+      <span class="ca-doc-status ca-doc-status--missing">{% translate "○ Noch nicht unterschrieben" %}</span>
       {% endif %}
     </div>
 
@@ -21,11 +22,11 @@ section. Needs: assignment, mode ("status" | "edit"), can_manage_documents, all_
       <a href="{% url 'assignment_document_download' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="color:var(--ca-teal);">{{ g.active_doc.file_name }}</a>
       <span>· {{ g.active_doc.signed_at|date:"d.m.Y" }} ({{ g.active_doc.company_signed_by.first_name }} {{ g.active_doc.company_signed_by.last_name }})</span>
       {% if mode == "edit" and can_manage_documents %}
-      <form method="post" action="{% url 'assignment_document_revoke' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;" data-confirm="Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.">
+      <form method="post" action="{% url 'assignment_document_revoke' assignment_pk=assignment.pk document_type=g.type doc_pk=g.active_doc.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;" data-confirm="{% translate 'Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.' %}">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
-        <input name="revoked_note" type="text" required placeholder="Grund des Widerrufs" style="padding:.2rem;">
-        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Widerrufen</button>
+        <input name="revoked_note" type="text" required placeholder="{% translate 'Grund des Widerrufs' %}" style="padding:.2rem;">
+        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">{% translate "Widerrufen" %}</button>
       </form>
       {% endif %}
     </div>
@@ -34,7 +35,7 @@ section. Needs: assignment, mode ("status" | "edit"), can_manage_documents, all_
     {% for d in g.docs %}{% if d.revoked_at %}
     <div class="ca-doc-row ca-doc-row--revoked">
       <a href="{% url 'assignment_document_download' assignment_pk=assignment.pk document_type=g.type doc_pk=d.pk %}" style="color:#888;">{{ d.file_name }}</a>
-      <span>· Widerrufen ({{ d.revoked_at|date:"d.m.Y" }}{% if d.revoked_note %}: {{ d.revoked_note }}{% endif %})</span>
+      <span>· {% translate "Widerrufen" %} ({{ d.revoked_at|date:"d.m.Y" }}{% if d.revoked_note %}: {{ d.revoked_note }}{% endif %})</span>
     </div>
     {% endif %}{% endfor %}
 
@@ -43,15 +44,15 @@ section. Needs: assignment, mode ("status" | "edit"), can_manage_documents, all_
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
       <input type="hidden" name="document_type" value="{{ g.type }}">
-      <label style="font-size:.85rem;">Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
-      <label style="font-size:.85rem;">Für die GmbH
+      <label style="font-size:.85rem;">{% translate "Unterschrieben am" %} <input name="signed_at" type="date" required style="padding:.3rem;"></label>
+      <label style="font-size:.85rem;">{% translate "Für die GmbH" %}
         <select name="company_signed_by" required style="padding:.3rem;">
           <option value="">—</option>
           {% for t in all_tenants %}<option value="{{ t.pk }}">{{ t.last_name }}, {{ t.first_name }}</option>{% endfor %}
         </select>
       </label>
       <input name="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:160px;">
-      <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Hochladen</button>
+      <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">{% translate "Hochladen" %}</button>
     </form>
     {% endif %}
   </div>

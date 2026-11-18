@@ -2,6 +2,7 @@ from datetime import date
 
 from django import forms
 from django.db.models import Q
+from django.utils.translation import gettext as _
 
 from app.models import LOCALE_CHOICES, Room, Tenant, TenantRoomAssignment
 from app.tenant_access import EDITABLE_COLUMNS
@@ -13,13 +14,13 @@ def validate_unique_email(email: str, current_tenant: Tenant | None = None) -> s
     if current_tenant and current_tenant.pk:
         qs = qs.exclude(pk=current_tenant.pk)
     if qs.exists():
-        raise forms.ValidationError("Diese E-Mail-Adresse wird bereits verwendet.")
+        raise forms.ValidationError(_("Diese E-Mail-Adresse wird bereits verwendet."))
 
     exclude_username = current_tenant.intranet_username if current_tenant else None
     try:
         from app.ldap_utils import is_ldap_mail_taken
         if is_ldap_mail_taken(email, exclude_username=exclude_username):
-            raise forms.ValidationError("Diese E-Mail-Adresse wird bereits im Intranet verwendet.")
+            raise forms.ValidationError(_("Diese E-Mail-Adresse wird bereits im Intranet verwendet."))
     except forms.ValidationError:
         raise
     except Exception:
@@ -70,7 +71,7 @@ class TenantForm(forms.ModelForm):
             has_phone = bool((cleaned.get("phone") or "").strip())
             no_phone = bool(cleaned.get("no_phone_number"))
             if has_phone == no_phone:
-                self.add_error("phone", "Bitte Telefonnummer oder „Keine Telefonnummer vorhanden“ wählen.")
+                self.add_error("phone", _("Bitte Telefonnummer oder „Keine Telefonnummer vorhanden“ wählen."))
         return cleaned
 
 

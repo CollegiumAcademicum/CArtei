@@ -1,4 +1,5 @@
 {% extends "app/base.html" %}
+{% load i18n %}
 {% load static %}
 {% load proof_extras %}
 {% load tenant_extras %}
@@ -9,46 +10,46 @@
     <h1 style="font-size:1.4rem;font-weight:700;margin:0;">{{ display_name }}</h1>
     <div style="margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;">
       {% if tenant.intranet_username %}
-        <span style="font-size:.85rem;color:#7a7a7a;">Intranet: <strong style="color:#555;">{{ tenant.intranet_username }}</strong></span>
+        <span style="font-size:.85rem;color:#7a7a7a;">{% translate "Intranet:" %} <strong style="color:#555;">{{ tenant.intranet_username }}</strong></span>
         {% if can_link %}
           <form method="post" action="{% url 'tenant_link' tenant.pk %}" style="margin:0;"
-                data-confirm="Verknüpfung mit {{ tenant.intranet_username }} entfernen?">
+                data-confirm="{% blocktranslate trimmed with uid=tenant.intranet_username %}Verknüpfung mit {{ uid }} entfernen?{% endblocktranslate %}">
             {% csrf_token %}
-            <button type="submit" class="ca-button ca-button-sm">Verknüpfung entfernen</button>
+            <button type="submit" class="ca-button ca-button-sm">{% translate "Verknüpfung entfernen" %}</button>
           </form>
         {% endif %}
       {% else %}
         {% if can_link %}
           <form method="post" action="{% url 'tenant_link' tenant.pk %}" style="margin:0;display:flex;align-items:center;gap:.4rem;">
             {% csrf_token %}
-            <input class="ca-input ca-input-sm ca-link-uid" name="uid" placeholder="Intranet-Account suchen" required
+            <input class="ca-input ca-input-sm ca-link-uid" name="uid" placeholder="{% translate 'Intranet-Account suchen' %}" required
                    list="link-accounts" autocomplete="off" data-search-url="{% url 'tenant_link_search' %}">
             <datalist id="link-accounts"></datalist>
-            <button type="submit" class="ca-button ca-button-sm">Verknüpfen</button>
+            <button type="submit" class="ca-button ca-button-sm">{% translate "Verknüpfen" %}</button>
           </form>
         {% endif %}
         {% if can_provision %}
         <form method="post" action="{% url 'tenant_provision' tenant.pk %}" style="margin:0;"
-              data-confirm="FreeIPA-Account für {{ display_name }} anlegen?"
-              data-busy-label="Wird angelegt…">
+              data-confirm="{% blocktranslate trimmed with name=display_name %}FreeIPA-Account für {{ name }} anlegen?{% endblocktranslate %}"
+              data-busy-label="{% translate 'Wird angelegt…' %}">
           {% csrf_token %}
-          <button type="submit" class="ca-button ca-button-sm">Intranet-Account anlegen</button>
+          <button type="submit" class="ca-button ca-button-sm">{% translate "Intranet-Account anlegen" %}</button>
         </form>
-        <span class="ca-hint" tabindex="0" role="button" aria-label="Was passiert beim Anlegen?">i<span class="ca-hint-bubble">Legt den Intranet-Account an und sendet die Zugangsdaten automatisch per E-Mail an die Bewohner:in.</span></span>
+        <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Was passiert beim Anlegen?' %}">i<span class="ca-hint-bubble">{% translate "Legt den Intranet-Account an und sendet die Zugangsdaten automatisch per E-Mail an die Bewohner:in." %}</span></span>
         {% elif not can_link %}
-        <span style="font-size:.85rem;color:#7a7a7a;">kein Intranet-Account</span>
+        <span style="font-size:.85rem;color:#7a7a7a;">{% translate "kein Intranet-Account" %}</span>
         {% endif %}
       {% endif %}
       {% if can_reset_profile_setup %}
         <form method="post" action="{% url 'tenant_reset_profile_setup' tenant.pk %}" style="margin:0;"
-              data-confirm="Profil-Einrichtung für {{ display_name }} zurücksetzen? Die Daten bleiben erhalten, werden beim nächsten Login aber erneut abgefragt."
-              data-busy-label="Wird zurückgesetzt…">
+              data-confirm="{% blocktranslate trimmed with name=display_name %}Profil-Einrichtung für {{ name }} zurücksetzen? Die Daten bleiben erhalten, werden beim nächsten Login aber erneut abgefragt.{% endblocktranslate %}"
+              data-busy-label="{% translate 'Wird zurückgesetzt…' %}">
           {% csrf_token %}
-          <button type="submit" class="ca-button ca-button-sm">Profil-Einrichtung zurücksetzen</button>
+          <button type="submit" class="ca-button ca-button-sm">{% translate "Profil-Einrichtung zurücksetzen" %}</button>
         </form>
       {% endif %}
       {% if can_link %}
-        <a href="{% url 'audit_log' %}?type=tenant&id={{ tenant.pk }}" class="ca-button-outline ca-button-sm">Verlauf</a>
+        <a href="{% url 'audit_log' %}?type=tenant&id={{ tenant.pk }}" class="ca-button-outline ca-button-sm">{% translate "Verlauf" %}</a>
       {% endif %}
     </div>
   </div>
@@ -59,13 +60,13 @@
       <span>{{ section.title }}</span>
       <span style="margin-left:auto;display:flex;gap:.4rem;align-items:center;">
         {% if section.key == "housing" and can_write_mv %}
-        <button type="button" class="ca-notes-toggle" data-notes="mv-notes">🗒 Notizen {{ mv_notes|length }}</button>
+        <button type="button" class="ca-notes-toggle" data-notes="mv-notes">🗒 {% translate "Notizen" %} {{ mv_notes|length }}</button>
         {% endif %}
         {% if section.key != "housing" %}
         {# Housing has no editable tenant fields — room assignments save per-card. #}
         <span class="section-actions" style="display:none;gap:.4rem;align-items:center;">
-          <button type="submit" form="form-{{ section.key }}" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
-          <button type="button" class="revert-btn ca-button-outline" style="padding:.2rem .75rem;font-size:.82rem;">Zurücksetzen</button>
+          <button type="submit" form="form-{{ section.key }}" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">{% translate "Speichern" %}</button>
+          <button type="button" class="revert-btn ca-button-outline" style="padding:.2rem .75rem;font-size:.82rem;">{% translate "Zurücksetzen" %}</button>
         </span>
         {% endif %}
       </span>
@@ -73,8 +74,8 @@
 
     {% if section.key == "housing" and can_write_mv %}
     <div class="ca-notes-panel" id="mv-notes"><div class="ca-notes-inner">
-    <p style="font-weight:500;margin:.5rem 0 .4rem;">Interne Notizen (Mietverwaltung)
-      <span class="ca-hint" tabindex="0" role="button" aria-label="Wer kann diese Notizen sehen?">i<span class="ca-hint-bubble">Nur für die Mietverwaltung (und Admins) sichtbar.</span></span></p>
+    <p style="font-weight:500;margin:.5rem 0 .4rem;">{% translate "Interne Notizen (Mietverwaltung)" %}
+      <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Wer kann diese Notizen sehen?' %}">i<span class="ca-hint-bubble">{% translate "Nur für die Mietverwaltung (und Admins) sichtbar." %}</span></span></p>
     {% if mv_notes %}
     <ul style="font-size:.9rem;margin:.25rem 0 .75rem;">
       {% for n in mv_notes %}
@@ -90,7 +91,7 @@
       {% endfor %}
     </ul>
     {% else %}
-    <p style="color:#888;font-size:.9rem;margin:.25rem 0 .5rem;">Keine Notizen.</p>
+    <p style="color:#888;font-size:.9rem;margin:.25rem 0 .5rem;">{% translate "Keine Notizen." %}</p>
     {% endif %}
     <form class="ca-note-form" method="post" action="{% url 'note_add' %}">
       {% csrf_token %}
@@ -99,7 +100,7 @@
       <input type="hidden" name="subject_id" value="{{ tenant.pk }}">
       <input type="hidden" name="next" value="{{ request.path }}">
       <div style="display:flex;align-items:center;gap:.4rem;">
-        <textarea name="body" rows="2" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
+        <textarea name="body" rows="2" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="{% translate 'Notiz hinzufügen…' %}"></textarea>
         <button type="submit" class="ca-button" style="padding:.45rem .65rem;font-size:1.1rem;line-height:1;flex-shrink:0;">→</button>
       </div>
     </form>
@@ -120,17 +121,17 @@
       {# Each editable card carries its own <form id="form-room-{pk}"> for per-card save/revert. #}
       {# aform is None for read-only cards (owner, or Belegium outside the edit window). #}
       <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
-      <p style="font-weight:500;margin:.25rem 0 .4rem;">Aktuelle Zimmer
-        {% if can_create_room %}<span class="ca-hint" tabindex="0" role="button" aria-label="Wer kann Zimmerbelegungen bearbeiten?">i<span class="ca-hint-bubble">Die Mietverwaltung kann Zimmerbelegungen jederzeit bearbeiten. Die Belegium nur bei zukünftigen Einzügen und in den ersten zwei Wochen nach Einzug – danach nur Lesezugriff. Notizen bleiben für beide immer bearbeitbar.</span></span>{% endif %}</p>
+      <p style="font-weight:500;margin:.25rem 0 .4rem;">{% translate "Aktuelle Zimmer" %}
+        {% if can_create_room %}<span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Wer kann Zimmerbelegungen bearbeiten?' %}">i<span class="ca-hint-bubble">{% translate "Die Mietverwaltung kann Zimmerbelegungen jederzeit bearbeiten. Die Belegium nur bei zukünftigen Einzügen und in den ersten zwei Wochen nach Einzug – danach nur Lesezugriff. Notizen bleiben für beide immer bearbeitbar." %}</span></span>{% endif %}</p>
       {% for assignment, aform in active_assignment_cards %}
       {% include "app/_room_assignment_edit.html" with show_damages_here=show_assignment_damages %}
       {% empty %}
-      <p style="color:#888;font-size:.9rem;margin:.25rem 0;">Kein aktuelles Zimmer.</p>
+      <p style="color:#888;font-size:.9rem;margin:.25rem 0;">{% translate "Kein aktuelles Zimmer." %}</p>
       {% endfor %}
       {% if past_assignment_cards %}
       <details class="ca-collapse" style="margin-top:.75rem;">
         <summary style="cursor:pointer;list-style:none;font-weight:500;">
-          Frühere Zimmer ({{ past_assignment_cards|length }}) ▾
+          {% translate "Frühere Zimmer" %} ({{ past_assignment_cards|length }}) ▾
         </summary>
         <div style="margin-top:.4rem;">
         {% for assignment, aform in past_assignment_cards %}
@@ -143,7 +144,7 @@
       <details class="ca-collapse" style="margin-top:.75rem;" {% if new_room_form.errors %}open{% endif %}>
         <summary style="cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:.5rem;">
           <span class="ca-button-outline" style="padding:.1rem .55rem;font-size:1.1rem;border-radius:4px;line-height:1.4;">+</span>
-          <span style="font-size:.9rem;color:#555;">Zimmer zuordnen</span>
+          <span style="font-size:.9rem;color:#555;">{% translate "Zimmer zuordnen" %}</span>
         </summary>
         {% if new_room_form.errors %}<div style="color:#b00;font-size:.85rem;margin-top:.5rem;">{{ new_room_form.errors }}</div>{% endif %}
         {# novalidate: server-side validation surfaces errors; HTML5 required would block the empty POST. #}
@@ -152,50 +153,50 @@
         <input type="hidden" name="section" value="housing">
         <div class="ca-field-grid ca-room-assignment" style="margin-top:.5rem;">
           <div class="ca-field{% if new_room_form.room.errors %} ca-field-error{% endif %}">
-            <span class="ca-field-label">Zimmer</span>
+            <span class="ca-field-label">{% translate "Zimmer" %}</span>
             {{ new_room_form.room }}
           </div>
           <div class="ca-field{% if new_room_form.moved_in.errors %} ca-field-error{% endif %}">
-            <span class="ca-field-label">Eingezogen</span>
+            <span class="ca-field-label">{% translate "Eingezogen" %}</span>
             {{ new_room_form.moved_in }}
           </div>
           <div class="ca-field">
-            <span class="ca-field-label">Ausgezogen</span>
+            <span class="ca-field-label">{% translate "Ausgezogen" %}</span>
             {{ new_room_form.moved_out }}
           </div>
           <div class="ca-field">
-            <span class="ca-field-label">Briefkastenschlüssel erhalten</span>
+            <span class="ca-field-label">{% translate "Briefkastenschlüssel erhalten" %}</span>
             {{ new_room_form.mailbox_key_received }}
           </div>
           <div class="ca-field">
-            <span class="ca-field-label">Briefkastenschlüssel abgegeben</span>
+            <span class="ca-field-label">{% translate "Briefkastenschlüssel abgegeben" %}</span>
             {{ new_room_form.mailbox_key_returned }}
           </div>
           <div class="ca-field">
-            <span class="ca-field-label">Schlüssel erhalten</span>
+            <span class="ca-field-label">{% translate "Schlüssel erhalten" %}</span>
             {{ new_room_form.key_received }}
           </div>
           <div class="ca-field">
-            <span class="ca-field-label">Schlüssel wieder abgegeben</span>
+            <span class="ca-field-label">{% translate "Schlüssel wieder abgegeben" %}</span>
             {{ new_room_form.key_returned }}
           </div>
           <div class="ca-field ca-sublet-toggle">
-            <span class="ca-field-label">Untermiete</span>
+            <span class="ca-field-label">{% translate "Untermiete" %}</span>
             {{ new_room_form.is_sublet }}
           </div>
           <div class="ca-field ca-sublet-dep">
-            <span class="ca-field-label">Untervermietet von
-              <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Es können nur Mieter:innen des gewählten Zimmers ausgewählt werden.</span></span>
+            <span class="ca-field-label">{% translate "Untervermietet von" %}
+              <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Hinweis anzeigen' %}">i<span class="ca-hint-bubble">{% translate "Es können nur Mieter:innen des gewählten Zimmers ausgewählt werden." %}</span></span>
             </span>
             {{ new_room_form.sublet_of_tenant }}
           </div>
           <div class="ca-field">
-            <span class="ca-field-label">Kaution IBAN</span>
+            <span class="ca-field-label">{% translate "Kaution IBAN" %}</span>
             {{ new_room_form.deposit_iban }}
           </div>
         </div>
         <div style="margin-top:.75rem;">
-          <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Speichern</button>
+          <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">{% translate "Speichern" %}</button>
         </div>
         </form>
       </details>
@@ -209,8 +210,8 @@
         {% for row in section.rows %}
         {# ca-field-row: one line (label left, value right) on phones; text inputs keep the label above. #}
         <div class="ca-field{% if not row.field or row.field.widget_type in 'checkbox select date number' %} ca-field-row{% endif %}" data-field="{{ row.name }}">
-          <span class="ca-field-label">{{ row.label }}{% if row.field.help_text %} <span class="ca-hint ca-hint-below" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble" id="{{ row.field.auto_id }}_helptext">{{ row.field.help_text }}</span></span>{% endif %}</span>
-          {% if row.name == "mailbox_list_opt_in" and not tenant.profile_setup_completed_at and not tenant.mailbox_list_opt_in %}<span class="ca-pill ca-pill-amber">Ausstehend</span>{% endif %}
+          <span class="ca-field-label">{{ row.label }}{% if row.field.help_text %} <span class="ca-hint ca-hint-below" tabindex="0" role="button" aria-label="{% translate 'Hinweis anzeigen' %}">i<span class="ca-hint-bubble" id="{{ row.field.auto_id }}_helptext">{{ row.field.help_text }}</span></span>{% endif %}</span>
+          {% if row.name == "mailbox_list_opt_in" and not tenant.profile_setup_completed_at and not tenant.mailbox_list_opt_in %}<span class="ca-pill ca-pill-amber">{% translate "Ausstehend" %}</span>{% endif %}
           {% if row.field %}
             {{ row.field }}
             {% if row.field.errors %}<div style="color:#b00;font-size:.85rem;">{{ row.field.errors }}</div>{% endif %}
@@ -225,13 +226,13 @@
 
     {% if section.key == "housing" and sublet_out %}
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
-    <p style="font-weight:500;margin:.25rem 0 .25rem;">Untervermietet an</p>
+    <p style="font-weight:500;margin:.25rem 0 .25rem;">{% translate "Untervermietet an" %}</p>
     <ul>
       {% for a in sublet_out %}
       <li class="ca-sublet-line">
         {% tenant_link a.tenant %}
         — {{ a.room.wg.building.name }} · <a href="{% url 'wg_detail' a.room.wg_id %}" style="color:var(--ca-teal);">{{ a.room.wg.name }}</a> · {{ a.room.name }}
-        (seit {{ a.moved_in }}{% if a.moved_out %} bis {{ a.moved_out }}{% endif %})
+        ({% if a.moved_out %}{% blocktranslate trimmed with from=a.moved_in to=a.moved_out %}seit {{ from }} bis {{ to }}{% endblocktranslate %}{% else %}{% blocktranslate trimmed with from=a.moved_in %}seit {{ from }}{% endblocktranslate %}{% endif %})
       </li>
       {% endfor %}
     </ul>
@@ -243,41 +244,41 @@
   {% if can_see_proofs %}
   <details id="section-proofs" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;">
-      <span>Ausbildungsnachweis</span>
+      <span>{% translate "Ausbildungsnachweis" %}</span>
     </summary>
 
-    <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Ausstehend</p>
+    <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">{% translate "Ausstehend" %}</p>
     {% if pending_proofs %}
     <div style="overflow-x:auto;">
     <table class="ca-stack-table ca-proof-table" style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
       <thead>
         <tr>
-          <th style="text-align:left;padding:.25rem .5rem;">Datei</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Typ</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Fach / Bereich</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Einrichtung</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Gültig bis</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Hochgeladen</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Status</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Datei" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Typ" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Fach / Bereich" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Einrichtung" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Gültig bis" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Hochgeladen" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Status" %}</th>
           {% if can_write_mv %}<th></th>{% endif %}
         </tr>
       </thead>
       <tbody>
         {% for p in pending_proofs %}
         <tr style="{% if p.needs_human_review %}background:#fff8e1;{% endif %}">
-          <td data-label="Datei"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}"><span class="ca-fn-short">{{ p.file_name|middle_truncate }}</span><span class="ca-fn-full">{{ p.file_name }}</span></a></td>
-          <td data-label="Typ">{{ p.get_enrollment_type_display }}</td>
-          <td data-label="Fach / Bereich">{{ p.field_of_study|default:"—" }}</td>
-          <td data-label="Einrichtung">{{ p.educational_institution|default:"—" }}</td>
-          <td data-label="Gültig bis">{{ p.valid_until }}</td>
-          <td data-label="Hochgeladen">{{ p.uploaded_at|date:"d.m.Y" }}</td>
-          <td data-label="Status">{% if p.needs_human_review %}⚠ Prüfung erforderlich{% if p.review_reason %}<br><small style="color:#a15c00;">{{ p.review_reason }}</small>{% endif %}{% else %}Ausstehend{% endif %}</td>
+          <td data-label="{% translate 'Datei' %}"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}"><span class="ca-fn-short">{{ p.file_name|middle_truncate }}</span><span class="ca-fn-full">{{ p.file_name }}</span></a></td>
+          <td data-label="{% translate 'Typ' %}">{{ p.get_enrollment_type_display }}</td>
+          <td data-label="{% translate 'Fach / Bereich' %}">{{ p.field_of_study|default:"—" }}</td>
+          <td data-label="{% translate 'Einrichtung' %}">{{ p.educational_institution|default:"—" }}</td>
+          <td data-label="{% translate 'Gültig bis' %}">{{ p.valid_until }}</td>
+          <td data-label="{% translate 'Hochgeladen' %}">{{ p.uploaded_at|date:"d.m.Y" }}</td>
+          <td data-label="{% translate 'Status' %}">{% if p.needs_human_review %}⚠ {% translate "Prüfung erforderlich" %}{% if p.review_reason %}<br><small style="color:#a15c00;">{{ p.review_reason }}</small>{% endif %}{% else %}{% translate "Ausstehend" %}{% endif %}</td>
           {% if can_write_mv %}
           <td class="ca-stack-actions" style="white-space:nowrap;">
-            <button type="button" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;" data-toggle-hidden="verify-form-{{ p.pk }}">Verifizieren</button>
-            <form method="post" action="{% url 'enrollment_proof_reject' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="Diesen Nachweis ablehnen und löschen?">
+            <button type="button" class="ca-button" style="font-size:.8rem;padding:.1rem .4rem;" data-toggle-hidden="verify-form-{{ p.pk }}">{% translate "Verifizieren" %}</button>
+            <form method="post" action="{% url 'enrollment_proof_reject' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="{% translate 'Diesen Nachweis ablehnen und löschen?' %}">
               {% csrf_token %}
-              <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;">Ablehnen</button>
+              <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;">{% translate "Ablehnen" %}</button>
             </form>
           </td>
           {% endif %}
@@ -288,16 +289,16 @@
             <form method="post" action="{% url 'enrollment_proof_verify' pk=tenant.pk proof_pk=p.pk %}" style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
               {% csrf_token %}
               <select name="enrollment_type" style="padding:.25rem;">
-                <option value="STUDY" {% if p.enrollment_type == "STUDY" %}selected{% endif %}>Studium</option>
-                <option value="APPRENTICESHIP" {% if p.enrollment_type == "APPRENTICESHIP" %}selected{% endif %}>Ausbildung</option>
-                <option value="SCHUELER" {% if p.enrollment_type == "SCHUELER" %}selected{% endif %}>Schüler*in</option>
-                <option value="FSJ" {% if p.enrollment_type == "FSJ" %}selected{% endif %}>FSJ</option>
+                <option value="STUDY" {% if p.enrollment_type == "STUDY" %}selected{% endif %}>{% translate "Studium" %}</option>
+                <option value="APPRENTICESHIP" {% if p.enrollment_type == "APPRENTICESHIP" %}selected{% endif %}>{% translate "Ausbildung" %}</option>
+                <option value="SCHUELER" {% if p.enrollment_type == "SCHUELER" %}selected{% endif %}>{% translate "Schüler*in" %}</option>
+                <option value="FSJ" {% if p.enrollment_type == "FSJ" %}selected{% endif %}>{% translate "FSJ" %}</option>
               </select>
-              <input name="field_of_study" type="text" value="{{ p.field_of_study|default:'' }}" placeholder="Fach / Bereich" style="padding:.25rem;flex:1;min-width:120px;">
-              <input name="educational_institution" type="text" value="{{ p.educational_institution|default:'' }}" placeholder="Bildungseinrichtung" style="padding:.25rem;flex:1;min-width:150px;">
+              <input name="field_of_study" type="text" value="{{ p.field_of_study|default:'' }}" placeholder="{% translate 'Fach / Bereich' %}" style="padding:.25rem;flex:1;min-width:120px;">
+              <input name="educational_institution" type="text" value="{{ p.educational_institution|default:'' }}" placeholder="{% translate 'Bildungseinrichtung' %}" style="padding:.25rem;flex:1;min-width:150px;">
               <input name="valid_until" type="date" value="{{ p.valid_until|date:'Y-m-d' }}" required style="padding:.25rem;">
-              <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Bestätigen</button>
-              <button type="button" class="ca-button-outline" style="font-size:.8rem;padding:.2rem .6rem;" data-toggle-hidden="verify-form-{{ p.pk }}">Abbrechen</button>
+              <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">{% translate "Bestätigen" %}</button>
+              <button type="button" class="ca-button-outline" style="font-size:.8rem;padding:.2rem .6rem;" data-toggle-hidden="verify-form-{{ p.pk }}">{% translate "Abbrechen" %}</button>
             </form>
           </td>
         </tr>
@@ -307,40 +308,40 @@
     </table>
     </div>
     {% else %}
-    <p style="color:#888;font-size:.9rem;">Keine ausstehenden Nachweise.</p>
+    <p style="color:#888;font-size:.9rem;">{% translate "Keine ausstehenden Nachweise." %}</p>
     {% endif %}
 
-    <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">Verifiziert</p>
+    <p style="font-weight:600;font-size:.9rem;margin:.75rem 0 .25rem;">{% translate "Verifiziert" %}</p>
     {% if verified_proofs %}
     <div style="overflow-x:auto;">
     <table class="ca-stack-table ca-proof-table" style="width:100%;border-collapse:collapse;margin:.25rem 0 .75rem;font-size:.9rem;">
       <thead>
         <tr>
-          <th style="text-align:left;padding:.25rem .5rem;">Datei</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Typ</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Fach / Bereich</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Einrichtung</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Gültig bis</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Hochgeladen</th>
-          <th style="text-align:left;padding:.25rem .5rem;">Verifiziert am</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Datei" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Typ" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Fach / Bereich" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Einrichtung" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Gültig bis" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Hochgeladen" %}</th>
+          <th style="text-align:left;padding:.25rem .5rem;">{% translate "Verifiziert am" %}</th>
           {% if can_write_mv %}<th></th>{% endif %}
         </tr>
       </thead>
       <tbody>
         {% for p in verified_proofs %}
         <tr>
-          <td data-label="Datei"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}"><span class="ca-fn-short">{{ p.file_name|middle_truncate }}</span><span class="ca-fn-full">{{ p.file_name }}</span></a></td>
-          <td data-label="Typ">{{ p.get_enrollment_type_display }}</td>
-          <td data-label="Fach / Bereich">{{ p.field_of_study|default:"—" }}</td>
-          <td data-label="Einrichtung">{{ p.educational_institution|default:"—" }}</td>
-          <td data-label="Gültig bis">{{ p.valid_until }}</td>
-          <td data-label="Hochgeladen">{{ p.uploaded_at|date:"d.m.Y" }}</td>
-          <td data-label="Verifiziert am">{{ p.verified_at|date:"d.m.Y" }}</td>
+          <td data-label="{% translate 'Datei' %}"><a href="{% url 'enrollment_proof_download' pk=tenant.pk proof_pk=p.pk %}" style="color:var(--ca-teal);" title="{{ p.file_name }}"><span class="ca-fn-short">{{ p.file_name|middle_truncate }}</span><span class="ca-fn-full">{{ p.file_name }}</span></a></td>
+          <td data-label="{% translate 'Typ' %}">{{ p.get_enrollment_type_display }}</td>
+          <td data-label="{% translate 'Fach / Bereich' %}">{{ p.field_of_study|default:"—" }}</td>
+          <td data-label="{% translate 'Einrichtung' %}">{{ p.educational_institution|default:"—" }}</td>
+          <td data-label="{% translate 'Gültig bis' %}">{{ p.valid_until }}</td>
+          <td data-label="{% translate 'Hochgeladen' %}">{{ p.uploaded_at|date:"d.m.Y" }}</td>
+          <td data-label="{% translate 'Verifiziert am' %}">{{ p.verified_at|date:"d.m.Y" }}</td>
           {% if can_write_mv %}
           <td class="ca-stack-actions">
-            <form method="post" action="{% url 'enrollment_proof_revert' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="Verifizierung aufheben? Der Nachweis wird erneut automatisch geprüft.">
+            <form method="post" action="{% url 'enrollment_proof_revert' pk=tenant.pk proof_pk=p.pk %}" style="display:inline;" data-confirm="{% translate 'Verifizierung aufheben? Der Nachweis wird erneut automatisch geprüft.' %}">
               {% csrf_token %}
-              <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;" title="Verifizierung aufheben – erneut automatisch prüfen">Aufheben</button>
+              <button type="submit" class="ca-button-outline" style="font-size:.8rem;padding:.1rem .4rem;" title="{% translate 'Verifizierung aufheben – erneut automatisch prüfen' %}">{% translate "Aufheben" %}</button>
             </form>
           </td>
           {% endif %}
@@ -350,27 +351,27 @@
     </table>
     </div>
     {% else %}
-    <p style="color:#888;font-size:.9rem;">Noch keine verifizierten Nachweise.</p>
+    <p style="color:#888;font-size:.9rem;">{% translate "Noch keine verifizierten Nachweise." %}</p>
     {% endif %}
 
     {% if can_upload %}
     <form method="post" action="{% url 'enrollment_proof_upload' pk=tenant.pk %}" enctype="multipart/form-data" style="margin-top:1rem;">
       {% csrf_token %}
-      <label style="font-size:.9rem;font-weight:600;display:block;margin-bottom:.4rem;">Nachweis hochladen</label>
+      <label style="font-size:.9rem;font-weight:600;display:block;margin-bottom:.4rem;">{% translate "Nachweis hochladen" %}</label>
       <div style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
         <select name="enrollment_type" required style="padding:.3rem;">
-          <option value="">— Typ wählen —</option>
-          <option value="STUDY">Studium</option>
-          <option value="APPRENTICESHIP">Ausbildung</option>
-          <option value="SCHUELER">Schüler*in</option>
-          <option value="FSJ">Freiwilliges Soziales Jahr</option>
+          <option value="">{% translate "— Typ wählen —" %}</option>
+          <option value="STUDY">{% translate "Studium" %}</option>
+          <option value="APPRENTICESHIP">{% translate "Ausbildung" %}</option>
+          <option value="SCHUELER">{% translate "Schüler*in" %}</option>
+          <option value="FSJ">{% translate "Freiwilliges Soziales Jahr" %}</option>
         </select>
-        <input name="field_of_study" type="text" placeholder="Fach / Bereich (optional)" style="padding:.3rem;flex:1;min-width:140px;">
-        <input name="educational_institution" type="text" placeholder="Bildungseinrichtung (optional)" style="padding:.3rem;flex:1;min-width:160px;">
+        <input name="field_of_study" type="text" placeholder="{% translate 'Fach / Bereich (optional)' %}" style="padding:.3rem;flex:1;min-width:140px;">
+        <input name="educational_institution" type="text" placeholder="{% translate 'Bildungseinrichtung (optional)' %}" style="padding:.3rem;flex:1;min-width:160px;">
         <input name="proof_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:160px;">
-        <button type="submit" class="ca-button">Hochladen</button>
+        <button type="submit" class="ca-button">{% translate "Hochladen" %}</button>
       </div>
-      <small style="color:#888;display:block;margin-top:.25rem;">PDF, JPG oder PNG, max. 10 MB</small>
+      <small style="color:#888;display:block;margin-top:.25rem;">{% translate "PDF, JPG oder PNG, max. 10 MB" %}</small>
     </form>
     {% endif %}
   </details>
@@ -379,8 +380,8 @@
   {% if can_see_documents %}
   <details id="section-documents" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="cursor:pointer;font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;">
-      <span>Rechtsdokumente</span>
-      {% for g in document_groups %}{% if g.type == "vertraulichkeitserklaerung" %}<span class="ca-pill ca-pill-{{ clearance.color }}" title="{{ clearance.tooltip }}">{{ g.short }}</span>{% else %}<span class="ca-pill {% if g.has_active %}ca-pill-green{% else %}ca-pill-red{% endif %}" title="{{ g.label }}{% if not g.has_active %} – noch nicht unterschrieben{% endif %}">{{ g.short }}</span>{% endif %}{% endfor %}
+      <span>{% translate "Rechtsdokumente" %}</span>
+      {% for g in document_groups %}{% if g.type == "vertraulichkeitserklaerung" %}<span class="ca-pill ca-pill-{{ clearance.color }}" title="{{ clearance.tooltip }}">{{ g.short }}</span>{% else %}<span class="ca-pill {% if g.has_active %}ca-pill-green{% else %}ca-pill-red{% endif %}" title="{{ g.label }}{% if not g.has_active %} – {% translate "noch nicht unterschrieben" %}{% endif %}">{{ g.short }}</span>{% endif %}{% endfor %}
     </summary>
 
     {% for g in document_groups %}
@@ -388,13 +389,13 @@
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;">
         <strong>{{ g.label }}</strong>
         {% if g.type == "vertraulichkeitserklaerung" %}
-        <span class="ca-pill ca-pill-{{ clearance.color }}">{% if clearance.color == "green" %}Freigegeben{% elif clearance.color == "yellow" %}Wartet auf Bestätigung{% elif clearance.color == "red" %}Keine Freigabe{% elif clearance.color == "black" %}Inkonsistent{% else %}Gruppenstatus unbekannt{% endif %}</span>
-        <span class="ca-hint" tabindex="0" role="button" aria-label="Was bedeuten die Farben?">i<span class="ca-hint-bubble ca-hint-bubble-wide">{% for name, text in clearance.legend %}<strong style="color:inherit;">{{ name }}:</strong> {{ text }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</span></span>
-        {% if clearance.is_granter %}<span style="font-size:.85rem;">Name: {{ clearance.full_name }}</span>{% endif %}
+        <span class="ca-pill ca-pill-{{ clearance.color }}">{% if clearance.color == "green" %}{% translate "Freigegeben" %}{% elif clearance.color == "yellow" %}{% translate "Wartet auf Bestätigung" %}{% elif clearance.color == "red" %}{% translate "Keine Freigabe" %}{% elif clearance.color == "black" %}{% translate "Inkonsistent" %}{% else %}{% translate "Gruppenstatus unbekannt" %}{% endif %}</span>
+        <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Was bedeuten die Farben?' %}">i<span class="ca-hint-bubble ca-hint-bubble-wide">{% for name, text in clearance.legend %}<strong style="color:inherit;">{{ name }}:</strong> {{ text }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</span></span>
+        {% if clearance.is_granter %}<span style="font-size:.85rem;">{% translate "Name:" %} {{ clearance.full_name }}</span>{% endif %}
         {% elif g.has_active %}
-        <span style="color:#0a0;font-size:.8rem;">● Aktiv</span>
+        <span style="color:#0a0;font-size:.8rem;">{% translate "● Aktiv" %}</span>
         {% else %}
-        <span style="color:#b26a00;font-size:.8rem;">○ Noch nicht unterschrieben</span>
+        <span style="color:#b26a00;font-size:.8rem;">{% translate "○ Noch nicht unterschrieben" %}</span>
         {% endif %}
       </div>
 
@@ -402,38 +403,38 @@
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.4rem;font-size:.9rem;{% if d.revoked_at %}opacity:.6;{% endif %}">
         <a href="{% url 'document_download' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="color:var(--ca-teal);">{{ d.file_name }}</a>
         {% if d.doc_type == "mietvertrag" %}
-        <span>· Mieter*in {{ d.renter_signed_at|date:"d.m.Y" }}</span>
+        <span>· {% translate "Mieter*in" %} {{ d.renter_signed_at|date:"d.m.Y" }}</span>
         <span>· GmbH {{ d.company_signed_at|date:"d.m.Y" }} ({{ d.company_signed_by.first_name }} {{ d.company_signed_by.last_name }})</span>
         {% elif d.doc_type == "bescheid_ausbildungsstelle" %}
         <span>· {{ d.signed_at|date:"d.m.Y" }} ({{ d.signed_by.first_name }} {{ d.signed_by.last_name }})</span>
         {% elif d.doc_type == "sepa_lastschriftmandat" %}
         <span>· {{ d.signed_at|date:"d.m.Y" }}</span>
-        <span>· Mandat {{ d.mandatsreferenz }}</span>
+        <span>· {% translate "Mandat" %} {{ d.mandatsreferenz }}</span>
         <span>· {{ d.kontoinhaber }}, {{ d.bank_name }}</span>
         <span>· {{ d.iban }} / {{ d.bic }}</span>
         {% else %}
         <span>· {{ d.signed_at|date:"d.m.Y" }}</span>
         {% endif %}
         {% if d.doc_type == "vertraulichkeitserklaerung" %}
-        <span>· hochgeladen von {{ d.uploaded_by|display }}</span>
+        <span>· {% translate "hochgeladen von" %} {{ d.uploaded_by|display }}</span>
         {% endif %}
         {% if d.doc_type == "vertraulichkeitserklaerung" and not d.revoked_at %}
-        <span>· {% if d.clearance_approved %}Bestätigt{% else %}Ausstehend{% endif %}</span>
+        <span>· {% if d.clearance_approved %}{% translate "Bestätigt" %}{% else %}{% translate "Ausstehend" %}{% endif %}</span>
         {% if clearance.can_grant and not d.clearance_approved or clearance.can_grant and clearance.color == "black" %}
         {% url 'document_download' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk as ve_src %}
-        <button type="button" class="ca-button-outline" style="font-size:.8rem;padding:.2rem .6rem;" data-pip-src="{{ ve_src }}" data-pip-kind="{% if d.file_name|default:''|lower|slice:'-4:' == '.pdf' %}pdf{% else %}image{% endif %}">Prüfen</button>
-        <button type="button" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;" data-clearance-grant="{% url 'clearance_grant' pk=tenant.pk doc_pk=d.pk %}"{% if not clearance.has_account %} disabled title="Noch kein Intranet-Account – zuerst provisionieren"{% endif %}>{% if d.clearance_approved %}Erneut gewähren{% else %}Bestätigen{% endif %}</button>
+        <button type="button" class="ca-button-outline" style="font-size:.8rem;padding:.2rem .6rem;" data-pip-src="{{ ve_src }}" data-pip-kind="{% if d.file_name|default:''|lower|slice:'-4:' == '.pdf' %}pdf{% else %}image{% endif %}">{% translate "Prüfen" %}</button>
+        <button type="button" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;" data-clearance-grant="{% url 'clearance_grant' pk=tenant.pk doc_pk=d.pk %}"{% if not clearance.has_account %} disabled title="{% translate 'Noch kein Intranet-Account – zuerst provisionieren' %}"{% endif %}>{% if d.clearance_approved %}{% translate "Erneut gewähren" %}{% else %}{% translate "Bestätigen" %}{% endif %}</button>
         {% endif %}
         {% endif %}
         {% if d.revoked_at %}
-        <span style="color:#a00;">· Widerrufen ({{ d.revoked_at|date:"d.m.Y" }}{% if d.revoked_note %}: {{ d.revoked_note }}{% endif %})</span>
+        <span style="color:#a00;">· {% translate "Widerrufen" %} ({{ d.revoked_at|date:"d.m.Y" }}{% if d.revoked_note %}: {{ d.revoked_note }}{% endif %})</span>
         {% elif d.revoke_blocked %}
         {# approved VE: server refuses revoke while impersonating #}
         {% elif can_manage_documents or g.type == "vertraulichkeitserklaerung" and clearance.can_revoke_ve %}
-        <form method="post" action="{% url 'document_revoke' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;" data-alert-errors data-confirm="{% if d.clearance_approved %}Erklärung widerrufen? Dies entzieht {{ clearance.group }} und beendet den Zugang zu allen internen Plattformen (und CArtei). Dies kann nicht rückgängig gemacht werden.{% else %}Dokument widerrufen? Dies kann nicht rückgängig gemacht werden.{% endif %}">
+        <form method="post" action="{% url 'document_revoke' pk=tenant.pk document_type=d.doc_type doc_pk=d.pk %}" style="display:flex;gap:.3rem;align-items:center;margin-left:auto;" data-alert-errors data-confirm="{% if d.clearance_approved %}{% blocktranslate trimmed with group=clearance.group %}Erklärung widerrufen? Dies entzieht {{ group }} und beendet den Zugang zu allen internen Plattformen (und CArtei). Dies kann nicht rückgängig gemacht werden.{% endblocktranslate %}{% else %}{% translate "Dokument widerrufen? Dies kann nicht rückgängig gemacht werden." %}{% endif %}">
           {% csrf_token %}
-          <input name="revoked_note" type="text" required placeholder="Grund des Widerrufs" style="padding:.2rem;">
-          <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Widerrufen</button>
+          <input name="revoked_note" type="text" required placeholder="{% translate 'Grund des Widerrufs' %}" style="padding:.2rem;">
+          <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">{% translate "Widerrufen" %}</button>
         </form>
         {% endif %}
       </div>
@@ -444,34 +445,34 @@
         {% csrf_token %}
         <input type="hidden" name="document_type" value="{{ g.type }}">
         {% if g.type == "mietvertrag" %}
-        <label style="font-size:.85rem;">Mieter*in unterschrieben <input type="date" name="renter_signed_at" required style="padding:.3rem;"></label>
-        <label style="font-size:.85rem;">GmbH unterschrieben <input type="date" name="company_signed_at" required style="padding:.3rem;"></label>
-        <label style="font-size:.85rem;">Für die GmbH
+        <label style="font-size:.85rem;">{% translate "Mieter*in unterschrieben" %} <input type="date" name="renter_signed_at" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">{% translate "GmbH unterschrieben" %} <input type="date" name="company_signed_at" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">{% translate "Für die GmbH" %}
           <select name="company_signed_by" required style="padding:.3rem;">
             <option value="">—</option>
             {% for t in all_tenants %}<option value="{{ t.pk }}">{{ t.last_name }}, {{ t.first_name }}</option>{% endfor %}
           </select>
         </label>
         {% elif g.type == "bescheid_ausbildungsstelle" %}
-        <label style="font-size:.85rem;">Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
-        <label style="font-size:.85rem;">Unterschrieben von
+        <label style="font-size:.85rem;">{% translate "Unterschrieben am" %} <input name="signed_at" type="date" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">{% translate "Unterschrieben von" %}
           <select name="signed_by" required style="padding:.3rem;">
             <option value="">—</option>
             {% for t in all_tenants %}<option value="{{ t.pk }}">{{ t.last_name }}, {{ t.first_name }}</option>{% endfor %}
           </select>
         </label>
         {% elif g.type == "sepa_lastschriftmandat" %}
-        <label style="font-size:.85rem;">Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
-        <label style="font-size:.85rem;">Mandatsreferenz <input name="mandatsreferenz" type="text" required style="padding:.3rem;"></label>
-        <label style="font-size:.85rem;">Kontoinhaber*in <input name="kontoinhaber" type="text" required style="padding:.3rem;"></label>
-        <label style="font-size:.85rem;">Name der Bank <input name="bank_name" type="text" required style="padding:.3rem;"></label>
-        <label style="font-size:.85rem;">IBAN <input name="iban" type="text" required style="padding:.3rem;"></label>
-        <label style="font-size:.85rem;">BIC <input name="bic" type="text" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">{% translate "Unterschrieben am" %} <input name="signed_at" type="date" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">{% translate "Mandatsreferenz" %} <input name="mandatsreferenz" type="text" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">{% translate "Kontoinhaber*in" %} <input name="kontoinhaber" type="text" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">{% translate "Name der Bank" %} <input name="bank_name" type="text" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">{% translate "IBAN" %} <input name="iban" type="text" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">{% translate "BIC" %} <input name="bic" type="text" required style="padding:.3rem;"></label>
         {% else %}
-        <label style="font-size:.85rem;">Unterschrieben am <input name="signed_at" type="date" required style="padding:.3rem;"></label>
+        <label style="font-size:.85rem;">{% translate "Unterschrieben am" %} <input name="signed_at" type="date" required style="padding:.3rem;"></label>
         {% endif %}
         <input name="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png" required style="flex:1;min-width:160px;">
-        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">Hochladen</button>
+        <button type="submit" class="ca-button" style="font-size:.8rem;padding:.2rem .6rem;">{% translate "Hochladen" %}</button>
       </form>
       {% endif %}
     </div>
@@ -479,19 +480,21 @@
 
     {% if clearance.can_grant %}
     <dialog id="clearance-dialog" data-name="{{ clearance.full_name }}" style="border:none;border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,0.18);padding:2rem;max-width:460px;width:100%;">
-      <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Vertraulichkeitsfreigabe gewähren</h2>
+      <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">{% translate "Vertraulichkeitsfreigabe gewähren" %}</h2>
       <p style="font-size:0.9rem;color:#7a7a7a;margin-bottom:.5rem;">
+        {% blocktranslate trimmed with name=clearance.full_name group=clearance.group %}
         Ich habe die Vertraulichkeitserklärung und ihre Metadaten (Name, Datum, Unterschrift) geprüft.
-        Mit „Gewähren“ erhält <strong>{{ clearance.full_name }}</strong> die Gruppe <code>{{ clearance.group }}</code>
+        Mit „Gewähren“ erhält <strong>{{ name }}</strong> die Gruppe <code>{{ group }}</code>
         und damit Zugang zu allen internen Plattformen des Collegiums.
+        {% endblocktranslate %}
       </p>
-      <p style="font-size:0.9rem;color:#7a7a7a;margin-bottom:1rem;">Zur Bestätigung bitte <strong>{{ clearance.full_name }}</strong> eintippen:</p>
+      <p style="font-size:0.9rem;color:#7a7a7a;margin-bottom:1rem;">{% blocktranslate trimmed with name=clearance.full_name %}Zur Bestätigung bitte <strong>{{ name }}</strong> eintippen:{% endblocktranslate %}</p>
       <form method="post" action="" data-alert-errors>
         {% csrf_token %}
         <input type="text" name="confirm_name" id="clearance-confirm" class="input" style="margin-bottom:1rem;" autocomplete="off">
         <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-          <button type="button" class="ca-button-outline" data-clearance-cancel>Abbrechen</button>
-          <button type="submit" id="clearance-submit" class="ca-button" disabled>Gewähren</button>
+          <button type="button" class="ca-button-outline" data-clearance-cancel>{% translate "Abbrechen" %}</button>
+          <button type="submit" id="clearance-submit" class="ca-button" disabled>{% translate "Gewähren" %}</button>
         </div>
       </form>
     </dialog>
@@ -502,16 +505,16 @@
   {% if engagement or can_write_cluster %}
   <details id="section-engagement" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
     <summary style="font-weight:600;cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;">
-      <span>Engagement</span>
+      <span>{% translate "Engagement" %}</span>
       {% if can_write_cluster %}
-      <button type="button" class="ca-notes-toggle" data-notes="cluster-notes" style="margin-left:auto;">🗒 Notizen {{ cluster_notes|length }}</button>
+      <button type="button" class="ca-notes-toggle" data-notes="cluster-notes" style="margin-left:auto;">🗒 {% translate "Notizen" %} {{ cluster_notes|length }}</button>
       {% endif %}
     </summary>
 
     {% if can_write_cluster %}
     <div class="ca-notes-panel" id="cluster-notes"><div class="ca-notes-inner">
-    <p style="font-weight:500;margin:.5rem 0 .4rem;">Interne Notizen (Clustersprechende)
-      <span class="ca-hint" tabindex="0" role="button" aria-label="Wer kann diese Notizen sehen?">i<span class="ca-hint-bubble">Nur für die Clustersprechenden (und Admins) sichtbar.</span></span></p>
+    <p style="font-weight:500;margin:.5rem 0 .4rem;">{% translate "Interne Notizen (Clustersprechende)" %}
+      <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Wer kann diese Notizen sehen?' %}">i<span class="ca-hint-bubble">{% translate "Nur für die Clustersprechenden (und Admins) sichtbar." %}</span></span></p>
     {% if cluster_notes %}
     <ul style="font-size:.9rem;margin:.25rem 0 .75rem;">
       {% for n in cluster_notes %}
@@ -527,7 +530,7 @@
       {% endfor %}
     </ul>
     {% else %}
-    <p style="color:#888;font-size:.9rem;margin:.25rem 0 .5rem;">Keine Notizen.</p>
+    <p style="color:#888;font-size:.9rem;margin:.25rem 0 .5rem;">{% translate "Keine Notizen." %}</p>
     {% endif %}
     <form class="ca-note-form" method="post" action="{% url 'note_add' %}">
       {% csrf_token %}
@@ -536,7 +539,7 @@
       <input type="hidden" name="subject_id" value="{{ tenant.pk }}">
       <input type="hidden" name="next" value="{{ request.path }}">
       <div style="display:flex;align-items:center;gap:.4rem;">
-        <textarea name="body" rows="2" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="Notiz hinzufügen…"></textarea>
+        <textarea name="body" rows="2" style="flex:1;font-size:.9rem;border:1px solid #ddd;border-radius:4px;padding:.3rem .5rem;" placeholder="{% translate 'Notiz hinzufügen…' %}"></textarea>
         <button type="submit" class="ca-button" style="padding:.45rem .65rem;font-size:1.1rem;line-height:1;flex-shrink:0;">→</button>
       </div>
     </form>
@@ -547,7 +550,7 @@
     <div style="overflow-x:auto;margin-top:.5rem;">
       <table class="table is-fullwidth is-striped is-hoverable ca-stack-table" style="font-size:.9rem;">
         <thead>
-          <tr><th>AG</th><th>Status</th><th>Notiz</th></tr>
+          <tr><th>{% translate "AG" %}</th><th>{% translate "Status" %}</th><th>{% translate "Notiz" %}</th></tr>
         </thead>
         <tbody>
           {% regroup engagement by abfrage as survey_list %}
@@ -558,18 +561,18 @@
           {% for r in survey.list %}
           <tr>
             <td>{{ r.ag_name }}</td>
-            <td data-label="Status"><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
-            <td data-label="Notiz" style="color:#7a7a7a;">{{ r.note|default:"—" }}</td>
+            <td data-label="{% translate 'Status' %}"><span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
+            <td data-label="{% translate 'Notiz' %}" style="color:#7a7a7a;">{{ r.note|default:"—" }}</td>
           </tr>
           {% endfor %}
           {% empty %}
-          <tr><td colspan="3" style="color:#7a7a7a;">Kein Engagement erfasst.</td></tr>
+          <tr><td colspan="3" style="color:#7a7a7a;">{% translate "Kein Engagement erfasst." %}</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% else %}
-    <p style="color:#888;font-size:.9rem;margin-top:.5rem;">Kein Engagement erfasst.</p>
+    <p style="color:#888;font-size:.9rem;margin-top:.5rem;">{% translate "Kein Engagement erfasst." %}</p>
     {% endif %}
   </details>
   {% endif %}

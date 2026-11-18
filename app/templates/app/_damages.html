@@ -1,3 +1,4 @@
+{% load i18n %}
 {% comment %} Reusable damage list. Context: open_damages, fixed_damages, add_url,
 lines, sizes, can_fix, fix_url_name, kind ("room"/"wg", for photo urls), next,
 title. Open damages show directly; fixed ones
@@ -10,38 +11,38 @@ buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
       <span style="color:#7a7a7a;white-space:nowrap;align-self:baseline;">{{ d.created_at|date:"Y-m-d" }}</span>
       <span style="flex:1;align-self:baseline;">
         {{ d.get_line_display }}{% if d.size %} ({{ d.get_size_display }}){% endif %}{% if d.note %} — {{ d.note }}{% endif %}
-        <span style="color:#b00;">· offen</span>
-        <span style="color:#888;">· gemeldet von {{ d.created_by.first_name }} {{ d.created_by.last_name }}</span>
+        <span style="color:#b00;">{% translate "· offen" %}</span>
+        <span style="color:#888;">· {% translate "gemeldet von" %} {{ d.created_by.first_name }} {{ d.created_by.last_name }}</span>
       </span>
       {% include "app/_damage_photo.html" %}
       {% if can_fix %}
         <form method="post" action="{% url fix_url_name d.pk %}" style="display:inline;">
           {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
-          <button type="submit" class="ca-button-outline ca-button-sm">als behoben markieren</button>
+          <button type="submit" class="ca-button-outline ca-button-sm">{% translate "als behoben markieren" %}</button>
         </form>
       {% endif %}
     </div>
   {% empty %}
-    <p style="color:#888;font-size:.85rem;margin:.15rem 0;">Keine offenen Schäden.</p>
+    <p style="color:#888;font-size:.85rem;margin:.15rem 0;">{% translate "Keine offenen Schäden." %}</p>
   {% endfor %}
 
   {% if fixed_damages %}
   <details class="ca-collapse" style="margin-top:.4rem;">
-    <summary style="cursor:pointer;font-size:.85rem;color:#555;">Behobene Schäden ({{ fixed_damages|length }})</summary>
+    <summary style="cursor:pointer;font-size:.85rem;color:#555;">{% translate "Behobene Schäden" %} ({{ fixed_damages|length }})</summary>
     <div style="margin-top:.3rem;">
     {% for d in fixed_damages %}
       <div style="font-size:.9rem;margin:.15rem 0;color:#888;display:flex;gap:.5rem;align-items:baseline;">
         <span style="white-space:nowrap;">{{ d.created_at|date:"Y-m-d" }}</span>
         <span style="flex:1;">
           {{ d.get_line_display }}{% if d.size %} ({{ d.get_size_display }}){% endif %}{% if d.note %} — {{ d.note }}{% endif %}
-          <span>· gemeldet von {{ d.created_by.first_name }} {{ d.created_by.last_name }}</span>
-          {% if d.fixed_by %}<span>· behoben von {{ d.fixed_by.first_name }} {{ d.fixed_by.last_name }} am {{ d.fixed_at|date:"Y-m-d" }}</span>{% endif %}
+          <span>· {% translate "gemeldet von" %} {{ d.created_by.first_name }} {{ d.created_by.last_name }}</span>
+          {% if d.fixed_by %}<span>· {% blocktranslate trimmed with first=d.fixed_by.first_name last=d.fixed_by.last_name at=d.fixed_at|date:"Y-m-d" %}behoben von {{ first }} {{ last }} am {{ at }}{% endblocktranslate %}</span>{% endif %}
         </span>
         {% include "app/_damage_photo.html" with add_url="" %}
         {% if can_fix %}
           <form method="post" action="{% url fix_url_name d.pk %}" style="display:inline;">
             {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
-            <button type="submit" class="ca-button-outline ca-button-sm">wieder öffnen</button>
+            <button type="submit" class="ca-button-outline ca-button-sm">{% translate "wieder öffnen" %}</button>
           </form>
         {% endif %}
       </div>
@@ -57,12 +58,12 @@ buttons; fix_url_name is only read when can_fix is true. {% endcomment %}
         {% for value, label in lines %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
       </select>
       <select name="size">
-        <option value="">– Größe –</option>
+        <option value="">{% translate "– Größe –" %}</option>
         {% for value, label in sizes %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
       </select>
-      <input type="text" name="note" placeholder="Notiz (optional)" maxlength="500">
-      <input type="file" name="photo" accept="image/jpeg,image/png,application/pdf" title="Foto (optional)">
-      <button type="submit" class="ca-button ca-button-sm">Schaden erfassen</button>
+      <input type="text" name="note" placeholder="{% translate 'Notiz (optional)' %}" maxlength="500">
+      <input type="file" name="photo" accept="image/jpeg,image/png,application/pdf" title="{% translate 'Foto (optional)' %}">
+      <button type="submit" class="ca-button ca-button-sm">{% translate "Schaden erfassen" %}</button>
     </form>
   {% endif %}
 </div>

@@ -175,7 +175,7 @@ def test_ve_pill_colours(client, owner, granter_user, monkeypatch, approved, pen
     assert f"ca-pill-{color}" in html
     assert clearance.tooltip(color) in html  # summary pill
     assert 'aria-label="Was bedeuten die Farben?"' in html
-    for name, text in clearance.LEGEND:
+    for name, text in clearance.legend():
         assert f"{name}:</strong> {text}" in html
 
 
