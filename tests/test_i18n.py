@@ -238,3 +238,28 @@ def test_welcome_email_stays_german(mailoutbox, settings):
     with translation.override("en"):
         send_welcome_email(t, "mara_test", "OneTime-9")
     assert "Deine Zugangsdaten lauten wie folgt" in mailoutbox[0].body
+
+
+# --- final review fixes -------------------------------------------------------
+
+def test_handover_steps_stay_german_when_imported_under_english():
+    import importlib
+    from django.utils import translation
+    import app.handover
+    with translation.override("en"):
+        importlib.reload(app.handover)
+    areas = [area for _kind, area, _lines in app.handover.STEPS]
+    assert areas == ["Zimmer", "Bad", "Küche", "Gemeinschaftsfläche"]
+
+
+@pytest.mark.django_db
+def test_write_through_duplicate_error_english():
+    from unittest.mock import MagicMock, patch
+    from django.utils import translation
+    from app.views._shared import write_through_email
+    t = _make_tenant("ada", email="old@x.de")
+    form = MagicMock(cleaned_data={"email": "new@x.de"})
+    with patch("app.views._shared.set_ldap_mail", side_effect=RuntimeError("mail: unique constraint")), \
+            translation.override("en"):
+        assert write_through_email(form, t) is False
+    form.add_error.assert_called_once_with("email", "This email address is already used in the intranet.")

@@ -1,6 +1,8 @@
 """Room handover (Übergabe): who may conduct one, the ordered catalog the
 wizard walks, and the recap damage scoping. The damages themselves live in the
 existing RoomDamage/WGDamage tables; this module only orchestrates."""
+from django.utils import translation
+
 from app.damages import open_and_fixed
 from app.models import RoomDamage, RoomDamageLine, WGDamage, WGDamageLine
 
@@ -15,7 +17,10 @@ CONDUCT_ROLES = {"mietverwaltung", "admin", "mietverwaltung_helfer"}
 # the area label is the part of the choice label before " – ", so a new WG line
 # lands in its area automatically.
 def _wg_area_steps():
-    labels = dict(WGDamageLine.choices)
+    # Labels are translatable; the Übergabe stays German whatever language the
+    # importing request runs in.
+    with translation.override("de"):
+        labels = {v: str(label) for v, label in WGDamageLine.choices}
     groups, order = {}, []
     for v in WGDamageLine.values:
         area = labels[v].split(" – ")[0]
