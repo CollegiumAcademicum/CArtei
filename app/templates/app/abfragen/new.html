@@ -1,29 +1,30 @@
 {% extends "app/base.html" %}
-{% block title %}Neue Abfrage — CArtei{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Neue Abfrage" %} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card" style="max-width:560px;">
-  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">Neue Abfrage erstellen</h1>
+  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">{% translate "Neue Abfrage erstellen" %}</h1>
   <form method="post">
     {% csrf_token %}
     <div class="ca-field">
-      <label class="ca-label" for="id_date">Datum</label>
+      <label class="ca-label" for="id_date">{% translate "Datum" %}</label>
       <input class="ca-input" type="date" name="date" id="id_date" required>
     </div>
     <div class="ca-field">
-      <label class="ca-label" for="id_label">Bezeichnung (optional)</label>
+      <label class="ca-label" for="id_label">{% translate "Bezeichnung (optional)" %}</label>
       <input class="ca-input" type="text" name="label" id="id_label">
     </div>
     <div class="ca-field">
-      <label class="ca-label" for="id_ends_at">Offizielle Deadline</label>
+      <label class="ca-label" for="id_ends_at">{% translate "Offizielle Deadline" %}</label>
       <input class="ca-input" type="date" name="ends_at" id="id_ends_at" required>
     </div>
     <div class="ca-field">
-      <label class="ca-label" for="id_grace_ends_at">Nachfrist bis</label>
+      <label class="ca-label" for="id_grace_ends_at">{% translate "Nachfrist bis" %}</label>
       <input class="ca-input" type="date" name="grace_ends_at" id="id_grace_ends_at" required>
     </div>
     <div style="display:flex;gap:0.75rem;align-items:center;margin-top:1.5rem;">
-      <button type="submit" class="ca-button">Erstellen</button>
-      <a href="{% url 'abfragen_list' %}" class="ca-button-outline" style="text-decoration:none;">Abbrechen</a>
+      <button type="submit" class="ca-button">{% translate "Erstellen" %}</button>
+      <a href="{% url 'abfragen_list' %}" class="ca-button-outline" style="text-decoration:none;">{% translate "Abbrechen" %}</a>
     </div>
   </form>
 </div>

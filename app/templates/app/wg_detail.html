@@ -1,5 +1,5 @@
 {% extends "app/base.html" %}
-{% load tenant_extras %}
+{% load i18n tenant_extras %}
 {% block title %}{{ wg.name }} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card" style="max-width:1100px;margin:1.5rem auto;">
@@ -7,42 +7,43 @@
   <p style="color:#666;margin:.2rem 0 1rem;">{% if wg.cluster %}Cluster {{ wg.cluster }}{% endif %}</p>
 
   <form method="get" style="margin:0 0 1rem;">
-    <label>Stichtag <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}"></label>
-    <button type="submit" class="ca-button">Anzeigen</button>
+    <label>{% translate "Stichtag" %} <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}"></label>
+    <button type="submit" class="ca-button">{% translate "Anzeigen" %}</button>
   </form>
 
   {% if show_engagement %}
   <div class="ca-card" style="margin-bottom:1.25rem;background:#fafafa;">
     {% if rollup %}
-    <div><strong>{{ rollup.met }} von {{ rollup.total }}</strong> erfüllen ihr Engagement
-      <span style="color:#888;">(Abfrage {{ rollup.abfrage.label|default:rollup.abfrage.date }})</span></div>
+    <div>{% blocktranslate trimmed with met=rollup.met total=rollup.total %}<strong>{{ met }} von {{ total }}</strong> erfüllen ihr Engagement{% endblocktranslate %}
+      <span style="color:#888;">({% translate "Abfrage" %} {{ rollup.abfrage.label|default:rollup.abfrage.date }})</span></div>
     <div style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.4rem;">
       {% for row in rollup.rows %}
       <span class="badge badge-{{ row.status }}">{{ row.label }}: {{ row.count }}</span>
       {% endfor %}
-      {% if rollup.no_entry %}<span class="badge" style="background:#eee;color:#555;">kein Eintrag: {{ rollup.no_entry }}</span>{% endif %}
+      {% if rollup.no_entry %}<span class="badge" style="background:#eee;color:#555;">{% blocktranslate with n=rollup.no_entry %}kein Eintrag: {{ n }}{% endblocktranslate %}</span>{% endif %}
     </div>
     {% else %}
-    <span style="color:#888;">Kein Engagement auswertbar (keine Abfrage / keine Bewohner*innen am Stichtag).</span>
+    <span style="color:#888;">{% translate "Kein Engagement auswertbar (keine Abfrage / keine Bewohner*innen am Stichtag)." %}</span>
     {% endif %}
   </div>
   {% endif %}
 
   {# WG-level shared spaces #}
   <details id="section-gemeinschaft" class="ca-collapse" style="margin-bottom:1.5rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;">
-    <summary style="font-weight:600;cursor:pointer;">Gemeinschaftsflächen</summary>
-    <p style="font-weight:500;margin:.75rem 0 .4rem;">Ausstattung</p>
-    <p style="color:#888;">Ausstattung der Gemeinschaftsflächen folgt in einem späteren Schritt.</p>
+    <summary style="font-weight:600;cursor:pointer;">{% translate "Gemeinschaftsflächen" %}</summary>
+    <p style="font-weight:500;margin:.75rem 0 .4rem;">{% translate "Ausstattung" %}</p>
+    <p style="color:#888;">{% translate "Ausstattung der Gemeinschaftsflächen folgt in einem späteren Schritt." %}</p>
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    {% translate "Schäden an Gemeinschaftsflächen (WG)" as t_wg_damages %}
     {% if show_damages %}
       {% url 'wg_damage_add' wg.id as wg_add_url %}
-      {% include "app/_damages.html" with open_damages=wg_damages_open fixed_damages=wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=True fix_url_name="wg_damage_fix" kind="wg" next=request.path title="Schäden an Gemeinschaftsflächen (WG)" %}
+      {% include "app/_damages.html" with open_damages=wg_damages_open fixed_damages=wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=True fix_url_name="wg_damage_fix" kind="wg" next=request.path title=t_wg_damages %}
     {% elif resident_wg %}
       {% url 'wg_damage_add' wg.id as wg_add_url %}
-      {% include "app/_damages.html" with open_damages=wg_damages_open fixed_damages=wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=False kind="wg" next=request.path title="Schäden an Gemeinschaftsflächen (WG)" %}
+      {% include "app/_damages.html" with open_damages=wg_damages_open fixed_damages=wg_damages_fixed add_url=wg_add_url lines=wg_damage_lines sizes=damage_sizes can_fix=False kind="wg" next=request.path title=t_wg_damages %}
     {% else %}
-      <p style="font-weight:500;margin:.25rem 0 .4rem;">Schäden</p>
-      <p style="color:#888;">Schadenskatalog folgt in einem späteren Schritt.</p>
+      <p style="font-weight:500;margin:.25rem 0 .4rem;">{% translate "Schäden" %}</p>
+      <p style="color:#888;">{% translate "Schadenskatalog folgt in einem späteren Schritt." %}</p>
     {% endif %}
   </details>
 
@@ -52,13 +53,13 @@
       <span>{{ r.room.name }}</span>
       <span style="color:#888;font-weight:400;font-size:.9rem;">{{ r.room.size_sqm }} m²</span>
       <span style="margin-left:auto;">
-        {% if r.active_count %}<span class="ca-pill ca-pill-green">belegt ({{ r.active_count }})</span>
-        {% else %}<span class="ca-pill ca-pill-no">frei</span>{% endif %}
+        {% if r.active_count %}<span class="ca-pill ca-pill-green">{% blocktranslate with n=r.active_count %}belegt ({{ n }}){% endblocktranslate %}</span>
+        {% else %}<span class="ca-pill ca-pill-no">{% translate "frei" %}</span>{% endif %}
       </span>
     </summary>
 
     {# Ausstattung #}
-    <p style="font-weight:500;margin:.75rem 0 .4rem;">Ausstattung</p>
+    <p style="font-weight:500;margin:.75rem 0 .4rem;">{% translate "Ausstattung" %}</p>
     {% if r.fform %}
     <form method="post" style="margin:.2rem 0 .4rem;">
       {% csrf_token %}
@@ -66,15 +67,15 @@
       {% for f in r.fform %}
       <label style="margin-right:1rem;">{{ f }} {{ f.label }}</label>
       {% endfor %}
-      <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Ausstattung speichern</button>
+      <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">{% translate "Ausstattung speichern" %}</button>
     </form>
     {% else %}
-    <p style="color:#666;margin:.2rem 0 .4rem;">{% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span style="color:#888;">keine</span>{% endif %}</p>
+    <p style="color:#666;margin:.2rem 0 .4rem;">{% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span style="color:#888;">{% translate "keine" %}</span>{% endif %}</p>
     {% endif %}
 
     {# Bewohner*innen #}
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
-    <p style="font-weight:500;margin:.25rem 0 .4rem;">Bewohner*innen</p>
+    <p style="font-weight:500;margin:.25rem 0 .4rem;">{% translate "Bewohner*innen" %}</p>
     {% if can_edit_rooms %}
       {% for c in r.active_cards %}
       <div class="wg-current">
@@ -82,12 +83,12 @@
         {% include "app/_room_assignment_edit.html" with assignment=c.assignment aform=c.aform %}
       </div>
       {% empty %}
-      <p style="color:#888;">Keine aktuelle Belegung.</p>
+      <p style="color:#888;">{% translate "Keine aktuelle Belegung." %}</p>
       {% endfor %}
       {% if r.past_cards %}
       <details class="ca-collapse" style="margin-top:.75rem;">
         <summary style="cursor:pointer;list-style:none;font-weight:500;">
-          Frühere Belegungen ({{ r.past_cards|length }}) ▾
+          {% blocktranslate with n=r.past_cards|length %}Frühere Belegungen ({{ n }}){% endblocktranslate %} ▾
         </summary>
         <div style="margin-top:.4rem;">
         {% for c in r.past_cards %}
@@ -103,7 +104,7 @@
       <details class="ca-collapse" style="margin-top:.75rem;" {% if r.cform.errors %}open{% endif %}>
         <summary style="cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:.5rem;">
           <span class="ca-button-outline" style="padding:.1rem .55rem;font-size:1.1rem;border-radius:4px;line-height:1.4;">+</span>
-          <span style="font-size:.9rem;color:#555;">Bewohner*in zuordnen</span>
+          <span style="font-size:.9rem;color:#555;">{% translate "Bewohner*in zuordnen" %}</span>
         </summary>
         {% if r.cform.non_field_errors %}<div style="color:#b00;font-size:.85rem;margin-top:.5rem;">{{ r.cform.non_field_errors }}</div>{% endif %}
         {# novalidate: server-side validation surfaces errors; HTML5 required would block the empty POST from a collapsed section. #}
@@ -112,51 +113,51 @@
           <input type="hidden" name="new_assignment_room_id" value="{{ r.room.pk }}">
           <div class="ca-field-grid" style="margin-top:.5rem;">
             <div class="ca-field{% if r.cform.tenant.errors %} ca-field-error{% endif %}">
-              <span class="ca-field-label">Bewohner*in</span>
+              <span class="ca-field-label">{% translate "Bewohner*in" %}</span>
               {{ r.cform.tenant }}
               {% if r.cform.tenant.errors %}<div style="color:#b00;font-size:.85rem;">{{ r.cform.tenant.errors }}</div>{% endif %}
             </div>
             <div class="ca-field{% if r.cform.moved_in.errors %} ca-field-error{% endif %}">
-              <span class="ca-field-label">Eingezogen</span>
+              <span class="ca-field-label">{% translate "Eingezogen" %}</span>
               {{ r.cform.moved_in }}
               {% if r.cform.moved_in.errors %}<div style="color:#b00;font-size:.85rem;">{{ r.cform.moved_in.errors }}</div>{% endif %}
             </div>
             <div class="ca-field">
-              <span class="ca-field-label">Ausgezogen</span>
+              <span class="ca-field-label">{% translate "Ausgezogen" %}</span>
               {{ r.cform.moved_out }}
             </div>
             <div class="ca-field">
-              <span class="ca-field-label">Briefkastenschlüssel erhalten</span>
+              <span class="ca-field-label">{% translate "Briefkastenschlüssel erhalten" %}</span>
               {{ r.cform.mailbox_key_received }}
             </div>
             <div class="ca-field">
-              <span class="ca-field-label">Briefkastenschlüssel abgegeben</span>
+              <span class="ca-field-label">{% translate "Briefkastenschlüssel abgegeben" %}</span>
               {{ r.cform.mailbox_key_returned }}
             </div>
             <div class="ca-field">
-              <span class="ca-field-label">Schlüssel erhalten</span>
+              <span class="ca-field-label">{% translate "Schlüssel erhalten" %}</span>
               {{ r.cform.key_received }}
             </div>
             <div class="ca-field">
-              <span class="ca-field-label">Schlüssel wieder abgegeben</span>
+              <span class="ca-field-label">{% translate "Schlüssel wieder abgegeben" %}</span>
               {{ r.cform.key_returned }}
             </div>
             <div class="ca-field ca-sublet-toggle">
-              <span class="ca-field-label">Untermiete</span>
+              <span class="ca-field-label">{% translate "Untermiete" %}</span>
               {{ r.cform.is_sublet }}
             </div>
             <div class="ca-field ca-sublet-dep">
-              <span class="ca-field-label">Untervermietet von</span>
+              <span class="ca-field-label">{% translate "Untervermietet von" %}</span>
               {{ r.cform.sublet_of_tenant }}
               {% if r.cform.sublet_of_tenant.errors %}<div style="color:#b00;font-size:.85rem;">{{ r.cform.sublet_of_tenant.errors }}</div>{% endif %}
             </div>
             <div class="ca-field">
-              <span class="ca-field-label">Kaution IBAN</span>
+              <span class="ca-field-label">{% translate "Kaution IBAN" %}</span>
               {{ r.cform.deposit_iban }}
             </div>
           </div>
           <div style="margin-top:.75rem;">
-            <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">Zuordnen</button>
+            <button type="submit" class="ca-button" style="padding:.2rem .75rem;font-size:.82rem;">{% translate "Zuordnen" %}</button>
           </div>
         </form>
       </details>
@@ -166,32 +167,33 @@
       {% include "app/_room_assignment_edit.html" with assignment=c.assignment aform=None %}
       {% endfor %}
     {% else %}
-      {% if r.active_count %}<p style="color:#888;">belegt ({{ r.active_count }})</p>
-      {% else %}<p style="color:#888;">frei</p>{% endif %}
+      {% if r.active_count %}<p style="color:#888;">{% blocktranslate with n=r.active_count %}belegt ({{ n }}){% endblocktranslate %}</p>
+      {% else %}<p style="color:#888;">{% translate "frei" %}</p>{% endif %}
     {% endif %}
 
     {# Schäden #}
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
+    {% translate "Schäden am Zimmer" as t_room_damages %}
     {% if show_damages %}
       {% url 'room_damage_add' r.room.id as room_add_url %}
-      {% include "app/_damages.html" with open_damages=r.room.damages_open fixed_damages=r.room.damages_fixed add_url=room_add_url lines=room_damage_lines sizes=damage_sizes can_fix=True fix_url_name="room_damage_fix" kind="room" next=request.path title="Schäden am Zimmer" %}
+      {% include "app/_damages.html" with open_damages=r.room.damages_open fixed_damages=r.room.damages_fixed add_url=room_add_url lines=room_damage_lines sizes=damage_sizes can_fix=True fix_url_name="room_damage_fix" kind="room" next=request.path title=t_room_damages %}
     {% elif r.own_resident %}
       {% url 'room_damage_add' r.room.id as room_add_url %}
-      {% include "app/_damages.html" with open_damages=r.room.damages_open fixed_damages=r.room.damages_fixed add_url=room_add_url lines=room_damage_lines sizes=damage_sizes can_fix=False kind="room" next=request.path title="Schäden am Zimmer" %}
+      {% include "app/_damages.html" with open_damages=r.room.damages_open fixed_damages=r.room.damages_fixed add_url=room_add_url lines=room_damage_lines sizes=damage_sizes can_fix=False kind="room" next=request.path title=t_room_damages %}
     {% else %}
-      <p style="font-weight:500;margin:.25rem 0 .4rem;">Schäden</p>
-      <p style="color:#888;">Schadenskatalog folgt in einem späteren Schritt.</p>
+      <p style="font-weight:500;margin:.25rem 0 .4rem;">{% translate "Schäden" %}</p>
+      <p style="color:#888;">{% translate "Schadenskatalog folgt in einem späteren Schritt." %}</p>
     {% endif %}
     {% if can_conduct_handover %}
     <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
-    <a href="{% url 'uebergabe_start' %}?room={{ r.room.id }}" class="ca-button ca-button-sm">Übergabe starten</a>
+    <a href="{% url 'uebergabe_start' %}?room={{ r.room.id }}" class="ca-button ca-button-sm">{% translate "Übergabe starten" %}</a>
     {% if r.room.last_uebergabe %}
-      <a href="{% url 'uebergabe_recap' r.room.last_uebergabe.pk %}" style="font-size:.85rem;margin-left:.5rem;">letzte Übergabe ({{ r.room.last_uebergabe.completed_at|date:"Y-m-d" }})</a>
+      <a href="{% url 'uebergabe_recap' r.room.last_uebergabe.pk %}" style="font-size:.85rem;margin-left:.5rem;">{% blocktranslate with d=r.room.last_uebergabe.completed_at|date:"Y-m-d" %}letzte Übergabe ({{ d }}){% endblocktranslate %}</a>
     {% endif %}
     {% endif %}
   </details>
   {% empty %}
-  <p style="color:#888;">Keine Zimmer erfasst.</p>
+  <p style="color:#888;">{% translate "Keine Zimmer erfasst." %}</p>
   {% endfor %}
 </div>
 

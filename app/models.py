@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.db import models
 from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 
 
 class AGStatus(models.TextChoices):
@@ -92,7 +92,7 @@ class AGAbfrage(models.Model):
         ordering = ["-date"]
 
     def __str__(self) -> str:
-        return self.label or f"Abfrage {self.ends_at}"
+        return self.label or gettext("Abfrage %(date)s") % {"date": self.ends_at}
 
     @property
     def state(self) -> str:

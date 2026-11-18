@@ -263,3 +263,124 @@ def test_write_through_duplicate_error_english():
             translation.override("en"):
         assert write_through_email(form, t) is False
     form.add_error.assert_called_once_with("email", "This email address is already used in the intranet.")
+
+
+# --- more views: profile setup, lists, WGs, surveys, admin portal ----------------
+
+_STAFF_GROUPS = {"admin": ["admins"], "mietverwaltung": ["ag.mietverwaltung"], "cluster": ["gr.cluster"]}
+
+
+@pytest.fixture
+def staff(client, settings):
+    settings.TENANT_ROLE_GROUPS = _STAFF_GROUPS
+    user = User.objects.create_user(username="staff")
+    for g in ("admins", "ag.mietverwaltung", "gr.cluster"):
+        user.groups.add(Group.objects.get_or_create(name=g)[0])
+    client.force_login(user)
+    return user
+
+
+@pytest.fixture
+def wg_room():
+    from app.models import Building, Room, WG
+    wg = WG.objects.create(building=Building.objects.create(name="Neubau"), name="1.02")
+    return Room.objects.create(wg=wg, name="1.02.1", size_sqm="12.00", has_bed=True)
+
+
+@pytest.fixture
+def abfrage():
+    from datetime import date, timedelta
+    from app.models import AGAbfrage
+    today = date.today()
+    return AGAbfrage.objects.create(date=today, ends_at=today + timedelta(days=7),
+                                    grace_ends_at=today + timedelta(days=14))
+
+
+def _body(client, url):
+    r = client.get(url, **EN)
+    assert r.status_code == 200
+    return r.content.decode()
+
+
+@pytest.mark.django_db
+def test_profile_setup_english(client, wg_room):
+    from django.utils import timezone
+    from app.models import TenantRoomAssignment
+    t, _u = _login(client, "ada", "en")
+    TenantRoomAssignment.objects.create(tenant=t, room=wg_room, moved_in=timezone.localdate())
+    body = client.get("/profile/setup/").content.decode()
+    assert "Complete your profile" in body and "Should your name appear on the mailbox list?" in body
+    assert "Profil vervollständigen" not in body and "Briefkastenliste" not in body
+
+
+@pytest.mark.django_db
+def test_tenant_list_english(client, staff):
+    _make_tenant("ada")
+    body = _body(client, "/tenants/?residents=all")
+    assert "Group by cluster" in body and "1 person<" in body and "Mailbox" in body
+    assert "Nach Cluster gruppieren" not in body and "Briefkasten" not in body
+
+
+@pytest.mark.django_db
+def test_tenant_create_english(client, staff):
+    from django.urls import reverse
+    body = _body(client, reverse("tenant_create"))
+    assert "New resident" in body and "First name" in body and "Create intranet account right away" in body
+    assert "Vorname" not in body and "Abbrechen" not in body
+
+
+@pytest.mark.django_db
+def test_wg_list_and_detail_english(client, staff, wg_room):
+    body = _body(client, "/wgs/")
+    assert "WGs & rooms" in body and "1 room<" in body and "Furnishings" in body and "Bed" in body
+    assert "Ausstattung" not in body and "Bett" not in body
+    body = _body(client, f"/wgs/{wg_room.wg.pk}/")
+    assert "Common areas" in body and "Save furnishings" in body and "Mattress" in body
+    assert "Gemeinschaftsflächen" not in body and "Matratze" not in body
+
+
+@pytest.mark.django_db
+def test_wg_detail_german(client, staff, wg_room):
+    body = client.get(f"/wgs/{wg_room.wg.pk}/", **DE).content.decode()
+    assert "Gemeinschaftsflächen" in body and "Ausstattung speichern" in body
+
+
+@pytest.mark.django_db
+def test_survey_views_english(client, staff, abfrage):
+    body = _body(client, "/abfragen/")
+    assert "AG engagement surveys" in body and "Grace period until" in body
+    assert f"Survey {abfrage.ends_at}" in body and "Nachfrist" not in body
+    body = _body(client, "/abfragen/new/")
+    assert "Create new survey" in body and "Official deadline" in body
+    body = _body(client, f"/abfragen/{abfrage.pk}/")
+    assert "Results by AG" in body and "Delete permanently" in body and "Löschen" not in body
+    body = _body(client, f"/abfragen/{abfrage.pk}/tenants/")
+    assert "Sufficient?" in body and "Ausreichend" not in body
+
+
+@pytest.mark.django_db
+def test_ag_edit_english(client, staff, abfrage, monkeypatch):
+    from app import ldap_utils
+    monkeypatch.setattr(ldap_utils, "get_ag_members", lambda ag: [])
+    body = _body(client, f"/abfragen/{abfrage.pk}/ag/ag.test/")
+    assert "Overall state of the AG" in body and "Add another resident" in body
+    assert 'data-labels="too active,active,' in body and 'data-labels="healthy,core tasks only,' in body
+    assert "Gesamtzustand" not in body and "nur Kernaufgaben" not in body
+
+
+@pytest.mark.django_db
+def test_admin_portal_english(client, staff):
+    body = _body(client, "/admin/")
+    assert "Admin portal" in body and "Invalidate all sessions" in body
+    assert "Admin-Portal" not in body and "Sitzungen" not in body
+
+
+def test_abfrage_str_follows_language():
+    from datetime import date
+    from django.utils import translation
+    from app.models import AGAbfrage
+    a = AGAbfrage(ends_at=date(2026, 12, 1))
+    with translation.override("en"):
+        assert str(a) == "Survey 2026-12-01"
+    with translation.override("de"):
+        assert str(a) == "Abfrage 2026-12-01"

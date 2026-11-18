@@ -1,10 +1,11 @@
 {% extends "app/base.html" %}
-{% block title %}WGs & Zimmer — CArtei{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "WGs & Zimmer" %} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
-    <h1 style="font-size:1.4rem;font-weight:700;">WGs & Zimmer</h1>
-    <span style="color:#7a7a7a;font-size:0.9rem;">{{ total_rooms }} Zimmer</span>
+    <h1 style="font-size:1.4rem;font-weight:700;">{% translate "WGs & Zimmer" %}</h1>
+    <span style="color:#7a7a7a;font-size:0.9rem;">{% blocktranslate count n=total_rooms %}{{ n }} Zimmer{% plural %}{{ n }} Zimmer{% endblocktranslate %}</span>
   </div>
 
   <div class="ca-tl-layout">
@@ -12,9 +13,9 @@
     <aside class="ca-tl-rail">
       <form method="get">
         <div class="ca-facet">
-          <h5>Stichtag</h5>
+          <h5>{% translate "Stichtag" %}</h5>
           <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}" class="input is-small" style="width:100%;">
-          <button type="submit" class="ca-button" style="margin-top:.5rem;font-size:.8rem;padding:.25rem .7rem;">Anzeigen</button>
+          <button type="submit" class="ca-button" style="margin-top:.5rem;font-size:.8rem;padding:.25rem .7rem;">{% translate "Anzeigen" %}</button>
         </div>
       </form>
     </aside>
@@ -31,32 +32,32 @@
               <td colspan="{{ col_count }}">
                 <a href="{% url 'wg_detail' w.wg.pk %}?as_of={{ as_of|date:'Y-m-d' }}">{{ w.wg.name }}</a>
                 <span class="ca-grp-tally">
-                  {% if w.wg.cluster %}· Cluster {{ w.wg.cluster }} {% endif %}· {{ w.rooms|length }} Zimmer
-                  {% if show_damages and w.damages.0 %}· <span style="color:#b00;">{{ w.damages.0 }} WG-Schäden offen</span>{% endif %}
+                  {% if w.wg.cluster %}· Cluster {{ w.wg.cluster }} {% endif %}· {% blocktranslate count n=w.rooms|length %}{{ n }} Zimmer{% plural %}{{ n }} Zimmer{% endblocktranslate %}
+                  {% if show_damages and w.damages.0 %}· <span style="color:#b00;">{% blocktranslate with n=w.damages.0 %}{{ n }} WG-Schäden offen{% endblocktranslate %}</span>{% endif %}
                 </span>
-                {% if show_engagement and w.engagement == "ok" %}<span class="ca-pill ca-pill-green">Engagement vollständig</span>
-                {% elif show_engagement and w.engagement == "flag" %}<span class="ca-pill ca-pill-amber">Engagement unvollständig</span>{% endif %}
+                {% if show_engagement and w.engagement == "ok" %}<span class="ca-pill ca-pill-green">{% translate "Engagement vollständig" %}</span>
+                {% elif show_engagement and w.engagement == "flag" %}<span class="ca-pill ca-pill-amber">{% translate "Engagement unvollständig" %}</span>{% endif %}
               </td>
             </tr>
             <tr>
-              <th style="text-align:left;">Zimmer</th>
+              <th style="text-align:left;">{% translate "Zimmer" %}</th>
               <th style="text-align:left;">m²</th>
-              <th style="text-align:left;">Ausstattung</th>
-              <th style="text-align:left;">Belegung</th>
+              <th style="text-align:left;">{% translate "Ausstattung" %}</th>
+              <th style="text-align:left;">{% translate "Belegung" %}</th>
               {% if show_engagement %}<th style="text-align:left;">Engagement</th>{% endif %}
-              {% if show_damages %}<th style="text-align:left;">Schäden (offen/behoben)</th>{% endif %}
+              {% if show_damages %}<th style="text-align:left;">{% translate "Schäden (offen/behoben)" %}</th>{% endif %}
             </tr>
           </thead>
           <tbody>
           {% for r in w.rooms %}
             <tr>
-              <td>{{ r.room.name }}{% if r.room.freifinanziert %} <span class="ca-room-badge">freifinanziert</span>{% endif %}</td>
+              <td>{{ r.room.name }}{% if r.room.freifinanziert %} <span class="ca-room-badge">{% translate "freifinanziert" %}</span>{% endif %}</td>
               <td>{{ r.room.size_sqm }}</td>
               <td>{% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span class="ca-tl-muted">—</span>{% endif %}</td>
               <td>
                 {% if r.occupants %}
-                  {% if may_see_names %}{% for o in r.occupants %}<a href="{% url 'tenant_detail' o.pk %}" class="ca-tl-name">{{ o.label }}</a>{% if o.realname %} <span class="ca-tl-muted">({{ o.realname }})</span>{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="ca-pill ca-pill-green">belegt ({{ r.occupants|length }})</span>{% endif %}
-                {% else %}<span class="ca-tl-muted">frei</span>{% endif %}
+                  {% if may_see_names %}{% for o in r.occupants %}<a href="{% url 'tenant_detail' o.pk %}" class="ca-tl-name">{{ o.label }}</a>{% if o.realname %} <span class="ca-tl-muted">({{ o.realname }})</span>{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="ca-pill ca-pill-green">{% blocktranslate with n=r.occupants|length %}belegt ({{ n }}){% endblocktranslate %}</span>{% endif %}
+                {% else %}<span class="ca-tl-muted">{% translate "frei" %}</span>{% endif %}
               </td>
               {% if show_engagement %}<td>
                 {% if r.engagement == "ok" %}<span class="ca-pill ca-pill-green">OK</span>
@@ -68,16 +69,16 @@
               </td>{% endif %}
             </tr>
           {% empty %}
-            <tr><td colspan="{{ col_count }}" class="ca-tl-muted">Keine Zimmer.</td></tr>
+            <tr><td colspan="{{ col_count }}" class="ca-tl-muted">{% translate "Keine Zimmer." %}</td></tr>
           {% endfor %}
           </tbody>
         </table>
       </div>
       {% empty %}
-      <p class="ca-tl-muted">Keine WGs.</p>
+      <p class="ca-tl-muted">{% translate "Keine WGs." %}</p>
       {% endfor %}
       {% empty %}
-      <p class="ca-tl-muted">Keine Gebäude vorhanden.</p>
+      <p class="ca-tl-muted">{% translate "Keine Gebäude vorhanden." %}</p>
       {% endfor %}
     </div>
   </div>

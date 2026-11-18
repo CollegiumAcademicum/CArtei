@@ -1,42 +1,43 @@
 {% extends "app/base.html" %}
-{% block title %}Abfragen — CArtei{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Abfragen" %} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
-    <h1 style="font-size:1.4rem;font-weight:700;">AG-Engagement-Abfragen</h1>
+    <h1 style="font-size:1.4rem;font-weight:700;">{% translate "AG-Engagement-Abfragen" %}</h1>
     {% if is_privileged %}
-    <a href="{% url 'abfrage_new' %}" class="ca-button" style="text-decoration:none;">+ Neue Abfrage</a>
+    <a href="{% url 'abfrage_new' %}" class="ca-button" style="text-decoration:none;">+ {% translate "Neue Abfrage" %}</a>
     {% endif %}
   </div>
   <div style="overflow-x:auto;">
     <table class="table is-fullwidth is-striped is-hoverable ca-stack-table" style="font-size:0.9rem;">
       <thead>
         <tr>
-          <th>Datum</th>
-          <th>Bezeichnung</th>
-          <th>Status</th>
-          <th>Endet am</th>
-          {% if is_privileged %}<th>Nachfrist bis</th>{% endif %}
-          {% if user_groups %}<th>Meine Gruppen</th>{% endif %}
+          <th>{% translate "Datum" %}</th>
+          <th>{% translate "Bezeichnung" %}</th>
+          <th>{% translate "Status" %}</th>
+          <th>{% translate "Endet am" %}</th>
+          {% if is_privileged %}<th>{% translate "Nachfrist bis" %}</th>{% endif %}
+          {% if user_groups %}<th>{% translate "Meine Gruppen" %}</th>{% endif %}
           <th></th>
         </tr>
       </thead>
       <tbody>
       {% for abfrage in abfragen %}
       <tr>
-        <td data-label="Datum">{{ abfrage.date }}</td>
-        <td data-label="Bezeichnung">{{ abfrage }}</td>
-        <td data-label="Status">
+        <td data-label="{% translate "Datum" %}">{{ abfrage.date }}</td>
+        <td data-label="{% translate "Bezeichnung" %}">{{ abfrage }}</td>
+        <td data-label="{% translate "Status" %}">
           {% if is_privileged %}
             <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
           {% else %}
             <span class="badge badge-{{ abfrage.user_state }}">{{ abfrage.user_state }}</span>
           {% endif %}
         </td>
-        <td data-label="Endet am">{{ abfrage.ends_at }}</td>
-        {% if is_privileged %}<td data-label="Nachfrist bis">{{ abfrage.grace_ends_at }}</td>{% endif %}
+        <td data-label="{% translate "Endet am" %}">{{ abfrage.ends_at }}</td>
+        {% if is_privileged %}<td data-label="{% translate "Nachfrist bis" %}">{{ abfrage.grace_ends_at }}</td>{% endif %}
         {% if user_groups %}
-        <td data-label="Meine Gruppen">
+        <td data-label="{% translate "Meine Gruppen" %}">
           {% if abfrage.user_state == "open" %}
             {% for g in user_groups %}
               <a href="{% url 'ag_edit' abfrage.pk g %}" style="color:var(--ca-teal);font-weight:600;display:block;">{{ g }}</a>
@@ -48,15 +49,15 @@
         {% endif %}
         <td class="ca-stack-actions" style="white-space:nowrap;">
           {% if is_privileged %}
-            <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Details</a>
+            <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">{% translate "Details" %}</a>
             <button type="button" class="ca-logout" style="color:#999;border-color:#ccc;margin-left:0.75rem;"
               data-delete-url="{% url 'abfrage_delete' abfrage.pk %}"
-              data-delete-label="{{ abfrage }}">Löschen</button>
+              data-delete-label="{{ abfrage }}">{% translate "Löschen" %}</button>
           {% endif %}
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" style="color:#7a7a7a;">Keine Abfragen vorhanden.</td></tr>
+      <tr><td colspan="6" style="color:#7a7a7a;">{% translate "Keine Abfragen vorhanden." %}</td></tr>
       {% endfor %}
       </tbody>
     </table>
@@ -65,17 +66,17 @@
 
 {% if is_privileged %}
 <dialog id="list-delete-dialog" style="border:none;border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,0.18);padding:2rem;max-width:420px;width:100%;">
-  <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Abfrage löschen</h2>
+  <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">{% translate "Abfrage löschen" %}</h2>
   <p style="font-size:0.9rem;color:#7a7a7a;margin-bottom:1rem;">
-    Diese Aktion löscht die Abfrage und alle zugehörigen Ergebnisse unwiderruflich.<br>
-    Zur Bestätigung bitte <strong id="list-delete-labeltext"></strong> eingeben:
+    {% translate "Diese Aktion löscht die Abfrage und alle zugehörigen Ergebnisse unwiderruflich." %}<br>
+    {% translate "Zur Bestätigung bitte eingeben:" %} <strong id="list-delete-labeltext"></strong>
   </p>
   <form id="list-delete-form" method="post">
     {% csrf_token %}
     <input type="text" id="list-delete-input" class="input" style="margin-bottom:1rem;" placeholder="" autocomplete="off">
     <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-      <button type="button" class="ca-button-outline" data-close-dialog>Abbrechen</button>
-      <button type="submit" id="list-delete-btn" class="ca-logout" style="color:#B61B29;border-color:#B61B29;opacity:0.4;cursor:not-allowed;" disabled>Endgültig löschen</button>
+      <button type="button" class="ca-button-outline" data-close-dialog>{% translate "Abbrechen" %}</button>
+      <button type="submit" id="list-delete-btn" class="ca-logout" style="color:#B61B29;border-color:#B61B29;opacity:0.4;cursor:not-allowed;" disabled>{% translate "Endgültig löschen" %}</button>
     </div>
   </form>
 </dialog>

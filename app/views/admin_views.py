@@ -12,6 +12,7 @@ from django.db import connection
 from django.db.models import OuterRef, Subquery, JSONField
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext
 from django.views.decorators.http import require_POST
 
 from app import ldap_utils
@@ -94,7 +95,7 @@ def sync_from_ldap(request):
         )
         if was_created:
             created += 1
-    messages.success(request, f"Sync abgeschlossen: {created} neue Mieter*innen angelegt.")
+    messages.success(request, gettext("Sync abgeschlossen: %(n)s neue Mieter*innen angelegt.") % {"n": created})
     return redirect("admin_portal")
 
 
@@ -105,7 +106,7 @@ def invalidate_all_sessions(request):
     count = Session.objects.count()
     Session.objects.all().delete()
     UserSession.objects.all().delete()
-    messages.success(request, f"{count} Sitzungen ungültig gemacht. Alle Nutzer*innen wurden abgemeldet.")
+    messages.success(request, gettext("%(n)s Sitzungen ungültig gemacht. Alle Nutzer*innen wurden abgemeldet.") % {"n": count})
     return redirect("admin_portal")
 
 
@@ -144,7 +145,7 @@ def revoke_session(request, session_key):
     """Kill one device's session."""
     Session.objects.filter(session_key=session_key).delete()
     UserSession.objects.filter(session_key=session_key).delete()
-    messages.success(request, "Sitzung beendet.")
+    messages.success(request, gettext("Sitzung beendet."))
     return redirect("session_management")
 
 
@@ -157,7 +158,7 @@ def invalidate_user_sessions(request, username):
     )
     Session.objects.filter(session_key__in=keys).delete()
     UserSession.objects.filter(username=username).delete()
-    messages.success(request, f"Alle Sitzungen von {username} beendet.")
+    messages.success(request, gettext("Alle Sitzungen von %(user)s beendet.") % {"user": username})
     return redirect("session_management")
 
 

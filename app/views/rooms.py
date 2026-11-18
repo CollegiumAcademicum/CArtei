@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext, gettext_lazy
 
 from app.damages import author_for, can_view_damages, damage_counts, is_room_resident, is_wg_resident, open_and_fixed
 from app.forms import RoomAssignmentCreateForm, RoomFurnitureForm, TenantRoomAssignmentForm
@@ -21,14 +22,18 @@ from app.views._shared import (
 )
 
 # Room furniture ("Ausstattung"), rendered as a comma-joined list per room.
-AUSSTATTUNG = [("has_mattress", "Matratze"), ("has_bed", "Bett"), ("has_table", "Tisch"), ("has_closet", "Schrank")]
+AUSSTATTUNG = [
+    ("has_mattress", gettext_lazy("Matratze")), ("has_bed", gettext_lazy("Bett")),
+    ("has_table", gettext_lazy("Tisch")), ("has_closet", gettext_lazy("Schrank")),
+]
 
 # Engagement states ranked best→worst. A tenant with several AG results is
 # bucketed once, by their most favourable status. AKTIV/ZU_AKTIV clear the flag.
 ENGAGEMENT_ORDER = ["AKTIV", "ZU_AKTIV", "IM_GESPRAECH", "NICHT_AUSREICHEND", "INAKTIV"]
 ENGAGEMENT_LABELS = {
-    "AKTIV": "aktiv", "ZU_AKTIV": "zu aktiv", "IM_GESPRAECH": "im Gespräch",
-    "NICHT_AUSREICHEND": "nicht ausreichend", "INAKTIV": "inaktiv",
+    "AKTIV": gettext_lazy("aktiv"), "ZU_AKTIV": gettext_lazy("zu aktiv"),
+    "IM_GESPRAECH": gettext_lazy("im Gespräch"),
+    "NICHT_AUSREICHEND": gettext_lazy("nicht ausreichend"), "INAKTIV": gettext_lazy("inaktiv"),
 }
 
 
@@ -51,7 +56,7 @@ def _occupants_by_room(as_of, may_see_names):
         .select_related("tenant")
     )
     for a in qs:
-        label = display(a.tenant) if may_see_names else "belegt"
+        label = display(a.tenant) if may_see_names else gettext("belegt")
         realname = (f"{a.tenant.first_name} {a.tenant.last_name}".strip()
                     if may_see_names and a.tenant.preferred_name else None)
         out.setdefault(a.room_id, []).append(
@@ -146,47 +151,47 @@ def wg_detail(request: HttpRequest, pk: int):
     if request.method == "POST" and "furniture_room_id" in request.POST:
         redirect_to = redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
         if not can_edit_furniture:
-            messages.error(request, "Keine Berechtigung zum Bearbeiten.")
+            messages.error(request, gettext("Keine Berechtigung zum Bearbeiten."))
             return redirect_to
         room = Room.objects.filter(wg=wg, pk=request.POST["furniture_room_id"]).first()
         if room is None:
-            messages.error(request, "Zimmer nicht gefunden.")
+            messages.error(request, gettext("Zimmer nicht gefunden."))
             return redirect_to
         fform = RoomFurnitureForm(request.POST, instance=room, prefix=f"furn_{room.pk}")
         if fform.is_valid():
             fform.save()
-            messages.success(request, "Ausstattung gespeichert.")
+            messages.success(request, gettext("Ausstattung gespeichert."))
         else:
-            messages.error(request, "Bitte Eingaben prüfen.")
+            messages.error(request, gettext("Bitte Eingaben prüfen."))
         return redirect_to
     # Create a new assignment for one room (tenant chosen, room fixed by the card).
     new_room_forms: dict[int, RoomAssignmentCreateForm] = {}
     if request.method == "POST" and "new_assignment_room_id" in request.POST:
         redirect_to = redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
         if not can_edit_rooms:
-            messages.error(request, "Keine Berechtigung zum Bearbeiten.")
+            messages.error(request, gettext("Keine Berechtigung zum Bearbeiten."))
             return redirect_to
         room = Room.objects.filter(wg=wg, pk=request.POST["new_assignment_room_id"]).first()
         if room is None:
-            messages.error(request, "Zimmer nicht gefunden.")
+            messages.error(request, gettext("Zimmer nicht gefunden."))
             return redirect_to
         cf = RoomAssignmentCreateForm(request.POST, room=room, prefix=f"new_{room.pk}")
         # Belegium may only create assignments within their edit window.
         if (cf.is_valid() and "belegium" in roles and not {"mietverwaltung", "admin"} & roles
                 and cf.cleaned_data["moved_in"] < today - BELEGIUM_EDIT_WINDOW):
-            cf.add_error("moved_in", "Belegium darf Zimmer nur ab zwei Wochen vor Einzug zuordnen.")
+            cf.add_error("moved_in", gettext("Belegium darf Zimmer nur ab zwei Wochen vor Einzug zuordnen."))
         if cf.is_valid():
             obj = cf.save(commit=False)
             obj.room = room
             obj.save()
-            messages.success(request, "Zimmer zugeordnet.")
+            messages.success(request, gettext("Zimmer zugeordnet."))
             return redirect_to
-        messages.error(request, "Bitte Eingaben prüfen.")
+        messages.error(request, gettext("Bitte Eingaben prüfen."))
         new_room_forms[room.pk] = cf  # re-render this room's form open with errors
         failed = {}
     elif request.method == "POST":
         if not can_edit_rooms:
-            messages.error(request, "Keine Berechtigung zum Bearbeiten.")
+            messages.error(request, gettext("Keine Berechtigung zum Bearbeiten."))
             return redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
         a_forms = submitted_assignment_forms(
             request, roles, today,
@@ -195,9 +200,9 @@ def wg_detail(request: HttpRequest, pk: int):
         if all(rf.is_valid() for _, rf in a_forms):
             for _, rf in a_forms:
                 rf.save()
-            messages.success(request, "Gespeichert.")
+            messages.success(request, gettext("Gespeichert."))
             return redirect(f"{request.path}?as_of={as_of:%Y-%m-%d}")
-        messages.error(request, "Bitte Eingaben prüfen.")
+        messages.error(request, gettext("Bitte Eingaben prüfen."))
         # fall through to re-render; failed forms are re-bound below by pk match
         failed = {a.pk: rf for a, rf in a_forms}
     else:
