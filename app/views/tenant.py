@@ -435,10 +435,12 @@ def _build_sections(tenant, form, visible, editable):
         for f in section.fields:
             if f.name not in visible:
                 continue
+            # Choice fields show their label; unknown codes (e.g. from Keycloak) fall back to raw.
+            display = getattr(tenant, f"get_{f.name}_display", None)
             rows.append({
                 "label": f.label,
                 "name": f.name,
-                "value": getattr(tenant, f.name),
+                "value": display() if display else getattr(tenant, f.name),
                 "field": form[f.name] if (f.name in editable and f.name in form.fields) else None,
             })
         if rows:

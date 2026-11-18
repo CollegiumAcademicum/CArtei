@@ -24,6 +24,8 @@ SECTIONS = [
     Section("personal", "Persönliche Informationen", [
         _f("preferred_name", "Rufname", _PUBLIC, _OWNER),
         _f("pronouns", "Pronomen", _PUBLIC, _OWNER),
+        # Keycloak `locale` cache; MV may seed it, the next login sync overwrites it.
+        _f("locale", "Sprache", _PUBLIC, _MV),
         _f("first_name", "Vorname", _OWN_MV | {_HELPER}, _ADMIN),
         _f("last_name", "Nachname", _OWN_MV | {_HELPER}, _ADMIN),
         _f("email", "E-Mail", _OWN_MV, _OWN_MV),

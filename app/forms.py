@@ -49,6 +49,8 @@ class TenantForm(forms.ModelForm):
         for name in list(self.fields):
             if name not in allowed:
                 del self.fields[name]
+        if "locale" in self.fields:  # Django's default blank label is English
+            self.fields["locale"].choices = [("", "—"), *Tenant._meta.get_field("locale").choices]
 
     def clean_email(self):
         return validate_unique_email(self.cleaned_data["email"], current_tenant=self.instance)

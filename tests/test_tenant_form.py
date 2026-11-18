@@ -117,3 +117,10 @@ def test_form_rejects_ldap_taken_email():
         assert not form.is_valid()
         assert "email" in form.errors
         assert "Diese E-Mail-Adresse wird bereits im Intranet verwendet." in form.errors["email"]
+
+
+@pytest.mark.django_db
+def test_locale_blank_option_is_dash():
+    from app.forms import TenantForm
+    form = TenantForm(allowed_fields={"locale"})
+    assert form.fields["locale"].choices == [("", "—"), ("de", "Deutsch"), ("en", "English")]
