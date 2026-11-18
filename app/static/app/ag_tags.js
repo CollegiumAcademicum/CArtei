@@ -6,11 +6,13 @@
   if (window.caAgTagsWired) return;
   window.caAgTagsWired = true;
 
-  var UNEXPECTED = 'Unerwarteter Fehler, Seite neu laden';
   var available = null; // [{cn, description}], fetched on first focus
   var loading = false;
 
   function block() { return document.getElementById('ag-tags'); }
+  // Texts come translated from _ag_tags.html; German fallback.
+  function msg(key, fallback) { return (block() && block().dataset[key]) || fallback; }
+  function unexpected() { return msg('msgUnexpected', 'Unerwarteter Fehler, Seite neu laden'); }
 
   function showError(msg) {
     var p = block().querySelector('.ag-tags-error');
@@ -41,7 +43,7 @@
   }
 
   function json(r) {
-    return r.json().catch(function() { return { ok: false, error: UNEXPECTED + ' (HTTP ' + r.status + ')' }; });
+    return r.json().catch(function() { return { ok: false, error: unexpected() + ' (HTTP ' + r.status + ')' }; });
   }
 
   function send(cn, action) {
@@ -55,11 +57,11 @@
     fetch(b.dataset.url, { method: 'POST', body: body })
       .then(json)
       .then(function(d) {
-        if (!d.ok) { setBusy(false); showError(d.error || UNEXPECTED); return; }
+        if (!d.ok) { setBusy(false); showError(d.error || unexpected()); return; }
         block().outerHTML = d.html;
         fillOptions();
       })
-      .catch(function() { setBusy(false); showError(UNEXPECTED); });
+      .catch(function() { setBusy(false); showError(unexpected()); });
   }
 
   function tryJoin(input) {
@@ -74,13 +76,13 @@
     fetch(block().dataset.availableUrl)
       .then(json)
       .then(function(d) {
-        if (!d.groups) throw new Error(d.error || UNEXPECTED);
+        if (!d.groups) throw new Error(d.error || unexpected());
         available = d.groups;
         fillOptions();
       })
       .catch(function(err) {
         block().querySelector('input[name=group]').disabled = true;
-        showError('Gruppenliste nicht ladbar: ' + err.message);
+        showError(msg('msgUnloadable', 'Gruppenliste nicht ladbar:') + ' ' + err.message);
       })
       .finally(function() { loading = false; });
   });

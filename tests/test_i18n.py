@@ -106,3 +106,49 @@ def test_vary_accept_language(client):
 @pytest.mark.django_db
 def test_html_lang_attribute(client):
     assert '<html lang="en">' in client.get("/info/", **EN).content.decode()
+
+
+# --- catalogue guard --------------------------------------------------------
+
+def test_po_complete_and_mo_in_sync():
+    import polib
+    from django.conf import settings
+    base = settings.LOCALE_PATHS[0] / "en/LC_MESSAGES"
+    po = polib.pofile(str(base / "django.po"))
+    mo = polib.mofile(str(base / "django.mo"))
+    assert not po.untranslated_entries()
+    assert not po.fuzzy_entries()
+    assert ({e.msgid: e.msgstr for e in po.translated_entries()}
+            == {e.msgid: e.msgstr for e in mo if e.msgid})
+
+
+# --- dashboard --------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_dashboard_english(client):
+    _login(client, "ada", "en")
+    body = client.get("/dashboard/").content.decode()
+    assert "My profile" in body and "Mein Profil" not in body
+    assert "Log out" in body and "Abmelden" not in body
+
+
+@pytest.mark.django_db
+def test_dashboard_german(client):
+    _login(client, "ada", "de")
+    body = client.get("/dashboard/").content.decode()
+    assert "Mein Profil" in body and "FLINTA-Quote" in body and "Abmelden" in body
+
+
+@pytest.mark.django_db
+def test_ag_tags_messages_attrs_english(client):
+    _login(client, "ada", "en")
+    body = client.get("/dashboard/").content.decode()
+    assert 'data-msg-unexpected="Unexpected error' in body
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("loc,error", [("en", "Unknown action."), ("de", "Unbekannte Aktion.")])
+def test_ag_membership_error_language(client, loc, error):
+    _login(client, "ada", loc)
+    r = client.post("/ags/", {"group": "ag.x", "action": "bogus"})
+    assert r.json()["error"] == error

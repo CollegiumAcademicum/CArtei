@@ -3,6 +3,7 @@ from datetime import date
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.shortcuts import render
+from django.utils.translation import gettext_lazy
 
 from app.auth import GROUP_PREFIXES, ag_group_names
 from app.models import AGAbfrage, AGAbfrageHealth, AGHealth, EnrollmentType, Tenant
@@ -12,7 +13,7 @@ from app.views.ag_membership import ag_tags_html
 # Worst first, so struggling AGs surface at the top of the widget.
 _HEALTH_RANK = {"TOT": 0, "KRITISCH": 1, "KERNAUFGABEN": 2, "GESUND": 3}
 # AG-Status widget sub-headings, in display order.
-_GROUP_TYPES = (("ag.", "AGs"), ("in.", "Initiativen"), ("gr.", "Gremien"))
+_GROUP_TYPES = (("ag.", gettext_lazy("AGs")), ("in.", gettext_lazy("Initiativen")), ("gr.", gettext_lazy("Gremien")))
 
 
 @login_required
@@ -57,7 +58,7 @@ def dashboard(request):
     ]
     # Health rows hold free-text names; keep any without a known prefix visible.
     if other := [a for a in ag_status if not a["ag_name"].startswith(GROUP_PREFIXES)]:
-        ag_status_groups.append({"label": "Sonstige", "items": other})
+        ag_status_groups.append({"label": gettext_lazy("Sonstige"), "items": other})
 
     total = Tenant.objects.count()
     living = Tenant.objects.filter(has_active_assignment(date.today()))

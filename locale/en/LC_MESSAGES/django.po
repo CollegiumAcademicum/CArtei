@@ -1,0 +1,236 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: CArtei\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-18 22:06+0100\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Unerwarteter Fehler, Seite neu laden"
+msgstr "Unexpected error, please reload the page"
+
+msgid "Gruppenliste nicht ladbar:"
+msgstr "Could not load the group list:"
+
+msgid "Meine AGs"
+msgstr "My AGs"
+
+#, python-format
+msgid "%(cn)s verlassen"
+msgstr "Leave %(cn)s"
+
+msgid "AG oder INI hinzufügen …"
+msgstr "Add AG or INI …"
+
+msgid "AG oder INI hinzufügen"
+msgstr "Add AG or INI"
+
+msgid ""
+"Nextcloud-Ordner können nach einer Änderung eine Weile brauchen, bis sie "
+"erscheinen oder verschwinden."
+msgstr ""
+"After a change, Nextcloud folders can take a while to appear or disappear."
+
+msgid "Hauptnavigation"
+msgstr "Main navigation"
+
+msgid "Menü"
+msgstr "Menu"
+
+msgid "Bewohner*innen"
+msgstr "Residents"
+
+msgid "Dokumente"
+msgstr "Documents"
+
+msgid "Abfragen"
+msgstr "Surveys"
+
+msgid "Abmelden"
+msgstr "Log out"
+
+#, python-format
+msgid ""
+"Du arbeitest als <strong>%(user)s</strong> (Superuser: "
+"<strong>%(impersonator)s</strong>)."
+msgstr ""
+"You are acting as <strong>%(user)s</strong> (superuser: "
+"<strong>%(impersonator)s</strong>)."
+
+msgid "Übernahme beenden"
+msgstr "Stop acting as user"
+
+msgid "Impressum"
+msgstr "Legal notice"
+
+msgid "Datenschutz"
+msgstr "Privacy"
+
+msgid "Kontakt"
+msgstr "Contact"
+
+#, python-format
+msgid "Aktion fehlgeschlagen (HTTP %%(status)s) – die Seite wird neu geladen."
+msgstr "Action failed (HTTP %%(status)s) – the page will reload."
+
+msgid "Aktion fehlgeschlagen – bitte erneut versuchen."
+msgstr "Action failed – please try again."
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Mein Profil"
+msgstr "My profile"
+
+msgid "FLINTA-Quote"
+msgstr "FLINTA share"
+
+msgid "Hinweis anzeigen"
+msgstr "Show hint"
+
+msgid ""
+"Anteil FLINTA unter den aktuell im CA wohnenden Mieter:innen (mit laufender "
+"Zimmerbelegung)."
+msgstr ""
+"Share of FLINTA among the tenants currently living at the CA (with an "
+"ongoing room assignment)."
+
+msgid "Azubi-Quote"
+msgstr "Apprentice share"
+
+msgid ""
+"Anteil Azubis unter den aktuell im CA wohnenden Mieter:innen (mit laufender "
+"Zimmerbelegung)."
+msgstr ""
+"Share of apprentices among the tenants currently living at the CA (with an "
+"ongoing room assignment)."
+
+msgid "Aktuelle Mieter*innen"
+msgstr "Current tenants"
+
+msgid ""
+"Mieter:innen mit heute laufender Zimmerbelegung (eingezogen, nicht "
+"ausgezogen)."
+msgstr ""
+"Tenants with a room assignment running today (moved in, not moved out)."
+
+msgid "All-Time Mietende"
+msgstr "All-time tenants"
+
+msgid "Alle je erfassten Mieter:innen, unabhängig von Ein- oder Auszug."
+msgstr "Every tenant ever recorded, regardless of move-in or move-out."
+
+msgid "AG-Status"
+msgstr "AG status"
+
+msgid "Engagement-Abfragen"
+msgstr "Engagement surveys"
+
+#, python-format
+msgid "endet am %(ends)s"
+msgstr "ends on %(ends)s"
+
+#, python-format
+msgid "%(g)s ausfüllen"
+msgstr "Fill in %(g)s"
+
+msgid "Keine aktive Abfrage."
+msgstr "No active survey."
+
+msgid "Gruppenliste aus LDAP nicht lesbar."
+msgstr "Could not read the group list from LDAP."
+
+#, python-format
+msgid "Beitritt zu %(cn)s fehlgeschlagen (%(uid)s): %(exc)s"
+msgstr "Joining %(cn)s failed (%(uid)s): %(exc)s"
+
+#, python-format
+msgid "Austritt aus %(cn)s fehlgeschlagen (%(uid)s): %(exc)s"
+msgstr "Leaving %(cn)s failed (%(uid)s): %(exc)s"
+
+#, python-format
+msgid ""
+"%(cn)s: Mitgliedschaft von %(uid)s besteht über eine andere Gruppe und kann "
+"hier nicht beendet werden."
+msgstr ""
+"%(cn)s: %(uid)s is a member through another group, so the membership cannot "
+"be ended here."
+
+#, python-format
+msgid ""
+"Beitritt zu %(cn)s (%(uid)s): Änderung nicht überprüfbar (%(exc)s). Seite "
+"neu laden."
+msgstr ""
+"Joining %(cn)s (%(uid)s): change could not be verified (%(exc)s). Please "
+"reload the page."
+
+#, python-format
+msgid ""
+"Austritt aus %(cn)s (%(uid)s): Änderung nicht überprüfbar (%(exc)s). Seite "
+"neu laden."
+msgstr ""
+"Leaving %(cn)s (%(uid)s): change could not be verified (%(exc)s). Please "
+"reload the page."
+
+#, python-format
+msgid ""
+"FreeIPA meldet die Änderung, aber %(uid)s ist nicht in %(cn)s. Bitte IT-AG "
+"Bescheid geben."
+msgstr ""
+"FreeIPA reports the change, but %(uid)s is not in %(cn)s. Please let the IT-"
+"AG know."
+
+#, python-format
+msgid ""
+"FreeIPA meldet die Änderung, aber %(uid)s ist in %(cn)s. Bitte IT-AG "
+"Bescheid geben."
+msgstr ""
+"FreeIPA reports the change, but %(uid)s is still in %(cn)s. Please let the "
+"IT-AG know."
+
+msgid "Gremium – wird von der IT-AG verwaltet"
+msgstr "Gremium – managed by the IT-AG"
+
+msgid "Rechtegruppe – wird von der IT-AG verwaltet"
+msgstr "Permission group – managed by the IT-AG"
+
+msgid "über eine andere Gruppe"
+msgstr "through another group"
+
+msgid "Kein Intranet-Account verknüpft."
+msgstr "No intranet account linked."
+
+msgid "Unbekannte Aktion."
+msgstr "Unknown action."
+
+#, python-format
+msgid "%(cn)s ist keine selbst verwaltbare AG/INI."
+msgstr "%(cn)s is not a self-managed AG/INI."
+
+#, python-format
+msgid "%(cn)s beigetreten"
+msgstr "Joined %(cn)s"
+
+msgid "AGs"
+msgstr "AGs"
+
+msgid "Initiativen"
+msgstr "Initiatives"
+
+msgid "Gremien"
+msgstr "Gremien"
+
+msgid "Sonstige"
+msgstr "Other"
