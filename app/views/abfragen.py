@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext, gettext_lazy
 from django.views.decorators.http import require_POST
 
 from app import ldap_utils
@@ -21,18 +22,18 @@ logger = logging.getLogger(__name__)
 
 # Ordered worst-last so the slider index maps green→black / active→inactive.
 _STATUS_CHOICES = [
-    ("ZU_AKTIV", "zu aktiv"),
-    ("AKTIV", "aktiv"),
-    ("NICHT_AUSREICHEND", "nicht ausreichend"),
-    ("IM_GESPRAECH", "im Gespräch"),
-    ("INAKTIV", "inaktiv"),
+    ("ZU_AKTIV", gettext_lazy("zu aktiv")),
+    ("AKTIV", gettext_lazy("aktiv")),
+    ("NICHT_AUSREICHEND", gettext_lazy("nicht ausreichend")),
+    ("IM_GESPRAECH", gettext_lazy("im Gespräch")),
+    ("INAKTIV", gettext_lazy("inaktiv")),
 ]
 
 _HEALTH_CHOICES = [
-    ("GESUND", "gesund"),
-    ("KERNAUFGABEN", "nur Kernaufgaben"),
-    ("KRITISCH", "kritisch"),
-    ("TOT", "tot"),
+    ("GESUND", gettext_lazy("gesund")),
+    ("KERNAUFGABEN", gettext_lazy("nur Kernaufgaben")),
+    ("KRITISCH", gettext_lazy("kritisch")),
+    ("TOT", gettext_lazy("tot")),
 ]
 
 
@@ -108,7 +109,8 @@ def _apply_member_changes(request, ag_name: str, members: list[dict]) -> None:
         name = f"{tenant.first_name} {tenant.last_name}"
         uid = tenant.intranet_username
         if not uid:
-            messages.warning(request, f"{name} hat kein Intranet-Account und wurde nicht zu {ag_name} hinzugefügt.")
+            messages.warning(request, gettext("%(name)s hat kein Intranet-Account und wurde nicht zu %(ag)s hinzugefügt.")
+                             % {"name": name, "ag": ag_name})
             continue
         if uid in names:
             continue
@@ -122,8 +124,10 @@ def _apply_member_changes(request, ag_name: str, members: list[dict]) -> None:
             own = all_cns
     if own is not None:
         sync_user_groups(request.user, own)
-    parts = ([f"Aus {ag_name} entfernt: {', '.join(removed)}"] if removed else []) + \
-            ([f"Zu {ag_name} hinzugefügt: {', '.join(added)}"] if added else [])
+    parts = ([gettext("Aus %(ag)s entfernt: %(names)s") % {"ag": ag_name, "names": ", ".join(removed)}]
+             if removed else []) + \
+            ([gettext("Zu %(ag)s hinzugefügt: %(names)s") % {"ag": ag_name, "names": ", ".join(added)}]
+             if added else [])
     if parts:
         messages.success(request, ". ".join(parts) + ".")
 
@@ -271,5 +275,5 @@ def abfrage_delete(request: HttpRequest, pk: int):
     label = str(abfrage)
     AGAbfrageResult.objects.filter(abfrage=abfrage).delete()
     abfrage.delete()
-    messages.success(request, f'Abfrage "{label}" wurde gelöscht.')
+    messages.success(request, gettext('Abfrage "%(label)s" wurde gelöscht.') % {"label": label})
     return redirect("abfragen_list")

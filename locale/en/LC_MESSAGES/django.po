@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CArtei\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 22:21+0100\n"
+"POT-Creation-Date: 2026-11-18 17:09-0600\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -64,6 +64,64 @@ msgstr "This email address is already used in the intranet."
 msgid "Bitte Telefonnummer oder „Keine Telefonnummer vorhanden“ wählen."
 msgstr "Please enter a phone number or choose “No phone number”."
 
+msgid "E-Mail-Adresse"
+msgstr "Email address"
+
+msgid "Telefonnummer"
+msgstr "Phone number"
+
+msgid "Ich habe keine Telefonnummer"
+msgstr "I don't have a phone number"
+
+msgid "Soll dein Name auf der Briefkastenliste stehen?"
+msgstr "Should your name appear on the mailbox list?"
+
+msgid "Ja"
+msgstr "Yes"
+
+msgid "Nein"
+msgstr "No"
+
+msgid "Bist du FLINTA*? (Frauen, Lesben, inter, nicht-binär, trans, agender)"
+msgstr ""
+"Are you FLINTA*? (women, lesbians, intersex, non-binary, trans, agender)"
+
+msgid "Bitte Telefonnummer oder „Ich habe keine Telefonnummer“ wählen."
+msgstr "Please enter a phone number or choose “I don't have a phone number”."
+
+msgid "Intranet-Account direkt anlegen"
+msgstr "Create intranet account right away"
+
+msgid "Vorname"
+msgstr "First name"
+
+msgid "Nachname"
+msgstr "Last name"
+
+msgid "E-Mail"
+msgstr "Email"
+
+msgid "Telefon"
+msgstr "Phone"
+
+msgid "Größe (m²)"
+msgstr "Size (m²)"
+
+msgid "Matratze"
+msgstr "Mattress"
+
+msgid "Bett"
+msgstr "Bed"
+
+msgid "Tisch"
+msgstr "Table"
+
+msgid "Schrank"
+msgstr "Wardrobe"
+
+msgid "Diese Person mietet das ausgewählte Zimmer nicht."
+msgstr "This person does not rent the selected room."
+
 msgid "zu aktiv"
 msgstr "too active"
 
@@ -116,6 +174,10 @@ msgid ""
 "Wird bei der nächsten Anmeldung mit der Sprache aus Keycloak überschrieben."
 msgstr ""
 "Will be overwritten with the language from Keycloak at the next login."
+
+#, python-format
+msgid "Abfrage %(date)s"
+msgstr "Survey %(date)s"
 
 msgid "Studium"
 msgstr "Studies"
@@ -319,6 +381,9 @@ msgstr "Damage photo"
 msgid "Foto"
 msgstr "Photo"
 
+msgid "Schäden"
+msgstr "Damages"
+
 msgid "· offen"
 msgstr "· open"
 
@@ -413,53 +478,215 @@ msgstr "fixed"
 msgid "Schäden an Gemeinschaftsflächen (WG)"
 msgstr "Common area damages (WG)"
 
-msgid "Hauptnavigation"
-msgstr "Main navigation"
+#, python-format
+msgid "Untermiete von %(name)s"
+msgstr "Sublet from %(name)s"
 
-msgid "Menü"
-msgstr "Menu"
+#, python-format
+msgid "Untervermietet an %(name)s"
+msgstr "Sublet to %(name)s"
 
-msgid "Bewohner*innen"
-msgstr "Residents"
+msgid "Ausstehend"
+msgstr "Pending"
 
-msgid "Dokumente"
-msgstr "Documents"
+msgid "gültig"
+msgstr "valid"
+
+#, python-format
+msgid "Prüfung (%(n)s)"
+msgstr "Review (%(n)s)"
+
+msgid "fehlt"
+msgstr "missing"
+
+msgid "kein Ergebnis"
+msgstr "no result"
+
+msgid "Zur Übersicht"
+msgstr "Back to overview"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Nachfrist"
+msgstr "Grace period"
+
+msgid "Diese Abfrage ist geschlossen. Bearbeitungen sind nicht mehr möglich."
+msgstr "This survey is closed. It can no longer be edited."
+
+msgid "Nur Ansicht: Bewertungen trägt die AG selbst ein."
+msgstr "View only: the AG enters its ratings itself."
+
+msgid "Diese Abfrage ist geschlossen – nur Ansicht."
+msgstr "This survey is closed – view only."
+
+msgid "nicht angegeben"
+msgstr "not specified"
+
+msgid "Gesamtzustand"
+msgstr "Overall state"
+
+msgid "Notiz"
+msgstr "Note"
+
+msgid "Keine Mitglieder in LDAP gefunden."
+msgstr "No members found in LDAP."
+
+msgid "Gesamtzustand der AG"
+msgstr "Overall state of the AG"
+
+msgid "Notiz zum Zustand (optional) …"
+msgstr "Note on the state (optional) …"
+
+msgid "kein Eintrag im System"
+msgstr "not in the system"
+
+msgid "nicht in der AG"
+msgstr "not in the AG"
+
+msgid "Notiz …"
+msgstr "Note …"
+
+msgid "Nicht im System — bitte LDAP-Sync durchführen"
+msgstr "Not in the system — please run the LDAP sync"
+
+msgid "Entfernen"
+msgstr "Remove"
+
+msgid "Wieder hinzufügen"
+msgstr "Add back"
+
+msgid "Weitere:n Bewohner:in hinzufügen …"
+msgstr "Add another resident …"
+
+msgid "Hinzufügen"
+msgstr "Add"
+
+msgid "Rückgängig"
+msgstr "Undo"
+
+msgid "Nichts passiert in LDAP, bevor „Speichern“ gedrückt wird."
+msgstr "Nothing changes in LDAP until you press “Save”."
+
+msgid "Beim Speichern: "
+msgstr "On save: "
+
+#, python-brace-format
+msgid "{names} wird aus {ag} entfernt"
+msgstr "{names} will be removed from {ag}"
+
+#, python-brace-format
+msgid "{names} werden aus {ag} entfernt"
+msgstr "{names} will be removed from {ag}"
+
+#, python-brace-format
+msgid "{names} wird hinzugefügt"
+msgstr "{names} will be added"
+
+#, python-brace-format
+msgid "{names} werden hinzugefügt"
+msgstr "{names} will be added"
+
+msgid "wird hinzugefügt"
+msgstr "will be added"
+
+msgid "wird entfernt"
+msgstr "will be removed"
+
+msgid "kein Intranet-Account – nur Bewertung"
+msgstr "no intranet account – rating only"
+
+msgid "Endet"
+msgstr "Ends"
+
+msgid "Alle Bewohner:innen"
+msgstr "All residents"
+
+msgid "Löschen"
+msgstr "Delete"
+
+msgid "Abfrage löschen"
+msgstr "Delete survey"
+
+msgid ""
+"Diese Aktion löscht die Abfrage und alle zugehörigen Ergebnisse "
+"unwiderruflich."
+msgstr "This permanently deletes the survey and all its results."
+
+msgid "Zur Bestätigung bitte eingeben:"
+msgstr "To confirm, please type:"
+
+msgid "Abbrechen"
+msgstr "Cancel"
+
+msgid "Endgültig löschen"
+msgstr "Delete permanently"
+
+msgid "Ergebnisse nach AG"
+msgstr "Results by AG"
+
+msgid "Zustand"
+msgstr "State"
+
+msgid "Noch keine Ergebnisse."
+msgstr "No results yet."
 
 msgid "Abfragen"
 msgstr "Surveys"
 
-msgid "Abmelden"
-msgstr "Log out"
+msgid "AG-Engagement-Abfragen"
+msgstr "AG engagement surveys"
 
-#, python-format
-msgid ""
-"Du arbeitest als <strong>%(user)s</strong> (Superuser: "
-"<strong>%(impersonator)s</strong>)."
-msgstr ""
-"You are acting as <strong>%(user)s</strong> (superuser: "
-"<strong>%(impersonator)s</strong>)."
+msgid "Neue Abfrage"
+msgstr "New survey"
 
-msgid "Übernahme beenden"
-msgstr "Stop acting as user"
+msgid "Datum"
+msgstr "Date"
 
-msgid "Impressum"
-msgstr "Legal notice"
+msgid "Bezeichnung"
+msgstr "Label"
 
-msgid "Kontakt"
-msgstr "Contact"
+msgid "Endet am"
+msgstr "Ends on"
 
-#, python-format
-msgid "Aktion fehlgeschlagen (HTTP %%(status)s) – die Seite wird neu geladen."
-msgstr "Action failed (HTTP %%(status)s) – the page will reload."
+msgid "Nachfrist bis"
+msgstr "Grace period until"
 
-msgid "Aktion fehlgeschlagen – bitte erneut versuchen."
-msgstr "Action failed – please try again."
+msgid "Meine Gruppen"
+msgstr "My groups"
 
-msgid "Dashboard"
-msgstr "Dashboard"
+msgid "Details"
+msgstr "Details"
 
-msgid "Mein Profil"
-msgstr "My profile"
+msgid "Keine Abfragen vorhanden."
+msgstr "No surveys yet."
+
+msgid "Neue Abfrage erstellen"
+msgstr "Create new survey"
+
+msgid "Bezeichnung (optional)"
+msgstr "Label (optional)"
+
+msgid "Offizielle Deadline"
+msgstr "Official deadline"
+
+msgid "Erstellen"
+msgstr "Create"
+
+msgid "Bewohner:innen"
+msgstr "Residents"
+
+msgid "Ergebnis(se)"
+msgstr "Result(s)"
+
+msgid "Ausreichend?"
+msgstr "Sufficient?"
+
+msgid "Keine aktiven Bewohner:innen."
+msgstr "No active residents."
+
+msgid "Admin-Portal"
+msgstr "Admin portal"
 
 msgid "FLINTA-Quote"
 msgstr "FLINTA share"
@@ -499,6 +726,115 @@ msgstr "All-time tenants"
 msgid "Alle je erfassten Mieter:innen, unabhängig von Ein- oder Auszug."
 msgstr "Every tenant ever recorded, regardless of move-in or move-out."
 
+msgid "Berechtigungen"
+msgstr "Permissions"
+
+msgid "Übersicht, welche Rollen welche Felder sehen und bearbeiten dürfen."
+msgstr "Overview of which roles may see and edit which fields."
+
+msgid "Berechtigungsmatrix ansehen"
+msgstr "View permission matrix"
+
+msgid "Änderungsprotokoll"
+msgstr "Change log"
+
+msgid "Wer hat wann was geändert oder gelöscht."
+msgstr "Who changed or deleted what, and when."
+
+msgid "Protokoll ansehen"
+msgstr "View log"
+
+msgid ""
+"Importiert neue Mitglieder aus der LDAP-Gruppe "
+"<code>confidentiality_clearance</code> als Mieter*innen. Bestehende Einträge"
+" werden nicht überschrieben."
+msgstr ""
+"Imports new members of the LDAP group <code>confidentiality_clearance</code>"
+" as tenants. Existing entries are not overwritten."
+
+msgid "Sync starten"
+msgstr "Start sync"
+
+msgid "Sitzungen"
+msgstr "Sessions"
+
+msgid "Einzelne Geräte verwalten oder alle Nutzer*innen abmelden."
+msgstr "Manage individual devices or log out all users."
+
+msgid "Aktive Sitzungen verwalten"
+msgstr "Manage active sessions"
+
+msgid ""
+"<strong>Alle</strong> Sitzungen ungültig machen meldet jede*n ab — dich "
+"selbst eingeschlossen."
+msgstr ""
+"Invalidating <strong>all</strong> sessions logs everyone out — including "
+"you."
+
+msgid ""
+"Wirklich alle Sitzungen ungültig machen? Alle Nutzer*innen werden "
+"abgemeldet."
+msgstr "Really invalidate all sessions? All users will be logged out."
+
+msgid "Alle Sitzungen ungültig machen"
+msgstr "Invalidate all sessions"
+
+msgid "Benutzerübernahme"
+msgstr "Impersonation"
+
+msgid ""
+"Als eine*n andere*n Nutzer*in arbeiten, um ihre Sicht zu sehen. Jede "
+"Übernahme wird protokolliert."
+msgstr "Act as another user to see their view. Every impersonation is logged."
+
+msgid "Benutzer*in übernehmen"
+msgstr "Impersonate user"
+
+msgid "Hauptnavigation"
+msgstr "Main navigation"
+
+msgid "Menü"
+msgstr "Menu"
+
+msgid "Bewohner*innen"
+msgstr "Residents"
+
+msgid "Dokumente"
+msgstr "Documents"
+
+msgid "Abmelden"
+msgstr "Log out"
+
+#, python-format
+msgid ""
+"Du arbeitest als <strong>%(user)s</strong> (Superuser: "
+"<strong>%(impersonator)s</strong>)."
+msgstr ""
+"You are acting as <strong>%(user)s</strong> (superuser: "
+"<strong>%(impersonator)s</strong>)."
+
+msgid "Übernahme beenden"
+msgstr "Stop acting as user"
+
+msgid "Impressum"
+msgstr "Legal notice"
+
+msgid "Kontakt"
+msgstr "Contact"
+
+#, python-format
+msgid "Aktion fehlgeschlagen (HTTP %%(status)s) – die Seite wird neu geladen."
+msgstr "Action failed (HTTP %%(status)s) – the page will reload."
+
+msgid "Aktion fehlgeschlagen – bitte erneut versuchen."
+msgstr "Action failed – please try again."
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Mein Profil"
+msgstr "My profile"
+
 msgid "AG-Status"
 msgstr "AG status"
 
@@ -515,6 +851,51 @@ msgstr "Fill in %(g)s"
 
 msgid "Keine aktive Abfrage."
 msgstr "No active survey."
+
+msgid "Profil vervollständigen"
+msgstr "Complete your profile"
+
+msgid ""
+"Bitte bestätige diese Angaben, bevor du CArtei nutzen kannst. Für die "
+"Briefkastenliste ist auch „Nein“ eine gültige Antwort."
+msgstr ""
+"Please confirm these details before you can use CArtei. For the mailbox "
+"list, “No” is a valid answer too."
+
+msgid "Prüfe deine gespeicherte Adresse und korrigiere sie bei Bedarf."
+msgstr "Check your saved address and correct it if needed."
+
+msgid "Dein Name erscheint nur auf der Briefkastenliste, wenn du „Ja“ wählst."
+msgstr "Your name only appears on the mailbox list if you choose “Yes”."
+
+msgid "Angaben speichern und fortfahren"
+msgstr "Save and continue"
+
+msgid "Neue*r Bewohner*in"
+msgstr "New resident"
+
+msgid ""
+"Manuell angelegt, ohne Intranet-Account. Der Account kann später verknüpft "
+"werden."
+msgstr ""
+"Created manually, without an intranet account. The account can be linked "
+"later."
+
+msgid "Wird angelegt…"
+msgstr "Creating…"
+
+msgid "Was passiert beim Anlegen?"
+msgstr "What happens on creation?"
+
+msgid ""
+"Legt beim Speichern den Intranet-Account an und sendet die Zugangsdaten "
+"automatisch per E-Mail an die Bewohner:in."
+msgstr ""
+"Creates the intranet account on save and automatically emails the login "
+"details to the resident."
+
+msgid "Anlegen"
+msgstr "Create"
 
 msgid "Intranet:"
 msgstr "Intranet:"
@@ -536,14 +917,8 @@ msgstr "Link"
 msgid "FreeIPA-Account für %(name)s anlegen?"
 msgstr "Create FreeIPA account for %(name)s?"
 
-msgid "Wird angelegt…"
-msgstr "Creating…"
-
 msgid "Intranet-Account anlegen"
 msgstr "Create intranet account"
-
-msgid "Was passiert beim Anlegen?"
-msgstr "What happens on creation?"
 
 msgid ""
 "Legt den Intranet-Account an und sendet die Zugangsdaten automatisch per "
@@ -608,9 +983,6 @@ msgstr "Assign room"
 msgid "Es können nur Mieter:innen des gewählten Zimmers ausgewählt werden."
 msgstr "Only tenants of the selected room can be chosen."
 
-msgid "Ausstehend"
-msgstr "Pending"
-
 msgid "Untervermietet an"
 msgstr "Sublet to"
 
@@ -643,9 +1015,6 @@ msgstr "Valid until"
 msgid "Hochgeladen"
 msgstr "Uploaded"
 
-msgid "Status"
-msgstr "Status"
-
 msgid "Prüfung erforderlich"
 msgstr "Review required"
 
@@ -666,9 +1035,6 @@ msgstr "Educational institution"
 
 msgid "Bestätigen"
 msgstr "Confirm"
-
-msgid "Abbrechen"
-msgstr "Cancel"
 
 msgid "Keine ausstehenden Nachweise."
 msgstr "No pending proofs."
@@ -821,11 +1187,211 @@ msgstr "Only visible to the Cluster speakers (and admins)."
 msgid "AG"
 msgstr "AG"
 
-msgid "Notiz"
-msgstr "Note"
-
 msgid "Kein Engagement erfasst."
 msgstr "No engagement recorded."
+
+#, python-format
+msgid "%(n)s Person"
+msgid_plural "%(n)s Personen"
+msgstr[0] "%(n)s person"
+msgstr[1] "%(n)s people"
+
+msgid "Aktuelle"
+msgstr "Current"
+
+msgid "Ehemalige"
+msgstr "Former"
+
+msgid "Alle"
+msgstr "All"
+
+msgid "Ansicht"
+msgstr "View"
+
+msgid "Nach Cluster gruppieren"
+msgstr "Group by cluster"
+
+msgid "Abfragen (Engagement)"
+msgstr "Surveys (engagement)"
+
+msgid "Anwenden"
+msgstr "Apply"
+
+msgid "Spalten"
+msgstr "Columns"
+
+msgid "Zimmer / WG"
+msgstr "Room / WG"
+
+msgid "Briefkasten"
+msgstr "Mailbox"
+
+msgid "Nachweis"
+msgstr "Proof"
+
+msgid "Barrierefrei"
+msgstr "Accessible"
+
+msgid "Einzug"
+msgstr "Move-in"
+
+msgid "kein Cluster"
+msgstr "no cluster"
+
+#, python-format
+msgid "%(n)s Bewohner*in"
+msgid_plural "%(n)s Bewohner*innen"
+msgstr[0] "%(n)s resident"
+msgstr[1] "%(n)s residents"
+
+msgid "Rechtsdok."
+msgstr "Legal docs"
+
+msgid "Filter…"
+msgstr "Filter…"
+
+msgid "Prüfung"
+msgstr "Review"
+
+msgid "vollständig"
+msgstr "complete"
+
+msgid "unvollständig"
+msgstr "incomplete"
+
+#, python-format
+msgid "%(n)s Engagement-Flag"
+msgid_plural "%(n)s Engagement-Flags"
+msgstr[0] "%(n)s engagement flag"
+msgstr[1] "%(n)s engagement flags"
+
+#, python-format
+msgid "%(n)s Nachweis fällig"
+msgid_plural "%(n)s Nachweise fällig"
+msgstr[0] "%(n)s proof due"
+msgstr[1] "%(n)s proofs due"
+
+#, python-format
+msgid "%(n)s× Briefkasten Ja"
+msgstr "%(n)s× mailbox yes"
+
+#, python-format
+msgid "%(n)s× Rechtsdok. unvollständig"
+msgstr "%(n)s× legal docs incomplete"
+
+msgid "Keine Bewohner*innen gefunden."
+msgstr "No residents found."
+
+msgid "Keine Treffer für die aktuellen Filter."
+msgstr "No matches for the current filters."
+
+msgid "Stichtag"
+msgstr "Reference date"
+
+msgid "Anzeigen"
+msgstr "Show"
+
+#, python-format
+msgid "<strong>%(met)s von %(total)s</strong> erfüllen ihr Engagement"
+msgstr "<strong>%(met)s of %(total)s</strong> meet their engagement"
+
+msgid "Abfrage"
+msgstr "Survey"
+
+#, python-format
+msgid "kein Eintrag: %(n)s"
+msgstr "no entry: %(n)s"
+
+msgid ""
+"Kein Engagement auswertbar (keine Abfrage / keine Bewohner*innen am "
+"Stichtag)."
+msgstr ""
+"No engagement to evaluate (no survey / no residents on the reference date)."
+
+msgid "Gemeinschaftsflächen"
+msgstr "Common areas"
+
+msgid "Ausstattung"
+msgstr "Furnishings"
+
+msgid "Ausstattung der Gemeinschaftsflächen folgt in einem späteren Schritt."
+msgstr "Common-area furnishings will follow in a later step."
+
+msgid "Schadenskatalog folgt in einem späteren Schritt."
+msgstr "The damage catalogue will follow in a later step."
+
+#, python-format
+msgid "belegt (%(n)s)"
+msgstr "occupied (%(n)s)"
+
+msgid "frei"
+msgstr "vacant"
+
+msgid "Ausstattung speichern"
+msgstr "Save furnishings"
+
+msgid "keine"
+msgstr "none"
+
+msgid "Keine aktuelle Belegung."
+msgstr "No current occupancy."
+
+#, python-format
+msgid "Frühere Belegungen (%(n)s)"
+msgstr "Past occupancies (%(n)s)"
+
+msgid "Bewohner*in zuordnen"
+msgstr "Assign resident"
+
+msgid "Bewohner*in"
+msgstr "Resident"
+
+msgid "Zuordnen"
+msgstr "Assign"
+
+msgid "Übergabe starten"
+msgstr "Start handover"
+
+#, python-format
+msgid "letzte Übergabe (%(d)s)"
+msgstr "last handover (%(d)s)"
+
+msgid "Keine Zimmer erfasst."
+msgstr "No rooms recorded."
+
+msgid "WGs & Zimmer"
+msgstr "WGs & rooms"
+
+#, python-format
+msgid "%(n)s Zimmer"
+msgid_plural "%(n)s Zimmer"
+msgstr[0] "%(n)s room"
+msgstr[1] "%(n)s rooms"
+
+#, python-format
+msgid "%(n)s WG-Schäden offen"
+msgstr "%(n)s open WG damages"
+
+msgid "Engagement vollständig"
+msgstr "Engagement complete"
+
+msgid "Engagement unvollständig"
+msgstr "Engagement incomplete"
+
+msgid "Schäden (offen/behoben)"
+msgstr "Damages (open/fixed)"
+
+msgid "freifinanziert"
+msgstr "privately financed"
+
+msgid "Keine Zimmer."
+msgstr "No rooms."
+
+msgid "Keine WGs."
+msgstr "No WGs."
+
+msgid "Keine Gebäude vorhanden."
+msgstr "No buildings yet."
 
 msgid "Persönliche Informationen"
 msgstr "Personal information"
@@ -838,18 +1404,6 @@ msgstr "Pronouns"
 
 msgid "Sprache"
 msgstr "Language"
-
-msgid "Vorname"
-msgstr "First name"
-
-msgid "Nachname"
-msgstr "Last name"
-
-msgid "E-Mail"
-msgstr "Email"
-
-msgid "Telefon"
-msgstr "Phone"
 
 msgid "Keine Telefonnummer vorhanden"
 msgstr "No phone number"
@@ -924,6 +1478,38 @@ msgstr "File content does not match the file type (allowed: PDF, JPG, PNG)."
 msgid ""
 "Konnte nicht ins Intranet (FreeIPA) übernommen werden — nicht gespeichert."
 msgstr "Could not be written to the intranet (FreeIPA) — not saved."
+
+#, python-format
+msgid ""
+"%(name)s hat kein Intranet-Account und wurde nicht zu %(ag)s hinzugefügt."
+msgstr "%(name)s has no intranet account and was not added to %(ag)s."
+
+#, python-format
+msgid "Aus %(ag)s entfernt: %(names)s"
+msgstr "Removed from %(ag)s: %(names)s"
+
+#, python-format
+msgid "Zu %(ag)s hinzugefügt: %(names)s"
+msgstr "Added to %(ag)s: %(names)s"
+
+#, python-format
+msgid "Abfrage \"%(label)s\" wurde gelöscht."
+msgstr "Survey \"%(label)s\" was deleted."
+
+#, python-format
+msgid "Sync abgeschlossen: %(n)s neue Mieter*innen angelegt."
+msgstr "Sync finished: %(n)s new tenants created."
+
+#, python-format
+msgid "%(n)s Sitzungen ungültig gemacht. Alle Nutzer*innen wurden abgemeldet."
+msgstr "%(n)s sessions invalidated. All users were logged out."
+
+msgid "Sitzung beendet."
+msgstr "Session ended."
+
+#, python-format
+msgid "Alle Sitzungen von %(user)s beendet."
+msgstr "All sessions of %(user)s ended."
 
 msgid "Gruppenliste aus LDAP nicht lesbar."
 msgstr "Could not read the group list from LDAP."
@@ -1038,6 +1624,30 @@ msgstr "Clearance failed: %(exc)s"
 msgid "Vertraulichkeitsfreigabe erteilt."
 msgstr "Confidentiality clearance granted."
 
+msgid "belegt"
+msgstr "occupied"
+
+msgid "Keine Berechtigung zum Bearbeiten."
+msgstr "No permission to edit."
+
+msgid "Zimmer nicht gefunden."
+msgstr "Room not found."
+
+msgid "Ausstattung gespeichert."
+msgstr "Furnishings saved."
+
+msgid "Bitte Eingaben prüfen."
+msgstr "Please check your input."
+
+msgid "Belegium darf Zimmer nur ab zwei Wochen vor Einzug zuordnen."
+msgstr "Belegium may only assign rooms from two weeks before move-in."
+
+msgid "Zimmer zugeordnet."
+msgstr "Room assigned."
+
+msgid "Gespeichert."
+msgstr "Saved."
+
 #, python-format
 msgid "Intranet-Account konnte nicht angelegt werden: %(exc)s"
 msgstr "Could not create the intranet account: %(exc)s"
@@ -1087,12 +1697,3 @@ msgstr "Could not create the account: %(exc)s"
 #, python-format
 msgid "Account angelegt: %(uid)s — Willkommens-E-Mail an %(email)s"
 msgstr "Account created: %(uid)s — welcome email sent to %(email)s"
-
-msgid "Keine Berechtigung zum Bearbeiten."
-msgstr "No permission to edit."
-
-msgid "Belegium darf Zimmer nur ab zwei Wochen vor Einzug zuordnen."
-msgstr "Belegium may only assign rooms from two weeks before move-in."
-
-msgid "Gespeichert."
-msgstr "Saved."

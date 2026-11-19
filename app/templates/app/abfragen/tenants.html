@@ -1,13 +1,13 @@
 {% extends "app/base.html" %}
-{% load tenant_extras %}
-{% block title %}Bewohner:innen — {{ abfrage }} — CArtei{% endblock %}
+{% load i18n tenant_extras %}
+{% block title %}{% translate "Bewohner:innen" %} — {{ abfrage }} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
   <div style="margin-bottom:1.5rem;">
     <p style="margin-bottom:0.5rem;">
-      <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">← Zur Übersicht</a>
+      <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">← {% translate "Zur Übersicht" %}</a>
     </p>
-    <h1 style="font-size:1.4rem;font-weight:700;">Bewohner:innen — {{ abfrage }}</h1>
+    <h1 style="font-size:1.4rem;font-weight:700;">{% translate "Bewohner:innen" %} — {{ abfrage }}</h1>
   </div>
   <div style="overflow-x:auto;">
     <table class="table is-fullwidth is-striped is-hoverable" style="font-size:0.9rem;">
@@ -15,8 +15,8 @@
         <tr>
           <th>Name</th>
           <th>Username</th>
-          <th>Ergebnis(se)</th>
-          <th>Ausreichend?</th>
+          <th>{% translate "Ergebnis(se)" %}</th>
+          <th>{% translate "Ausreichend?" %}</th>
         </tr>
       </thead>
       <tbody>
@@ -31,14 +31,14 @@
         </td>
         <td>
           {% if row.sufficient %}
-          <span style="color:#155724;font-weight:700;">✓ Ja</span>
+          <span style="color:#155724;font-weight:700;">✓ {% translate "Ja" %}</span>
           {% else %}
-          <span style="color:#B61B29;font-weight:700;">✗ Nein</span>
+          <span style="color:#B61B29;font-weight:700;">✗ {% translate "Nein" %}</span>
           {% endif %}
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="4" style="color:#7a7a7a;">Keine aktiven Bewohner:innen.</td></tr>
+      <tr><td colspan="4" style="color:#7a7a7a;">{% translate "Keine aktiven Bewohner:innen." %}</td></tr>
       {% endfor %}
       </tbody>
     </table>

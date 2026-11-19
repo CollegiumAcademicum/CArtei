@@ -1,5 +1,5 @@
 {% extends "app/base.html" %}
-{% load tenant_extras %}
+{% load i18n tenant_extras %}
 {% block title %}{{ abfrage }} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
@@ -7,29 +7,29 @@
     <div>
       <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;">{{ abfrage }}</h1>
       <p style="color:#7a7a7a;font-size:0.9rem;">
-        Status: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
-        &nbsp;·&nbsp; Endet: {{ abfrage.ends_at }}
-        &nbsp;·&nbsp; Nachfrist: {{ abfrage.grace_ends_at }}
+        {% translate "Status" %}: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
+        &nbsp;·&nbsp; {% translate "Endet" %}: {{ abfrage.ends_at }}
+        &nbsp;·&nbsp; {% translate "Nachfrist" %}: {{ abfrage.grace_ends_at }}
       </p>
       <p style="margin-top:0.75rem;">
-        <a href="{% url 'abfrage_tenants' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">Alle Bewohner:innen →</a>
+        <a href="{% url 'abfrage_tenants' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">{% translate "Alle Bewohner:innen" %} →</a>
       </p>
     </div>
     {% if is_privileged %}
-    <button type="button" class="ca-logout" style="color:#B61B29;border-color:#B61B29;" data-show-modal="delete-dialog">Löschen</button>
+    <button type="button" class="ca-logout" style="color:#B61B29;border-color:#B61B29;" data-show-modal="delete-dialog">{% translate "Löschen" %}</button>
 
     <dialog id="delete-dialog" style="border:none;border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,0.18);padding:2rem;max-width:420px;width:100%;">
-      <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Abfrage löschen</h2>
+      <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">{% translate "Abfrage löschen" %}</h2>
       <p style="font-size:0.9rem;color:#7a7a7a;margin-bottom:1rem;">
-        Diese Aktion löscht die Abfrage und alle zugehörigen Ergebnisse unwiderruflich.<br>
-        Zur Bestätigung bitte <strong>{{ abfrage }}</strong> eingeben:
+        {% translate "Diese Aktion löscht die Abfrage und alle zugehörigen Ergebnisse unwiderruflich." %}<br>
+        {% translate "Zur Bestätigung bitte eingeben:" %} <strong>{{ abfrage }}</strong>
       </p>
       <form method="post" action="{% url 'abfrage_delete' abfrage.pk %}">
         {% csrf_token %}
         <input type="text" id="delete-confirm" class="input" style="margin-bottom:1rem;" placeholder="{{ abfrage }}" autocomplete="off">
         <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-          <button type="button" class="ca-button-outline" data-close-dialog>Abbrechen</button>
-          <button type="submit" id="delete-btn" class="ca-logout" style="color:#B61B29;border-color:#B61B29;opacity:0.4;cursor:not-allowed;" disabled>Endgültig löschen</button>
+          <button type="button" class="ca-button-outline" data-close-dialog>{% translate "Abbrechen" %}</button>
+          <button type="submit" id="delete-btn" class="ca-logout" style="color:#B61B29;border-color:#B61B29;opacity:0.4;cursor:not-allowed;" disabled>{% translate "Endgültig löschen" %}</button>
         </div>
       </form>
     </dialog>
@@ -55,11 +55,11 @@
 
   <hr class="ca-divider">
 
-  <h2 class="ca-label" style="font-size:1rem;margin-bottom:1rem;">Ergebnisse nach AG</h2>
+  <h2 class="ca-label" style="font-size:1rem;margin-bottom:1rem;">{% translate "Ergebnisse nach AG" %}</h2>
   {% if ags %}
   <div style="overflow-x:auto;">
     <table class="table is-fullwidth is-striped is-hoverable" style="font-size:0.9rem;">
-      <thead><tr><th>AG</th><th>Zustand</th><th>Bewohner:in</th><th>Status</th><th>Notiz</th></tr></thead>
+      <thead><tr><th>AG</th><th>{% translate "Zustand" %}</th><th>{% translate "Bewohner:in" %}</th><th>{% translate "Status" %}</th><th>{% translate "Notiz" %}</th></tr></thead>
       <tbody>
       {% for ag in ags %}
       {% for r in ag.results %}
@@ -82,7 +82,7 @@
     </table>
   </div>
   {% else %}
-  <p style="color:#7a7a7a;">Noch keine Ergebnisse.</p>
+  <p style="color:#7a7a7a;">{% translate "Noch keine Ergebnisse." %}</p>
   {% endif %}
 </div>
 {% endblock %}

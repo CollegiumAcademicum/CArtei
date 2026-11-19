@@ -3,6 +3,7 @@ from datetime import date
 from django import forms
 from django.db.models import Q
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 
 from app.models import LOCALE_CHOICES, Room, Tenant, TenantRoomAssignment
 from app.tenant_access import EDITABLE_COLUMNS
@@ -76,22 +77,22 @@ class TenantForm(forms.ModelForm):
 
 
 class ProfileSetupForm(forms.Form):
-    email = forms.EmailField(label="E-Mail-Adresse", widget=forms.EmailInput(attrs={
+    email = forms.EmailField(label=gettext_lazy("E-Mail-Adresse"), widget=forms.EmailInput(attrs={
         "class": "ca-input", "autocomplete": "email",
     }))
     phone = forms.CharField(
-        label="Telefonnummer", required=False, max_length=50,
+        label=gettext_lazy("Telefonnummer"), required=False, max_length=50,
         widget=forms.TextInput(attrs={"class": "ca-input", "type": "tel", "autocomplete": "tel"}),
     )
-    no_phone_number = forms.BooleanField(label="Ich habe keine Telefonnummer", required=False)
+    no_phone_number = forms.BooleanField(label=gettext_lazy("Ich habe keine Telefonnummer"), required=False)
     mailbox_list_opt_in = forms.ChoiceField(
-        label="Soll dein Name auf der Briefkastenliste stehen?",
-        choices=(("yes", "Ja"), ("no", "Nein")),
+        label=gettext_lazy("Soll dein Name auf der Briefkastenliste stehen?"),
+        choices=(("yes", gettext_lazy("Ja")), ("no", gettext_lazy("Nein"))),
         widget=forms.RadioSelect,
     )
     is_flinta = forms.ChoiceField(
-        label="Bist du FLINTA*? (Frauen, Lesben, inter, nicht-binär, trans, agender)",
-        choices=(("yes", "Ja"), ("no", "Nein")),
+        label=gettext_lazy("Bist du FLINTA*? (Frauen, Lesben, inter, nicht-binär, trans, agender)"),
+        choices=(("yes", gettext_lazy("Ja")), ("no", gettext_lazy("Nein"))),
         widget=forms.RadioSelect,
     )
 
@@ -107,7 +108,7 @@ class ProfileSetupForm(forms.Form):
         has_phone = bool((cleaned.get("phone") or "").strip())
         no_phone = bool(cleaned.get("no_phone_number"))
         if has_phone == no_phone:
-            self.add_error("phone", "Bitte Telefonnummer oder „Ich habe keine Telefonnummer“ wählen.")
+            self.add_error("phone", _("Bitte Telefonnummer oder „Ich habe keine Telefonnummer“ wählen."))
         return cleaned
 
 
@@ -119,12 +120,16 @@ class TenantCreateForm(forms.ModelForm):
     email = forms.EmailField(required=True)
     create_ldap_account = forms.BooleanField(
         required=False, initial=False,
-        label="Intranet-Account direkt anlegen",
+        label=gettext_lazy("Intranet-Account direkt anlegen"),
     )
 
     class Meta:
         model = Tenant
         fields = ["first_name", "last_name", "email", "phone"]
+        labels = {
+            "first_name": gettext_lazy("Vorname"), "last_name": gettext_lazy("Nachname"),
+            "email": gettext_lazy("E-Mail"), "phone": gettext_lazy("Telefon"),
+        }
 
     def clean_email(self):
         return validate_unique_email(self.cleaned_data["email"], current_tenant=None)
@@ -137,8 +142,8 @@ class RoomFurnitureForm(forms.ModelForm):
         model = Room
         fields = ["size_sqm", "has_mattress", "has_bed", "has_table", "has_closet"]
         labels = {
-            "size_sqm": "Größe (m²)", "has_mattress": "Matratze",
-            "has_bed": "Bett", "has_table": "Tisch", "has_closet": "Schrank",
+            "size_sqm": gettext_lazy("Größe (m²)"), "has_mattress": gettext_lazy("Matratze"),
+            "has_bed": gettext_lazy("Bett"), "has_table": gettext_lazy("Tisch"), "has_closet": gettext_lazy("Schrank"),
         }
         widgets = {"size_sqm": forms.NumberInput(attrs={"step": "0.01", "min": "0", "class": "ca-input"})}
 
@@ -191,7 +196,7 @@ class TenantRoomAssignmentForm(forms.ModelForm):
             if not rents:
                 self.add_error(
                     "sublet_of_tenant",
-                    "Diese Person mietet das ausgewählte Zimmer nicht.",
+                    _("Diese Person mietet das ausgewählte Zimmer nicht."),
                 )
         return cleaned
 
@@ -238,7 +243,7 @@ class RoomAssignmentCreateForm(forms.ModelForm):
             if not rents:
                 self.add_error(
                     "sublet_of_tenant",
-                    "Diese Person mietet das ausgewählte Zimmer nicht.",
+                    _("Diese Person mietet das ausgewählte Zimmer nicht."),
                 )
         return cleaned
 

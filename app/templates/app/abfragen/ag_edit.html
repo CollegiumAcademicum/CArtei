@@ -1,45 +1,45 @@
 {% extends "app/base.html" %}
-{% load tenant_extras %}
+{% load i18n tenant_extras %}
 {% block title %}{{ ag_name }} — {{ abfrage }} — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
   <div style="margin-bottom:1.5rem;">
     <p style="margin-bottom:0.5rem;">
       {% if is_privileged %}
-      <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">← Zur Übersicht</a>
+      <a href="{% url 'abfrage_detail' abfrage.pk %}" style="color:var(--ca-teal);font-weight:600;">← {% translate "Zur Übersicht" %}</a>
       {% else %}
-      <a href="{% url 'abfragen_list' %}" style="color:var(--ca-teal);font-weight:600;">← Zur Übersicht</a>
+      <a href="{% url 'abfragen_list' %}" style="color:var(--ca-teal);font-weight:600;">← {% translate "Zur Übersicht" %}</a>
       {% endif %}
     </p>
     <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;">{{ ag_name }} — {{ abfrage }}</h1>
     <p style="color:#7a7a7a;font-size:0.9rem;">
       {% if is_privileged %}
-        Status: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
+        {% translate "Status" %}: <span class="badge badge-{{ abfrage.state }}">{{ abfrage.state }}</span>
         &nbsp;·&nbsp; Deadline: {{ abfrage.ends_at }}
-        &nbsp;·&nbsp; Nachfrist: {{ abfrage.grace_ends_at }}
+        &nbsp;·&nbsp; {% translate "Nachfrist" %}: {{ abfrage.grace_ends_at }}
       {% else %}
-        Status: <span class="badge badge-{{ abfrage.user_state }}">{{ abfrage.user_state }}</span>
+        {% translate "Status" %}: <span class="badge badge-{{ abfrage.user_state }}">{{ abfrage.user_state }}</span>
         &nbsp;·&nbsp; Deadline: {{ abfrage.ends_at }}
       {% endif %}
     </p>
   </div>
 
   {% if closed %}
-  <div class="ca-message warning">Diese Abfrage ist geschlossen. Bearbeitungen sind nicht mehr möglich.</div>
+  <div class="ca-message warning">{% translate "Diese Abfrage ist geschlossen. Bearbeitungen sind nicht mehr möglich." %}</div>
   {% elif readonly %}
-  <div class="ca-message info">{% if abfrage.can_ag_edit %}Nur Ansicht: Bewertungen trägt die AG selbst ein.{% else %}Diese Abfrage ist geschlossen – nur Ansicht.{% endif %}</div>
-  <p style="margin-bottom:1rem;"><strong>Gesamtzustand:</strong> {{ health_label|default:"nicht angegeben" }}{% if health.note %} – {{ health.note }}{% endif %}</p>
+  <div class="ca-message info">{% if abfrage.can_ag_edit %}{% translate "Nur Ansicht: Bewertungen trägt die AG selbst ein." %}{% else %}{% translate "Diese Abfrage ist geschlossen – nur Ansicht." %}{% endif %}</div>
+  <p style="margin-bottom:1rem;">{% translate "nicht angegeben" as t_unset %}<strong>{% translate "Gesamtzustand" %}:</strong> {{ health_label|default:t_unset }}{% if health.note %} – {{ health.note }}{% endif %}</p>
   <table class="table is-fullwidth is-striped ca-stack-table" style="font-size:0.9rem;">
-    <thead><tr><th>Bewohner:in</th><th>Status</th><th>Notiz</th></tr></thead>
+    <thead><tr><th>{% translate "Bewohner:in" %}</th><th>{% translate "Status" %}</th><th>{% translate "Notiz" %}</th></tr></thead>
     <tbody>
     {% for row in rows %}
     <tr>
       <td>{% if row.tenant %}{% tenant_link row.tenant %}{% else %}{{ row.name }}{% endif %}</td>
-      <td data-label="Status">{{ row.status_label|default:"—" }}</td>
-      <td data-label="Notiz">{{ row.result.note|default:"" }}</td>
+      <td data-label="{% translate "Status" %}">{{ row.status_label|default:"—" }}</td>
+      <td data-label="{% translate "Notiz" %}">{{ row.result.note|default:"" }}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="3" style="color:#7a7a7a;">Keine Mitglieder in LDAP gefunden.</td></tr>
+    <tr><td colspan="3" style="color:#7a7a7a;">{% translate "Keine Mitglieder in LDAP gefunden." %}</td></tr>
     {% endfor %}
     </tbody>
   </table>
@@ -48,48 +48,48 @@
     {% csrf_token %}
 
     <div style="margin-bottom:1.5rem;padding:1rem;background:#fafafa;border-radius:6px;">
-      <label class="ca-label" style="display:block;margin-bottom:0.6rem;">Gesamtzustand der AG</label>
-      <div class="ca-slider" data-values="GESUND,KERNAUFGABEN,KRITISCH,TOT" data-labels="gesund,nur Kernaufgaben,kritisch,tot">
+      <label class="ca-label" style="display:block;margin-bottom:0.6rem;">{% translate "Gesamtzustand der AG" %}</label>
+      <div class="ca-slider" data-values="{% for v, l in health_choices %}{{ v }}{% if not forloop.last %},{% endif %}{% endfor %}" data-labels="{% for v, l in health_choices %}{{ l }}{% if not forloop.last %},{% endif %}{% endfor %}">
         <input type="range" min="0" max="3" step="1" data-initial="{{ health.health|default:'GESUND' }}">
         <input type="hidden" name="health" value="{{ health.health|default:'GESUND' }}">
         <output class="ca-slider-out"></output>
       </div>
-      <input class="input is-small ca-mobile-full" type="text" name="health_note" value="{{ health.note|default:'' }}" placeholder="Notiz zum Zustand (optional) …" style="margin-top:0.6rem;max-width:420px;">
+      <input class="input is-small ca-mobile-full" type="text" name="health_note" value="{{ health.note|default:'' }}" placeholder="{% translate "Notiz zum Zustand (optional) …" %}" style="margin-top:0.6rem;max-width:420px;">
     </div>
 
     <div style="overflow-x:auto;">
       <table class="table is-fullwidth is-striped ca-stack-table" style="font-size:0.9rem;">
         <thead>
-          <tr><th>Bewohner:in</th><th>Status</th><th>Notiz (optional)</th>{% if can_manage %}<th></th>{% endif %}</tr>
+          <tr><th>{% translate "Bewohner:in" %}</th><th>{% translate "Status" %}</th><th>{% translate "Notiz (optional)" %}</th>{% if can_manage %}<th></th>{% endif %}</tr>
         </thead>
         <tbody id="ag-rows">
         {% for row in rows %}
         <tr>
           <td>
             <span class="ag-row-name">{% if row.tenant %}{% tenant_link row.tenant %}{% else %}{{ row.name }}{% endif %}</span>
-            {% if not row.tenant %}<br><em style="color:#999;font-size:0.8rem;">(kein Eintrag im System)</em>{% endif %}
-            {% if can_manage and not row.member %}<span class="ag-row-tag ag-row-tag-out">nicht in der AG</span>{% endif %}
+            {% if not row.tenant %}<br><em style="color:#999;font-size:0.8rem;">({% translate "kein Eintrag im System" %})</em>{% endif %}
+            {% if can_manage and not row.member %}<span class="ag-row-tag ag-row-tag-out">{% translate "nicht in der AG" %}</span>{% endif %}
           </td>
           {% if row.tenant %}
-          <td data-label="Status">
-            <div class="ca-slider" data-values="ZU_AKTIV,AKTIV,NICHT_AUSREICHEND,IM_GESPRAECH,INAKTIV" data-labels="zu aktiv,aktiv,nicht ausreichend,im Gespräch,inaktiv">
+          <td data-label="{% translate "Status" %}">
+            <div class="ca-slider" data-values="{% for v, l in status_choices %}{{ v }}{% if not forloop.last %},{% endif %}{% endfor %}" data-labels="{% for v, l in status_choices %}{{ l }}{% if not forloop.last %},{% endif %}{% endfor %}">
               <input type="range" min="0" max="4" step="1" data-initial="{{ row.result.status|default:'INAKTIV' }}">
               <input type="hidden" name="status_{{ row.tenant.pk }}" value="{{ row.result.status|default:'INAKTIV' }}">
               <output class="ca-slider-out"></output>
             </div>
           </td>
-          <td data-label="Notiz">
-            <input class="input is-small" type="text" name="note_{{ row.tenant.pk }}" value="{{ row.result.note|default:'' }}" placeholder="Notiz …">
+          <td data-label="{% translate "Notiz" %}">
+            <input class="input is-small" type="text" name="note_{{ row.tenant.pk }}" value="{{ row.result.note|default:'' }}" placeholder="{% translate "Notiz …" %}">
           </td>
           {% else %}
-          <td colspan="2" style="color:#7a7a7a;font-size:0.85rem;">Nicht im System — bitte LDAP-Sync durchführen</td>
+          <td colspan="2" style="color:#7a7a7a;font-size:0.85rem;">{% translate "Nicht im System — bitte LDAP-Sync durchführen" %}</td>
           {% endif %}
           {% if can_manage %}
-          <td class="ca-stack-actions">{% if row.member %}<button type="button" class="remove-btn" data-uid="{{ row.member.username }}" data-name="{{ row.name }}">Entfernen</button>{% elif row.tenant.intranet_username %}<button type="button" class="readd-btn" data-pk="{{ row.tenant.pk }}" data-name="{{ row.name }}" data-uid="{{ row.tenant.intranet_username }}">Wieder hinzufügen</button>{% endif %}</td>
+          <td class="ca-stack-actions">{% if row.member %}<button type="button" class="remove-btn" data-uid="{{ row.member.username }}" data-name="{{ row.name }}">{% translate "Entfernen" %}</button>{% elif row.tenant.intranet_username %}<button type="button" class="readd-btn" data-pk="{{ row.tenant.pk }}" data-name="{{ row.name }}" data-uid="{{ row.tenant.intranet_username }}">{% translate "Wieder hinzufügen" %}</button>{% endif %}</td>
           {% endif %}
         </tr>
         {% empty %}
-        <tr><td colspan="{% if can_manage %}4{% else %}3{% endif %}" style="color:#7a7a7a;">Keine Mitglieder in LDAP gefunden.</td></tr>
+        <tr><td colspan="{% if can_manage %}4{% else %}3{% endif %}" style="color:#7a7a7a;">{% translate "Keine Mitglieder in LDAP gefunden." %}</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -97,42 +97,62 @@
 
     <div style="margin-top:0.5rem;margin-bottom:1.5rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
       <select id="add-tenant-select" class="input is-small ca-mobile-full" style="max-width:340px;">
-        <option value="">Weitere:n Bewohner:in hinzufügen …</option>
+        <option value="">{% translate "Weitere:n Bewohner:in hinzufügen …" %}</option>
         {% for t in all_tenants %}
         <option value="{{ t.pk }}" data-name="{{ t.first_name }} {{ t.last_name }}" data-uid="{{ t.intranet_username|default:'' }}">{{ t.last_name }}, {{ t.first_name }} ({{ t.intranet_username }})</option>
         {% endfor %}
       </select>
-      <button type="button" class="ca-button-sm" id="add-tenant-btn">Hinzufügen</button>
+      <button type="button" class="ca-button-sm" id="add-tenant-btn">{% translate "Hinzufügen" %}</button>
     </div>
 
     <template id="ag-row-tpl">
       <tr>
         <td class="tenant-name"></td>
-        <td data-label="Status">
-          <div class="ca-slider" data-values="ZU_AKTIV,AKTIV,NICHT_AUSREICHEND,IM_GESPRAECH,INAKTIV" data-labels="zu aktiv,aktiv,nicht ausreichend,im Gespräch,inaktiv">
+        <td data-label="{% translate "Status" %}">
+          <div class="ca-slider" data-values="{% for v, l in status_choices %}{{ v }}{% if not forloop.last %},{% endif %}{% endfor %}" data-labels="{% for v, l in status_choices %}{{ l }}{% if not forloop.last %},{% endif %}{% endfor %}">
             <input type="range" min="0" max="4" step="1" data-initial="INAKTIV">
             <input type="hidden" name="status___PK__" value="INAKTIV">
             <output class="ca-slider-out"></output>
           </div>
         </td>
-        <td data-label="Notiz"><input class="input is-small" type="text" name="note___PK__" placeholder="Notiz …"></td>
-        {% if can_manage %}<td class="ca-stack-actions"><button type="button" class="ag-undo-add">Rückgängig</button></td>{% endif %}
+        <td data-label="{% translate "Notiz" %}"><input class="input is-small" type="text" name="note___PK__" placeholder="{% translate "Notiz …" %}"></td>
+        {% if can_manage %}<td class="ca-stack-actions"><button type="button" class="ag-undo-add">{% translate "Rückgängig" %}</button></td>{% endif %}
       </tr>
     </template>
 
     {% if can_manage %}
     <div id="ag-member-summary" class="ca-message info" data-ag="{{ ag_name }}" hidden></div>
-    <p class="ag-member-note">Nichts passiert in LDAP, bevor „Speichern“ gedrückt wird.</p>
+    <p class="ag-member-note">{% translate "Nichts passiert in LDAP, bevor „Speichern“ gedrückt wird." %}</p>
     {% endif %}
 
     <div class="ca-form-actions" style="display:none;gap:.5rem;align-items:center;">
-      <button type="submit" class="ca-button">Speichern</button>
-      <button type="button" id="ag-revert" class="ca-button-outline">Zurücksetzen</button>
+      <button type="submit" class="ca-button">{% translate "Speichern" %}</button>
+      <button type="button" id="ag-revert" class="ca-button-outline">{% translate "Zurücksetzen" %}</button>
     </div>
   </form>
 
   <script nonce="{{ csp_nonce }}">
   (function () {
+    var M = {
+      onSave: '{{ _("Beim Speichern: ")|escapejs }}',
+      rm1: '{{ _("{names} wird aus {ag} entfernt")|escapejs }}',
+      rmN: '{{ _("{names} werden aus {ag} entfernt")|escapejs }}',
+      add1: '{{ _("{names} wird hinzugefügt")|escapejs }}',
+      addN: '{{ _("{names} werden hinzugefügt")|escapejs }}',
+      willAdd: '{{ _("wird hinzugefügt")|escapejs }}',
+      willRemove: '{{ _("wird entfernt")|escapejs }}',
+      noAccount: '{{ _("kein Intranet-Account – nur Bewertung")|escapejs }}',
+      undo: '{{ _("Rückgängig")|escapejs }}',
+      remove: '{{ _("Entfernen")|escapejs }}',
+      readd: '{{ _("Wieder hinzufügen")|escapejs }}'
+    };
+    // Appends tpl to el, swapping each {key} for parts[key] (a string or node).
+    function fill(el, tpl, parts) {
+      tpl.split(/(\{\w+\})/).forEach(function (bit) {
+        var m = bit.match(/^\{(\w+)\}$/);
+        if (m && m[1] in parts) el.append(parts[m[1]]); else if (bit) el.append(bit);
+      });
+    }
     var COLORS = {
       GESUND:'#2e7d32', KERNAUFGABEN:'#c9a400', KRITISCH:'#c62828', TOT:'#111',
       ZU_AKTIV:'#155724', AKTIV:'#2e7d32', NICHT_AUSREICHEND:'#e08a00',
@@ -179,13 +199,15 @@
       summary.hidden = !rm.length && !add.length;
       if (summary.hidden) return;
       function b(text) { var e = document.createElement('b'); e.textContent = text; return e; }
-      function verb(list) { return list.length > 1 ? ' werden ' : ' wird '; }
-      summary.append('Beim Speichern: ');
+      summary.append(M.onSave);
       if (rm.length) {
         var code = document.createElement('code'); code.textContent = summary.dataset.ag;
-        summary.append(b(rm.join(', ')), verb(rm) + 'aus ', code, ' entfernt');
+        fill(summary, rm.length > 1 ? M.rmN : M.rm1, {names: b(rm.join(', ')), ag: code});
       }
-      if (add.length) summary.append(rm.length ? ', ' : '', b(add.join(', ')), verb(add) + 'hinzugefügt');
+      if (add.length) {
+        if (rm.length) summary.append(', ');
+        fill(summary, add.length > 1 ? M.addN : M.add1, {names: b(add.join(', '))});
+      }
       summary.append('.');
     }
 
@@ -211,7 +233,7 @@
         tr.classList.add('ag-adding');
         tr.dataset.name = opt.dataset.name;
         tr.dataset.uid = opt.dataset.uid;
-        addTag(tr, opt.dataset.uid ? 'wird hinzugefügt' : 'kein Intranet-Account – nur Bewertung');
+        addTag(tr, opt.dataset.uid ? M.willAdd : M.noAccount);
       }
       tbody.appendChild(tr);
       tr.querySelectorAll('.ca-slider').forEach(initSlider);
@@ -248,7 +270,7 @@
       var btn = tr.querySelector('.remove-btn');
       tr.classList.toggle('ag-removing', on);
       tr.dataset.name = btn.dataset.name;
-      btn.textContent = on ? 'Rückgängig' : 'Entfernen';
+      btn.textContent = on ? M.undo : M.remove;
       var mark = tr.querySelector('input.ag-remove-mark');
       var tag = tr.querySelector('.ag-row-tag-rm');
       if (on && !mark) {
@@ -256,7 +278,7 @@
         mark.type = 'hidden'; mark.className = 'ag-remove-mark';
         mark.name = 'remove_' + btn.dataset.uid; mark.value = '1';
         btn.parentNode.appendChild(mark);
-        addTag(tr, 'wird entfernt').classList.add('ag-row-tag-rm');
+        addTag(tr, M.willRemove).classList.add('ag-row-tag-rm');
       } else if (!on) {
         if (mark) mark.remove();
         if (tag) tag.remove();
@@ -275,14 +297,14 @@
       tr.classList.toggle('ag-adding', on);
       tr.dataset.name = btn.dataset.name;
       tr.dataset.uid = btn.dataset.uid;
-      btn.textContent = on ? 'Rückgängig' : 'Wieder hinzufügen';
+      btn.textContent = on ? M.undo : M.readd;
       var mark = tr.querySelector('input.ag-add-mark');
       if (on && !mark) {
         mark = document.createElement('input');
         mark.type = 'hidden'; mark.className = 'ag-add-mark';
         mark.name = 'add_' + btn.dataset.pk; mark.value = '1';
         btn.parentNode.appendChild(mark);
-        addTag(tr, 'wird hinzugefügt').classList.add('ag-row-tag-add');
+        addTag(tr, M.willAdd).classList.add('ag-row-tag-add');
       } else if (!on) {
         if (mark) mark.remove();
         var tag = tr.querySelector('.ag-row-tag-add');

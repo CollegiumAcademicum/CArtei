@@ -1,79 +1,82 @@
 {% extends "app/base.html" %}
+{% load i18n %}
 {% block title %}Admin — CArtei{% endblock %}
 {% block content %}
 <div class="ca-card">
-  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">Admin-Portal</h1>
+  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">{% translate "Admin-Portal" %}</h1>
 
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;margin-bottom:2rem;">
     <div class="ca-stat-card">
       <div class="ca-stat-value">{{ flinta_quote }}%</div>
-      <div class="ca-stat-label">FLINTA-Quote
-        <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Anteil FLINTA unter den aktuell im CA wohnenden Mieter:innen (mit laufender Zimmerbelegung).</span></span>
+      <div class="ca-stat-label">{% translate "FLINTA-Quote" %}
+        <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Hinweis anzeigen' %}">i<span class="ca-hint-bubble">{% translate "Anteil FLINTA unter den aktuell im CA wohnenden Mieter:innen (mit laufender Zimmerbelegung)." %}</span></span>
       </div>
     </div>
     <div class="ca-stat-card">
       <div class="ca-stat-value">{{ azubi_quote }}%</div>
-      <div class="ca-stat-label">Azubi-Quote
-        <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Anteil Azubis unter den aktuell im CA wohnenden Mieter:innen (mit laufender Zimmerbelegung).</span></span>
+      <div class="ca-stat-label">{% translate "Azubi-Quote" %}
+        <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Hinweis anzeigen' %}">i<span class="ca-hint-bubble">{% translate "Anteil Azubis unter den aktuell im CA wohnenden Mieter:innen (mit laufender Zimmerbelegung)." %}</span></span>
       </div>
     </div>
     <div class="ca-stat-card">
       <div class="ca-stat-value">{{ current_tenants }}</div>
-      <div class="ca-stat-label">Aktuelle Mieter*innen
-        <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Mieter:innen mit heute laufender Zimmerbelegung (eingezogen, nicht ausgezogen).</span></span>
+      <div class="ca-stat-label">{% translate "Aktuelle Mieter*innen" %}
+        <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Hinweis anzeigen' %}">i<span class="ca-hint-bubble">{% translate "Mieter:innen mit heute laufender Zimmerbelegung (eingezogen, nicht ausgezogen)." %}</span></span>
       </div>
     </div>
     <div class="ca-stat-card">
       <div class="ca-stat-value">{{ total_tenants }}</div>
-      <div class="ca-stat-label">All-Time Mietende
-        <span class="ca-hint" tabindex="0" role="button" aria-label="Hinweis anzeigen">i<span class="ca-hint-bubble">Alle je erfassten Mieter:innen, unabhängig von Ein- oder Auszug.</span></span>
+      <div class="ca-stat-label">{% translate "All-Time Mietende" %}
+        <span class="ca-hint" tabindex="0" role="button" aria-label="{% translate 'Hinweis anzeigen' %}">i<span class="ca-hint-bubble">{% translate "Alle je erfassten Mieter:innen, unabhängig von Ein- oder Auszug." %}</span></span>
       </div>
     </div>
   </div>
 
-  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">Berechtigungen</h2>
-  <p style="color:#555;margin-bottom:1rem;">Übersicht, welche Rollen welche Felder sehen und bearbeiten dürfen.</p>
-  <a href="{% url 'permission_matrix' %}" class="ca-button-outline">Berechtigungsmatrix ansehen</a>
+  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">{% translate "Berechtigungen" %}</h2>
+  <p style="color:#555;margin-bottom:1rem;">{% translate "Übersicht, welche Rollen welche Felder sehen und bearbeiten dürfen." %}</p>
+  <a href="{% url 'permission_matrix' %}" class="ca-button-outline">{% translate "Berechtigungsmatrix ansehen" %}</a>
 
   <hr class="ca-divider">
-  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">Änderungsprotokoll</h2>
-  <p style="color:#555;margin-bottom:1rem;">Wer hat wann was geändert oder gelöscht.</p>
-  <a href="{% url 'audit_log' %}" class="ca-button-outline">Protokoll ansehen</a>
+  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">{% translate "Änderungsprotokoll" %}</h2>
+  <p style="color:#555;margin-bottom:1rem;">{% translate "Wer hat wann was geändert oder gelöscht." %}</p>
+  <a href="{% url 'audit_log' %}" class="ca-button-outline">{% translate "Protokoll ansehen" %}</a>
 
   <hr class="ca-divider">
   <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">LDAP-Sync</h2>
   <p style="color:#555;margin-bottom:1rem;">
+    {% blocktranslate trimmed %}
     Importiert neue Mitglieder aus der LDAP-Gruppe <code>confidentiality_clearance</code> als Mieter*innen.
     Bestehende Einträge werden nicht überschrieben.
+    {% endblocktranslate %}
   </p>
   <form method="post" action="{% url 'sync_from_ldap' %}">
     {% csrf_token %}
-    <button type="submit" class="ca-button">Sync starten</button>
+    <button type="submit" class="ca-button">{% translate "Sync starten" %}</button>
   </form>
 
   <hr class="ca-divider">
-  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">Sitzungen</h2>
+  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">{% translate "Sitzungen" %}</h2>
   <p style="color:#555;margin-bottom:1rem;">
-    Einzelne Geräte verwalten oder alle Nutzer*innen abmelden.
+    {% translate "Einzelne Geräte verwalten oder alle Nutzer*innen abmelden." %}
   </p>
-  <a href="{% url 'session_management' %}" class="ca-button-outline" style="margin-bottom:1rem;display:inline-block;">Aktive Sitzungen verwalten</a>
+  <a href="{% url 'session_management' %}" class="ca-button-outline" style="margin-bottom:1rem;display:inline-block;">{% translate "Aktive Sitzungen verwalten" %}</a>
   <p style="color:#555;margin-bottom:1rem;">
-    <strong>Alle</strong> Sitzungen ungültig machen meldet jede*n ab — dich selbst eingeschlossen.
+    {% blocktranslate trimmed %}<strong>Alle</strong> Sitzungen ungültig machen meldet jede*n ab — dich selbst eingeschlossen.{% endblocktranslate %}
   </p>
   <form method="post" action="{% url 'invalidate_all_sessions' %}"
-        data-confirm="Wirklich alle Sitzungen ungültig machen? Alle Nutzer*innen werden abgemeldet.">
+        data-confirm="{% translate "Wirklich alle Sitzungen ungültig machen? Alle Nutzer*innen werden abgemeldet." %}">
     {% csrf_token %}
-    <button type="submit" class="ca-button">Alle Sitzungen ungültig machen</button>
+    <button type="submit" class="ca-button">{% translate "Alle Sitzungen ungültig machen" %}</button>
   </form>
 
   {# Link placement only: impersonation needs can_impersonate, not admin — the views aren't admin-gated. #}
   {% if can_impersonate and not request.impersonator %}
   <hr class="ca-divider">
-  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">Benutzerübernahme</h2>
+  <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">{% translate "Benutzerübernahme" %}</h2>
   <p style="color:#555;margin-bottom:1rem;">
-    Als eine*n andere*n Nutzer*in arbeiten, um ihre Sicht zu sehen. Jede Übernahme wird protokolliert.
+    {% translate "Als eine*n andere*n Nutzer*in arbeiten, um ihre Sicht zu sehen. Jede Übernahme wird protokolliert." %}
   </p>
-  <a href="{% url 'impersonation_choose' %}" class="ca-button-outline">Benutzer*in übernehmen</a>
+  <a href="{% url 'impersonation_choose' %}" class="ca-button-outline">{% translate "Benutzer*in übernehmen" %}</a>
   {% endif %}
 </div>
 {% endblock %}
