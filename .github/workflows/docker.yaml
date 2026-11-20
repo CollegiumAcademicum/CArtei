@@ -70,5 +70,8 @@ jobs:
           tags: |
             ghcr.io/collegiumacademicum/cartei-web:latest
             ghcr.io/collegiumacademicum/cartei-web:${{ steps.sha.outputs.short }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Layer cache in the same registry as the image: unchanged layers (TeX
+          # Live is ~900 MB) are mounted server-side instead of being downloaded
+          # from the Actions cache and pushed again on every build.
+          cache-from: type=registry,ref=ghcr.io/collegiumacademicum/cartei-web:buildcache
+          cache-to: type=registry,ref=ghcr.io/collegiumacademicum/cartei-web:buildcache,mode=max
