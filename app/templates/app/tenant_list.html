@@ -36,6 +36,7 @@
               <option value="" {% if not sublet %}selected{% endif %}>{% translate "Alle" %}</option>
               <option value="only" {% if sublet == "only" %}selected{% endif %}>{% translate "nur Untermiete" %}</option>
               <option value="exclude" {% if sublet == "exclude" %}selected{% endif %}>{% translate "ohne Untermiete" %}</option>
+              <option value="lessors" {% if sublet == "lessors" %}selected{% endif %}>{% translate "nur Untervermietende" %}</option>
             </select>
           </div>
         </div>
