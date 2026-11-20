@@ -48,10 +48,7 @@
     v(0.6em)
     h(0.5em)
     [Letzte Aktualisierung: #data.updated]
-  } else {
-    align(right, emph[Fortführung auf nächster Seite...])
   }
-  place(bottom + center, dy: 1.15cm, text(size: 10pt, str(s.number)))
 })
 
 #for (i, sheet) in data.sheets.enumerate() {

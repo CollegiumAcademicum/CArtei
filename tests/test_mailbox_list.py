@@ -181,7 +181,6 @@ def test_build_data_paginates_strips_three_per_sheet():
     data = build_data(rows, date(2026, 10, 6))
     strips = [strip for sheet in data["sheets"] for strip in sheet]
     assert [len(sheet) for sheet in data["sheets"]] == [3, 2]
-    assert [s["number"] for s in strips] == [1, 2, 3, 4, 5]
     assert all(len(s["rows"]) == ROWS_PER_STRIP for s in strips[:-1]) and strips[-1]["last"]
     assert sum(len(s["rows"]) for s in strips) == 120
     # The letter shows once per block; a continued block shows none on the next strip.

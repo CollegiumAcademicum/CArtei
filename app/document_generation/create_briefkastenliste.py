@@ -18,10 +18,10 @@ TEMPLATE = HERE / "briefkastenliste.typ"
 FONTS = HERE / "fonts"
 
 # Fixed row height (briefkastenliste.typ) makes pagination exact: a 21 cm
-# strip holds the header and 25 rows; the last one also needs room for
+# strip holds the header and 26 rows; the last one also needs room for
 # "Auflistung fertig." and the update date.
-ROWS_PER_STRIP = 25
-ROWS_ON_LAST_STRIP = 22
+ROWS_PER_STRIP = 26
+ROWS_ON_LAST_STRIP = 23
 STRIPS_PER_SHEET = 3
 
 
@@ -74,8 +74,7 @@ def build_data(rows, updated):
         take = ROWS_PER_STRIP if remaining > ROWS_PER_STRIP else remaining - 1
         strips.append({"rows": entries[start:start + take], "last": False})
         start += take
-    for number, strip in enumerate(strips, start=1):
-        strip["number"] = number
+    for strip in strips:
         if strip["rows"]:
             strip["rows"][0] = {**strip["rows"][0], "new_block": False}  # header rule already above
     return {
