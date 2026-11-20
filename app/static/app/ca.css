@@ -102,10 +102,13 @@ body {
   content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
   border: 6px solid transparent; border-top-color: var(--ca-text);
 }
+/* The right-most stat tile's bubble would spill past the viewport: open it leftwards. */
+.ca-stat-card:last-child .ca-hint-bubble { left: auto; right: -0.6rem; transform: none; }
+.ca-stat-card:last-child .ca-hint-bubble::after { left: auto; right: 0.6rem; transform: none; }
 /* Profile sections are <details> with overflow:hidden (.ca-collapse), which clips a
    bubble opening upwards: drop it below the label, spanning the field instead.
-   Phones keep the viewport-pinned toast (max-width: 768px rule below). */
-@media (min-width: 769px) {
+   Phones and touch devices keep the viewport-pinned toast (rule below). */
+@media (min-width: 769px) and (hover: hover) {
   .ca-hint-below { position: static; }
   .ca-hint-below .ca-hint-bubble { top: 1.6rem; bottom: auto; left: 0; right: 0; width: auto; transform: none; }
   .ca-hint-below .ca-hint-bubble::after { display: none; }
@@ -541,15 +544,20 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   .ca-card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
+/* Hint bubbles centred on an icon near the edge would spill off-screen: on
+   phones and touch devices (landscape phones, tablets) pin them to the bottom
+   of the viewport like a toast instead. */
+@media (max-width: 768px), (hover: none) {
+  .ca-hint-bubble, .ca-stat-card:last-child .ca-hint-bubble {
+    position: fixed; left: 1rem; right: 1rem; bottom: 1rem; top: auto;
+    width: auto !important; transform: none; font-size: 0.9rem; }
+  .ca-hint-bubble::after { display: none; }
+}
+
 /* Phones + small tablets */
 @media (max-width: 768px) {
   .ca-main { padding: 0 0.75rem 2rem; }
   .ca-card { padding: 1rem; }
-  /* Hint bubbles centred on an icon near the edge would spill off-screen:
-     pin them to the bottom of the viewport like a toast instead. */
-  .ca-hint-bubble { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; top: auto;
-    width: auto !important; transform: none; font-size: 0.9rem; }
-  .ca-hint-bubble::after { display: none; }
 
   .ca-dash { flex-direction: column; align-items: stretch; gap: 0; }
   .ca-dash-profile { width: auto; }
