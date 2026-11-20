@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CArtei\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-20 07:54-0600\n"
+"POT-Creation-Date: 2026-11-20 08:24-0600\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -144,6 +144,99 @@ msgstr "Wardrobe"
 
 msgid "Diese Person mietet das ausgewählte Zimmer nicht."
 msgstr "This person does not rent the selected room."
+
+msgid "Name"
+msgstr "Name"
+
+msgid "freifinanziert"
+msgstr "privately financed"
+
+msgid "Zimmer"
+msgstr "Room"
+
+msgid "Eingezogen"
+msgstr "Moved in"
+
+msgid "Ausgezogen"
+msgstr "Moved out"
+
+msgid "Briefkastenschlüssel erhalten"
+msgstr "Mailbox key received"
+
+msgid "Briefkastenschlüssel abgegeben"
+msgstr "Mailbox key returned"
+
+msgid "Schlüssel erhalten"
+msgstr "Key received"
+
+msgid "Schlüssel wieder abgegeben"
+msgstr "Key returned"
+
+msgid "Untermiete"
+msgstr "Sublet"
+
+msgid "Untervermietet von"
+msgstr "Sublet from"
+
+msgid "Kaution IBAN"
+msgstr "Deposit IBAN"
+
+msgid "belegt"
+msgstr "occupied"
+
+#, python-format
+msgid "%(what)s gelöscht"
+msgstr "%(what)s deleted"
+
+#, python-format
+msgid "Belegung %(room)s · %(name)s"
+msgstr "Allocation %(room)s · %(name)s"
+
+#, python-format
+msgid "Belegung %(room)s"
+msgstr "Allocation %(room)s"
+
+#, python-format
+msgid "Einzug: %(what)s"
+msgstr "Move-in: %(what)s"
+
+#, python-format
+msgid "Auszug: %(what)s"
+msgstr "Move-out: %(what)s"
+
+#, python-format
+msgid "%(type)s hochgeladen: %(file)s"
+msgstr "%(type)s uploaded: %(file)s"
+
+#, python-format
+msgid "%(type)s widerrufen: %(file)s"
+msgstr "%(type)s revoked: %(file)s"
+
+#, python-format
+msgid "Schaden erfasst: %(what)s"
+msgstr "Damage recorded: %(what)s"
+
+#, python-format
+msgid "Schaden behoben: %(what)s"
+msgstr "Damage fixed: %(what)s"
+
+msgid "Profil"
+msgstr "Profile"
+
+#, python-format
+msgid "Nachweis hochgeladen: %(file)s"
+msgstr "Proof uploaded: %(file)s"
+
+#, python-format
+msgid "Nachweis geprüft: %(file)s"
+msgstr "Proof verified: %(file)s"
+
+#, python-format
+msgid "Zimmer %(room)s"
+msgstr "Room %(room)s"
+
+msgid "Gemeinschaftsflächen"
+msgstr "Common areas"
 
 msgid "zu aktiv"
 msgstr "too active"
@@ -441,29 +534,18 @@ msgstr "Photo (optional)"
 msgid "Schaden erfassen"
 msgstr "Record damage"
 
-msgid "Eingezogen"
-msgstr "Moved in"
+msgid "Verlauf"
+msgstr "History"
 
-msgid "Ausgezogen"
-msgstr "Moved out"
+#, python-format
+msgid "Alle %(n)s Einträge anzeigen"
+msgstr "Show all %(n)s entries"
 
 msgid "aktuell"
 msgstr "current"
 
-msgid "Untermiete"
-msgstr "Sublet"
-
 msgid "von"
 msgstr "from"
-
-msgid "Briefkastenschlüssel erhalten"
-msgstr "Mailbox key received"
-
-msgid "Briefkastenschlüssel abgegeben"
-msgstr "Mailbox key returned"
-
-msgid "Schlüssel erhalten"
-msgstr "Key received"
 
 msgid "Schlüssel abgegeben"
 msgstr "Key returned"
@@ -476,18 +558,6 @@ msgstr "Save"
 
 msgid "Zurücksetzen"
 msgstr "Reset"
-
-msgid "Zimmer"
-msgstr "Room"
-
-msgid "Schlüssel wieder abgegeben"
-msgstr "Key returned"
-
-msgid "Untervermietet von"
-msgstr "Sublet from"
-
-msgid "Kaution IBAN"
-msgstr "Deposit IBAN"
 
 msgid "Schäden am Zimmer"
 msgstr "Room damages"
@@ -982,9 +1052,6 @@ msgstr "Resetting…"
 msgid "Profil-Einrichtung zurücksetzen"
 msgstr "Reset profile setup"
 
-msgid "Verlauf"
-msgstr "History"
-
 msgid "Notizen"
 msgstr "Notes"
 
@@ -1348,9 +1415,6 @@ msgid ""
 msgstr ""
 "No engagement to evaluate (no survey / no residents on the reference date)."
 
-msgid "Gemeinschaftsflächen"
-msgstr "Common areas"
-
 msgid "Ausstattung"
 msgstr "Furnishings"
 
@@ -1440,9 +1504,6 @@ msgstr "Engagement incomplete"
 
 msgid "Schäden (offen/behoben)"
 msgstr "Damages (open/fixed)"
-
-msgid "freifinanziert"
-msgstr "privately financed"
 
 #, python-format
 msgid "+%(n)s neu · %(f)s behoben"
@@ -1687,9 +1748,6 @@ msgstr "Clearance failed: %(exc)s"
 
 msgid "Vertraulichkeitsfreigabe erteilt."
 msgstr "Confidentiality clearance granted."
-
-msgid "belegt"
-msgstr "occupied"
 
 msgid "Keine Berechtigung zum Bearbeiten."
 msgstr "No permission to edit."

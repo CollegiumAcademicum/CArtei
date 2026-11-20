@@ -1,0 +1,22 @@
+{% load i18n %}
+{# Change timeline (#115). Expects `history` (app.history.Event list, newest first), `history_total`, `history_all`. #}
+{% if history %}
+<details id="section-history" class="ca-collapse" style="margin-top:1rem;border:1px solid #ddd;border-radius:8px;padding:.5rem 1rem;"{% if history_all %} open{% endif %}>
+  <summary style="font-weight:600;cursor:pointer;">{% translate "Verlauf" %} <span class="ca-tl-muted" style="font-weight:400;">({{ history_total }})</span></summary>
+  <ol class="ca-history">
+    {% for e in history %}
+    <li>
+      <div class="ca-history-meta">{{ e.at|date:"d.m.Y" }}{% if e.at|time:"Hi" != "0000" %} {{ e.at|time:"H:i" }}{% endif %}{% if e.who %} · {{ e.who }}{% endif %}</div>
+      <div class="ca-history-what">{{ e.what }}</div>
+      {% for label, before, after in e.changes %}
+      <div class="ca-history-change"><span class="ca-history-field">{{ label }}</span> <span class="ca-diff-del">{{ before }}</span> → <span class="ca-diff-add">{{ after }}</span></div>
+      {% endfor %}
+      {% if e.note %}<div class="ca-history-note">{{ e.note }}</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  {% if history_total > history|length %}
+  <a href="?verlauf=alle#section-history" style="color:var(--ca-teal);font-size:.9rem;">{% blocktranslate with n=history_total %}Alle {{ n }} Einträge anzeigen{% endblocktranslate %}</a>
+  {% endif %}
+</details>
+{% endif %}

@@ -196,6 +196,7 @@
   {% empty %}
   <p style="color:#888;">{% translate "Keine Zimmer erfasst." %}</p>
   {% endfor %}
+  {% include "app/_history.html" %}
 </div>
 
 <script nonce="{{ csp_nonce }}">

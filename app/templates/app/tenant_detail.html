@@ -576,6 +576,7 @@
     {% endif %}
   </details>
   {% endif %}
+  {% include "app/_history.html" %}
 </div>
 
 {% if clearance.can_grant %}<script src="{% static 'app/clearance_review.js' %}"></script>{% endif %}
