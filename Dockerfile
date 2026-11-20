@@ -29,9 +29,10 @@ COPY pyproject.toml ./
 RUN uv sync --no-dev --no-install-project
 
 # The app runs from /app (manage.py, gunicorn), so the project itself is not
-# installed: a RUN here would pull every cached layer below it (~1 GB) into
-# the builder just to install one local package.
-COPY . .
+# installed. --link builds this layer on its own: a plain COPY (or any RUN)
+# here makes BuildKit download and unpack every cached layer below it
+# (~1 GB, mostly TeX Live) on each build just to add the app code.
+COPY --link . .
 
 # Commit this image was built from (CI passes the git SHA); see /version/.
 ARG GIT_SHA=dev
