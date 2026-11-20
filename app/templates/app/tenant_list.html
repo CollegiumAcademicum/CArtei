@@ -28,6 +28,18 @@
           </div>
         </div>
 
+        {% if can_diff %}
+        <div class="ca-facet">
+          <h5>{% translate "Vergleich" %}</h5>
+          <label class="ca-facet-line">{% translate "von" %}
+            <input type="date" name="diff_from" value="{{ diff_from|date:'Y-m-d' }}" class="input is-small"></label>
+          <label class="ca-facet-line">{% translate "bis (leer: heute)" %}
+            <input type="date" name="diff_to" value="{% if diff_active %}{{ diff_to|date:'Y-m-d' }}{% endif %}" class="input is-small"></label>
+          <button type="submit" class="ca-button ca-button-sm" style="margin-top:.5rem;">{% translate "Vergleichen" %}</button>
+          {% if diff_active %}<a href="?residents={{ residents }}" class="ca-facet-line" style="color:var(--ca-teal);">{% translate "Vergleich beenden" %}</a>{% endif %}
+        </div>
+        {% endif %}
+
         {% if show_cluster %}
         <div class="ca-facet">
           <h5>{% translate "Ansicht" %}</h5>
@@ -74,6 +86,11 @@
 
     {# ---------------- MAIN: overview table ---------------- #}
     <div class="ca-tl-main">
+      {% if diff_active %}
+      <p class="ca-diff-note">{% blocktranslate trimmed with a=diff_from|date:"d.m.Y" b=diff_to|date:"d.m.Y" %}
+        Änderungen zwischen {{ a }} und {{ b }}: Belegung, Rechtsdokumente und Nachweise, soweit du sie sehen darfst.
+      {% endblocktranslate %}</p>
+      {% endif %}
       {% if summary and not grouped %}
       <div class="engagement-summary" style="margin-bottom:1rem;">
         {% for g in summary %}
@@ -96,6 +113,7 @@
           <thead>
             <tr>
               <th data-col="name" {% if not grouped %}data-sort-type="text" class="ca-sortable"{% endif %}>Name <span class="sort-ind"></span></th>
+              {% if diff_active %}<th data-col="diff">{% translate "Änderung" %}</th>{% endif %}
               {% if show_room %}<th data-col="room" {% if not grouped %}data-sort-type="text" class="ca-sortable"{% endif %}>{% translate "Zimmer / WG" %} <span class="sort-ind"></span></th>{% endif %}
               {% if show_cluster and not grouped %}<th data-col="cluster" data-sort-type="text" class="ca-sortable">Cluster <span class="sort-ind"></span></th>{% endif %}
               {% if show_realname %}
@@ -111,6 +129,7 @@
             </tr>
             <tr class="ca-filter-row">
               <th data-col="name" data-label="Name"><input type="text" class="col-filter input is-small" data-col="name" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>
+              {% if diff_active %}<th data-col="diff" data-label="{% translate "Änderung" %}"><input type="text" class="col-filter input is-small" data-col="diff" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>{% endif %}
               {% if show_room %}<th data-col="room" data-label="{% translate "Zimmer / WG" %}"><input type="text" class="col-filter input is-small" data-col="room" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>{% endif %}
               {% if show_cluster and not grouped %}<th data-col="cluster" data-label="Cluster"><input type="text" class="col-filter input is-small" data-col="cluster" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>{% endif %}
               {% if show_realname %}

@@ -6,6 +6,7 @@ from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext, gettext_lazy
 
+from app.diff import damage_delta, parse_date
 from app.damages import author_for, can_view_damages, damage_counts, is_room_resident, is_wg_resident, open_and_fixed
 from app.forms import RoomAssignmentCreateForm, RoomFurnitureForm, TenantRoomAssignmentForm
 from app.handover import can_conduct_handover
@@ -62,6 +63,25 @@ def _occupants_by_room(as_of, may_see_names):
         out.setdefault(a.room_id, []).append(
             {"pk": a.tenant_id, "label": label, "realname": realname})
     return out
+
+
+def _occupancy_label(n):
+    return gettext("frei") if not n else gettext("belegt (%(n)s)") % {"n": n}
+
+
+def _room_diff(after, before, may_see_names, damage_delta):
+    """What changed in one room between the compare date and the Stichtag.
+    Without names only the occupant count is compared — who swapped with whom
+    is not visible at either date alone, so it stays hidden here too."""
+    diff = {"added": set(), "removed": [], "count": None, "damages": damage_delta}
+    if may_see_names:
+        before_pks, after_pks = {o["pk"] for o in before}, {o["pk"] for o in after}
+        diff["added"] = after_pks - before_pks
+        diff["removed"] = [o for o in before if o["pk"] not in after_pks]
+    elif len(before) != len(after):
+        diff["count"] = f"{_occupancy_label(len(before))} → {_occupancy_label(len(after))}"
+    diff["changed"] = bool(diff["added"] or diff["removed"] or diff["count"] or damage_delta)
+    return diff
 
 
 def _engagement_rollup(tenant_ids, as_of):
@@ -305,10 +325,19 @@ def wg_list(request: HttpRequest):
     show_engagement = bool({"cluster", "admin"} & roles)
     show_damages = can_view_damages(roles)
     as_of = parse_as_of(request)
+    # Compare with a second date (#120): the table shows the later one, marked
+    # with what changed since the earlier. Same gates as the plain columns.
+    compare = parse_date(request.GET.get("compare"))
+    if compare and compare > as_of:
+        as_of, compare = compare, as_of
+    changed_only = bool(compare) and request.GET.get("changed_only") == "1"
     occ = _occupants_by_room(as_of, may_see_names)
+    occ_before = _occupants_by_room(compare, may_see_names) if compare else {}
     engaged = _engaged_tenant_ids(as_of) if show_engagement else None
     room_dmg = damage_counts(RoomDamage, "room_id") if show_damages else {}
     wg_dmg = damage_counts(WGDamage, "wg_id") if show_damages else {}
+    room_delta = damage_delta(RoomDamage, "room_id", compare, as_of) if compare and show_damages else {}
+    wg_delta = damage_delta(WGDamage, "wg_id", compare, as_of) if compare and show_damages else {}
 
     buildings = []
     total_rooms = 0
@@ -318,24 +347,36 @@ def wg_list(request: HttpRequest):
             rooms = []
             for room in Room.objects.filter(wg=wg).order_by("name"):
                 occupants = occ.get(room.id, [])
+                diff = _room_diff(occupants, occ_before.get(room.id, []), may_see_names,
+                                  room_delta.get(room.id)) if compare else None
+                total_rooms += 1
+                if changed_only and not diff["changed"]:
+                    continue
                 rooms.append({
                     "room": room,
                     "occupants": occupants,
                     "ausstattung": [label for attr, label in AUSSTATTUNG if getattr(room, attr)],
                     "engagement": _room_engagement([o["pk"] for o in occupants], engaged),
                     "damages": room_dmg.get(room.id, (0, 0)),
+                    "diff": diff,
                 })
-                total_rooms += 1
+            delta = wg_delta.get(wg.id)
+            n_changes = sum(1 for r in rooms if r["diff"] and r["diff"]["changed"]) + bool(delta)
+            if changed_only and not n_changes:
+                continue
             wgs.append({
                 "wg": wg, "rooms": rooms,
                 "engagement": _wg_engagement([r["engagement"] for r in rooms]),
                 "damages": wg_dmg.get(wg.id, (0, 0)),
+                "changes": n_changes, "damage_delta": delta,
             })
-        buildings.append({"building": b, "wgs": wgs})
+        if wgs or not changed_only:
+            buildings.append({"building": b, "wgs": wgs})
 
     return render(request, "app/wg_list.html", {
         "buildings": buildings, "as_of": as_of, "may_see_names": may_see_names,
         "total_rooms": total_rooms, "show_engagement": show_engagement,
+        "compare": compare, "changed_only": changed_only,
         "show_damages": show_damages,
         # Zimmer, m², Ausstattung, Belegung + optional Engagement/Schäden.
         "col_count": 4 + show_engagement + show_damages,

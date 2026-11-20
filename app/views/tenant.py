@@ -15,6 +15,7 @@ from django.utils.translation import gettext
 from django.core.exceptions import PermissionDenied
 
 from app import clearance
+from app.diff import DOC_SHORT as _DOC_SHORT, parse_date, tenant_changes
 from app.emails import send_welcome_email
 from app.forms import TenantCreateForm, TenantForm, TenantRoomAssignmentForm
 from app.ldap_utils import _dn_to_cn, get_member, provision_ldap_account, search_accounts
@@ -41,12 +42,6 @@ ProofStatus = namedtuple("ProofStatus", "state count")
 
 # Short pill codes per document type — one source for the list column and the
 # detail-view Rechtsdokumente header. Ordered to match DOCUMENT_MODELS.
-_DOC_SHORT = {
-    "datenschutz": "DS", "photoerlaubnis": "FoE", "vertraulichkeitserklaerung": "VE",
-    "mietvertrag": "MVt", "mietbedingungen": "AMB",
-    "sepa_lastschriftmandat": "SEPA", "bescheid_ausbildungsstelle": "Bes",
-    "selbstverpflichtung_engagement": "SVE",
-}
 
 
 def _proof_status(proofs, today):
@@ -107,13 +102,28 @@ def tenant_list(request: HttpRequest):
     show_surveys = bool({"cluster", "admin"} & roles)  # AG-engagement columns
     today = date.today()
 
+    # Compare two dates (#120): each kind of change behind the gate of the column
+    # that already shows it. In/out needs move dates or rooms, a room switch rooms.
+    diff_docs = list(_DOC_SHORT) if show_realname else (
+        ["vertraulichkeitserklaerung"] if show_documents else [])
+    diff_occupancy = show_room or "ersteinzug" in visible
+    can_diff = diff_occupancy or bool(diff_docs) or show_realname
+    diff_from = parse_date(request.GET.get("diff_from")) if can_diff else None
+    diff_to = parse_date(request.GET.get("diff_to")) or today
+    changes = tenant_changes(
+        diff_from, diff_to, occupancy=diff_occupancy, rooms=show_room,
+        doc_types=diff_docs, proofs=show_realname,
+    ) if diff_from else None
+
     # Server-side *scope* only (which records to load). Column filtering, sorting
     # and visibility are all client-side (see tenant_list.html).
     # Ersteinzug = earliest move-in across the tenant's room assignments (computed).
     qs = Tenant.objects.annotate(ersteinzug=Min("tenantroomassignment__moved_in"))
     residents = request.GET.get("residents", "active")
     active = has_active_assignment(today)
-    if residents == "active":
+    if changes is not None:
+        qs = qs.filter(pk__in=changes.keys())  # a diff spans residents and former ones
+    elif residents == "active":
         qs = qs.filter(active)
     elif residents == "former":
         # Had a room but holds none now.
@@ -196,6 +206,7 @@ def tenant_list(request: HttpRequest):
             ],
             "sublet_to": reverse_by_tenant.get(t.pk, []),
             "proof": proof_by_tenant.get(t.pk, ProofStatus("fehlt", 0)) if show_realname else None,
+            "changes": changes.get(t.pk) if changes is not None else None,
         }
         if show_realname:
             row["documents"] = [
@@ -271,6 +282,10 @@ def tenant_list(request: HttpRequest):
         "selected_abfragen": selected_abfragen,
         "summary": _engagement_summary(rows, selected_abfragen) if selected_abfragen else None,
         "residents": residents,
+        "can_diff": can_diff,
+        "diff_from": diff_from,
+        "diff_to": diff_to,
+        "diff_active": changes is not None,
         "can_create_tenant": bool({"mietverwaltung", "admin"} & roles),
     })
 
