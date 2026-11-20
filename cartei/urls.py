@@ -2,7 +2,9 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
+from django.templatetags.static import static
 from django.urls import include, path
+from django.views.generic import RedirectView
 from mozilla_django_oidc import views as oidc_views
 
 from app.auth import KeycloakCallbackView
@@ -22,6 +24,8 @@ def _version(request):
 urlpatterns = [
     path("", _root),
     path("version/", _version, name="version"),
+    # Browsers probe /favicon.ico regardless of <link rel="icon"> (bookmarks, non-HTML responses).
+    path("favicon.ico", RedirectView.as_view(url=static("app/favicon-32.png"), permanent=True)),
     path("login/", oidc_views.OIDCAuthenticationRequestView.as_view(), name="login"),
     path("oidc/callback/", KeycloakCallbackView.as_view(), name="oidc_authentication_callback"),
     path("logout/", oidc_views.OIDCLogoutView.as_view(), name="logout"),
