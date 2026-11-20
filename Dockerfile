@@ -28,8 +28,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends texlive-latex-e
 COPY pyproject.toml ./
 RUN uv sync --no-dev --no-install-project
 
+# The app runs from /app (manage.py, gunicorn), so the project itself is not
+# installed: a RUN here would pull every cached layer below it (~1 GB) into
+# the builder just to install one local package.
 COPY . .
-RUN uv sync --no-dev
 
 # Commit this image was built from (CI passes the git SHA); see /version/.
 ARG GIT_SHA=dev
