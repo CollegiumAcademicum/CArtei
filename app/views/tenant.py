@@ -149,11 +149,14 @@ def tenant_list(request: HttpRequest):
                 reverse_by_tenant.setdefault(a.sublet_of_tenant_id, []).append(display(a.tenant))
 
     # Untermiete filter (#121): Untermieter*innen = an active assignment with
-    # is_sublet. Gated with the room column, which is where sublets show.
+    # is_sublet; "lessors" = people currently subletting their room to someone.
+    # Gated with the room column, which is where sublets show.
     sublet = request.GET.get("sublet", "") if show_room else ""
     if sublet in ("only", "exclude"):
-        subletters = {tid for tid, assigns in assigns_by_tenant.items() if any(a.is_sublet for a in assigns)}
-        tenants = [t for t in tenants if (t.pk in subletters) == (sublet == "only")]
+        subtenants = {tid for tid, assigns in assigns_by_tenant.items() if any(a.is_sublet for a in assigns)}
+        tenants = [t for t in tenants if (t.pk in subtenants) == (sublet == "only")]
+    elif sublet == "lessors":
+        tenants = [t for t in tenants if t.pk in reverse_by_tenant]
 
     # Proof status per tenant (one bulk query, gated with the personal columns).
     proof_by_tenant = {}

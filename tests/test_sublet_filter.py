@@ -51,6 +51,13 @@ def test_tenant_list_only_and_exclude_sublets(client, settings, flat):
     assert "Unterm (" not in excl and ">Unterm<" not in excl and "Normalo" in excl and "Hauptmiete" in excl
 
 
+def test_tenant_list_only_subletters(client, settings, flat):
+    _login(client, settings, "mietverwaltung")
+    body = _get(client, "/tenants/?sublet=lessors")
+    assert ">Hauptmiete<" in body and ">Unterm<" not in body and "Normalo" not in body
+    assert 'value="lessors" selected' in body
+
+
 def test_tenant_list_sublet_filter_needs_room_column(client, settings, flat):
     _login(client, settings, "cluster")
     body = _get(client, "/tenants/?sublet=only")

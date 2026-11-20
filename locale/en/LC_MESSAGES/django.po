@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CArtei\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-20 10:35-0600\n"
+"POT-Creation-Date: 2026-11-20 11:02-0600\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -1318,6 +1318,9 @@ msgstr "sublets only"
 
 msgid "ohne Untermiete"
 msgstr "without sublets"
+
+msgid "nur Untervermietende"
+msgstr "subletting out only"
 
 msgid "Vergleich"
 msgstr "Compare"
