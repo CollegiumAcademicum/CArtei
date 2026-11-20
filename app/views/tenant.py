@@ -16,6 +16,7 @@ from django.core.exceptions import PermissionDenied
 
 from app import clearance
 from app.diff import DOC_SHORT as _DOC_SHORT, parse_date, tenant_changes
+from app.history import history_page, tenant_timeline
 from app.emails import send_welcome_email
 from app.forms import TenantCreateForm, TenantForm, TenantRoomAssignmentForm
 from app.ldap_utils import _dn_to_cn, get_member, provision_ldap_account, search_accounts
@@ -612,6 +613,15 @@ def tenant_detail(request: HttpRequest, pk: int):
 
     can_see_proofs = bool({"owner", "mietverwaltung", "admin"} & roles)
     ctx["can_see_proofs"] = can_see_proofs
+    # Change timeline (#115): each source behind the gate of the section showing it.
+    history = tenant_timeline(
+        tenant, roles, visible,
+        assignments="room_assignments_view" in visible,
+        assignment_docs=can_see_assignment_docs,
+        proofs=can_see_proofs,
+        doc_readable=lambda dtype: bool(document_readers(dtype) & roles),
+    )
+    ctx.update(history_page(request, history))
     if can_see_proofs:
         proofs = list(EnrollmentProof.objects.filter(tenant=tenant).order_by("-uploaded_at"))
         ctx["pending_proofs"] = [p for p in proofs if not p.verified_at or p.needs_human_review]

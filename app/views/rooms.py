@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext, gettext_lazy
 
 from app.diff import damage_delta, parse_date
+from app.history import history_page, wg_timeline
 from app.damages import author_for, can_view_damages, damage_counts, is_room_resident, is_wg_resident, open_and_fixed
 from app.forms import RoomAssignmentCreateForm, RoomFurnitureForm, TenantRoomAssignmentForm
 from app.handover import can_conduct_handover
@@ -293,12 +294,19 @@ def wg_detail(request: HttpRequest, pk: int):
                       or RoomAssignmentCreateForm(room=room, prefix=f"new_{room.pk}")) if can_edit_rooms else None,
         })
 
+    history = wg_timeline(
+        wg, roles, may_see_names=may_see_names, assignments=can_edit_rooms,
+        assignment_docs=can_see_assignment_docs, damages=show_damages,
+        own_room_ids=[r["room"].pk for r in rooms if r["own_resident"]],
+        own_tenant=current if resident_wg else None, resident=resident_wg,
+    )
     rollup = _engagement_rollup(list(active_tenant_ids), as_of) if show_engagement else None
     wg_damages_open, wg_damages_fixed = (
         open_and_fixed(WGDamage.objects.filter(wg=wg)) if show_damages or resident_wg else ([], [])
     )
 
     return render(request, "app/wg_detail.html", {
+        **history_page(request, history),
         "wg": wg, "as_of": as_of, "rooms": rooms,
         "show_engagement": show_engagement, "rollup": rollup,
         "may_see_names": may_see_names, "can_edit_rooms": can_edit_rooms,

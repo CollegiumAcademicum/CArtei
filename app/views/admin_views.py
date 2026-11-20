@@ -1,14 +1,10 @@
-import json
 import uuid as uuid_module
 from datetime import date
 from itertools import groupby
 
-from django.apps import apps
 from django.contrib import messages
 from django.contrib.sessions.models import Session
 from django.core.paginator import Paginator
-from django.core.serializers.json import DjangoJSONEncoder
-from django.db import connection
 from django.db.models import OuterRef, Subquery, JSONField
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -17,6 +13,7 @@ from django.views.decorators.http import require_POST
 
 from app import ldap_utils
 from app.decorators import require_group
+from app.history import live_snapshot
 from app.models import EnrollmentProof, EnrollmentType, EntityHistory, Tenant, UserSession
 from app.residency import has_active_assignment
 from app.tenant_access import RESOURCE_SECTIONS, SECTIONS
@@ -162,23 +159,6 @@ def invalidate_user_sessions(request, username):
     return redirect("session_management")
 
 
-def _live_snapshot(entity_type, entity_id):
-    """The row as it is now, in the same shape the trigger snapshots it; None if deleted."""
-    model = next((m for m in apps.get_models() if m._meta.db_table == entity_type), None)
-    if model is None:
-        return None
-    if connection.vendor == "postgresql":
-        with connection.cursor() as c:
-            c.execute(
-                f"SELECT to_jsonb(t) FROM {connection.ops.quote_name(entity_type)} t WHERE id = %s",
-                [entity_id],
-            )
-            row = c.fetchone()
-        return (json.loads(row[0]) if isinstance(row[0], str) else row[0]) if row else None
-    row = model.objects.filter(pk=entity_id).values().first()
-    return json.loads(json.dumps(row, cls=DjangoJSONEncoder)) if row else None
-
-
 @require_group("admins")
 def audit_log(request):
     """entity_history, newest first. Each entry shows what the change did:
@@ -203,7 +183,7 @@ def audit_log(request):
     for h in page:
         after = h.after
         if after is None:
-            after = _live_snapshot(h.entity_type, h.entity_id)
+            after = live_snapshot(h.entity_type, h.entity_id)
         changes = [
             {"field": k, "before": v, "after": None if after is None else after.get(k)}
             for k, v in h.snapshot.items()
