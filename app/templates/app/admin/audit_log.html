@@ -18,6 +18,7 @@
     {% if filter_query %}<a href="{% url 'audit_log' %}">zurücksetzen</a>{% endif %}
   </form>
 
+  <div class="ca-scroll-x">
   <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
     <thead>
       <tr style="text-align:left;color:#777;">
@@ -53,6 +54,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 
   {% if page.paginator.num_pages > 1 %}
   <div style="display:flex;gap:1rem;justify-content:center;margin-top:1rem;">

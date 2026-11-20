@@ -2,7 +2,7 @@
 {% load i18n %}
 {% block title %}{% translate "Neue*r Bewohner*in" %} — CArtei{% endblock %}
 {% block content %}
-<div class="ca-card" style="max-width:640px;margin:0 auto;">
+<div class="ca-card" style="max-width:640px;margin:1.5rem auto;">
   <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1rem;">{% translate "Neue*r Bewohner*in" %}</h1>
   <p style="color:#7a7a7a;font-size:.9rem;margin-bottom:1rem;">
     {% translate "Manuell angelegt, ohne Intranet-Account. Der Account kann später verknüpft werden." %}
@@ -22,8 +22,8 @@
     </div>
 
     <div style="margin-top:1.25rem;display:flex;gap:.75rem;">
-      <button type="submit" class="button is-primary">{% translate "Anlegen" %}</button>
-      <a href="{% url 'tenant_list' %}" class="button ca-button-outline">{% translate "Abbrechen" %}</a>
+      <button type="submit" class="ca-button">{% translate "Anlegen" %}</button>
+      <a href="{% url 'tenant_list' %}" class="ca-button-outline" style="text-decoration:none;">{% translate "Abbrechen" %}</a>
     </div>
   </form>
 </div>

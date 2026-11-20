@@ -11,7 +11,8 @@
   <div class="ca-tl-layout">
     {# ---------------- LEFT RAIL: view controls (server round-trip) ---------------- #}
     <aside class="ca-tl-rail">
-      <form method="get">
+      <button type="button" class="ca-button-outline ca-button-sm ca-rail-toggle" data-rail-toggle aria-expanded="false">{% translate "Stichtag" %}: {{ as_of|date:"d.m.Y" }} <span aria-hidden="true">▾</span></button>
+      <form method="get" class="ca-rail-body">
         <div class="ca-facet">
           <h5>{% translate "Stichtag" %}</h5>
           <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}" class="input is-small" style="width:100%;">
@@ -26,7 +27,7 @@
       <h2 style="font-size:1.1rem;font-weight:700;margin:1.25rem 0 .5rem;">{{ b.building.name }}</h2>
       {% for w in b.wgs %}
       <div style="overflow-x:auto;margin-bottom:1rem;">
-        <table class="table is-fullwidth is-hoverable" style="font-size:0.9rem;">
+        <table class="table is-fullwidth is-hoverable ca-stack-table ca-stack-inline" style="font-size:0.9rem;">
           <thead>
             <tr class="cluster-group-header">
               <td colspan="{{ col_count }}">
@@ -52,19 +53,19 @@
           {% for r in w.rooms %}
             <tr>
               <td>{{ r.room.name }}{% if r.room.freifinanziert %} <span class="ca-room-badge">{% translate "freifinanziert" %}</span>{% endif %}</td>
-              <td>{{ r.room.size_sqm }}</td>
-              <td>{% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span class="ca-tl-muted">—</span>{% endif %}</td>
-              <td>
+              <td data-label="m²">{{ r.room.size_sqm }}</td>
+              <td data-label="{% translate "Ausstattung" %}">{% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span class="ca-tl-muted">—</span>{% endif %}</td>
+              <td data-label="{% translate "Belegung" %}">
                 {% if r.occupants %}
                   {% if may_see_names %}{% for o in r.occupants %}<a href="{% url 'tenant_detail' o.pk %}" class="ca-tl-name">{{ o.label }}</a>{% if o.realname %} <span class="ca-tl-muted">({{ o.realname }})</span>{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="ca-pill ca-pill-green">{% blocktranslate with n=r.occupants|length %}belegt ({{ n }}){% endblocktranslate %}</span>{% endif %}
                 {% else %}<span class="ca-tl-muted">{% translate "frei" %}</span>{% endif %}
               </td>
-              {% if show_engagement %}<td>
+              {% if show_engagement %}<td data-label="Engagement">
                 {% if r.engagement == "ok" %}<span class="ca-pill ca-pill-green">OK</span>
                 {% elif r.engagement == "flag" %}<span class="ca-pill ca-pill-amber">⚠</span>
                 {% else %}<span class="ca-tl-muted">—</span>{% endif %}
               </td>{% endif %}
-              {% if show_damages %}<td>
+              {% if show_damages %}<td data-label="{% translate "Schäden (offen/behoben)" %}">
                 {% if r.damages.0 %}<span style="color:#b00;">{{ r.damages.0 }}</span>{% else %}0{% endif %}<span class="ca-tl-muted"> / {{ r.damages.1 }}</span>
               </td>{% endif %}
             </tr>

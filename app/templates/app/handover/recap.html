@@ -1,9 +1,9 @@
 {# CArtei/app/templates/app/handover/recap.html #}
 {% extends "app/base.html" %}
 {% block content %}
-<div class="ca-card" style="max-width:720px;margin:1rem auto;">
-  <h2 style="margin:.2rem 0 1rem;">Übergabe – {{ u.room.wg.name }} {{ u.room.name }}</h2>
-  <p style="color:#555;margin:-.5rem 0 1rem;">
+<div class="ca-card" style="max-width:720px;margin:1.5rem auto;">
+  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1rem;">Übergabe – {{ u.room.wg.name }} {{ u.room.name }}</h1>
+  <p style="color:#555;margin:-.25rem 0 1rem;">
     {% if u.outgoing_assignment %}Auszug: {{ u.outgoing_assignment.tenant.first_name }} {{ u.outgoing_assignment.tenant.last_name }}{% endif %}
     {% if u.incoming_assignment %}{% if u.outgoing_assignment %} · {% endif %}Einzug: {{ u.incoming_assignment.tenant.first_name }} {{ u.incoming_assignment.tenant.last_name }}{% endif %}
   </p>

@@ -1,9 +1,9 @@
 {# CArtei/app/templates/app/handover/step.html #}
 {% extends "app/base.html" %}
 {% block content %}
-<div class="ca-card" style="max-width:640px;margin:1rem auto;">
-  <p style="color:#888;">Übergabe · Schritt {{ n|add:1 }} von {{ total }}</p>
-  <h2 style="margin:.2rem 0 1rem;">{{ area }}</h2>
+<div class="ca-card" style="max-width:640px;margin:1.5rem auto;">
+  <p style="color:#888;margin-bottom:.25rem;">Übergabe · Schritt {{ n|add:1 }} von {{ total }}</p>
+  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1rem;">{{ area }}</h1>
 
   {% for line, label, existing in categories %}
     <div style="margin:.35rem 0;">
@@ -21,19 +21,21 @@
   <hr style="margin:.75rem 0;border:none;border-top:1px solid #eee;">
   <form method="post" action="{% url 'uebergabe_damage' u.pk %}?step={{ n }}" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
-    <select name="line" required>
+    <div class="ca-field-grid">
+    <select name="line" required class="ca-input" aria-label="Kategorie">
       <option value="">– Kategorie –</option>
       {% for line, label, existing in categories %}<option value="{{ line }}">{{ label }}</option>{% endfor %}
     </select>
-    <select name="size">
+    <select name="size" class="ca-input" aria-label="Größe">
       <option value="">– Größe –</option>
       {% for value, label in sizes %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
     </select>
-    <input type="text" name="note" placeholder="Notiz (optional)" maxlength="500">
-    <input type="file" name="photo" accept="image/jpeg,image/png,application/pdf">
-    <button type="submit" class="ca-button">Schaden erfassen</button>
+    <input type="text" name="note" placeholder="Notiz (optional)" maxlength="500" class="ca-input" aria-label="Notiz">
+    <input type="file" name="photo" accept="image/jpeg,image/png,application/pdf" aria-label="Foto">
+    </div>
+    <button type="submit" class="ca-button" style="margin-top:.75rem;">Schaden erfassen</button>
   </form>
-  <a class="ca-button-outline" style="margin-top:.6rem;display:inline-block;"
+  <a class="ca-button-outline" style="margin-top:.6rem;display:inline-block;text-decoration:none;"
      href="{% url 'uebergabe_step' u.pk %}?step={{ n|add:1 }}">Weiter</a>
 </div>
 {% endblock %}
