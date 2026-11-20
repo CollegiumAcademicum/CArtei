@@ -2,26 +2,14 @@ FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
 
 WORKDIR /app
 
+# python-ldap compiles against libldap/libsasl. The Briefkastenliste renders
+# with Typst (a Python wheel, fonts vendored in app/document_generation/fonts),
+# so no TeX Live or other system packages are needed (#148).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libldap-dev \
     libsasl2-dev \
-    libpango-1.0-0 \
-    libpangoft2-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf-2.0-0 \
-    libcairo2 \
-    libffi8 \
-    fonts-dejavu-core \
-    texlive-latex-base \
-    texlive-latex-recommended \
-    texlive-fonts-extra \
-    texlive-extra-utils \
-    latexmk \
     && rm -rf /var/lib/apt/lists/*
-
-# PyLaTeX adds lastpage.sty from this package.
-RUN apt-get update && apt-get install -y --no-install-recommends texlive-latex-extra && rm -rf /var/lib/apt/lists/*
 
 # Dependencies resolved from pyproject.toml (uv.lock is not committed), without
 # the project itself: this layer is reused until pyproject.toml changes.
@@ -31,7 +19,7 @@ RUN uv sync --no-dev --no-install-project
 # The app runs from /app (manage.py, gunicorn), so the project itself is not
 # installed. --link builds this layer on its own: a plain COPY (or any RUN)
 # here makes BuildKit download and unpack every cached layer below it
-# (~1 GB, mostly TeX Live) on each build just to add the app code.
+# on each build just to add the app code.
 COPY --link . .
 
 # Commit this image was built from (CI passes the git SHA); see /version/.

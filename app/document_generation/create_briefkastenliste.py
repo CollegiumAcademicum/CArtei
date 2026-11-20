@@ -1,20 +1,28 @@
 """Render the Briefkastenliste PDF from in-memory resident rows.
 
-Originally a standalone pandas/matplotlib script by Jakob M. Krieger (2024).
-Rewritten to run in-process from CArtei data: no CSV round-trip, no
-pandas/numpy (numpy's x86-64-v2 baseline broke on the deployment CPU) and no
-matplotlib. Only latexmk (via pylatex) and pdfjam remain as subprocesses.
+Originally a standalone pandas/matplotlib/LaTeX script by Jakob M. Krieger
+(2024). Now rendered in-process with Typst (briefkastenliste.typ): no CSV
+round-trip, no subprocesses, no TeX Live in the image (#148).
 
 A row is a dict with "forename", "surename" and "flatnumber" (the caller
 passes only residents who opted in)."""
 
 import colorsys
-import subprocess
-from collections import Counter
+import json
 from pathlib import Path
 
-from pylatex import Command, Document, LargeText, LongTable, MultiColumn, Package
-from pylatex.utils import bold, dumps_list, italic
+import typst
+
+HERE = Path(__file__).resolve().parent
+TEMPLATE = HERE / "briefkastenliste.typ"
+FONTS = HERE / "fonts"
+
+# Fixed row height (briefkastenliste.typ) makes pagination exact: a 21 cm
+# strip holds the header and 26 rows; the last one also needs room for
+# "Auflistung fertig." and the update date.
+ROWS_PER_STRIP = 26
+ROWS_ON_LAST_STRIP = 23
+STRIPS_PER_SHEET = 3
 
 
 def _sort_tail(name):
@@ -32,84 +40,54 @@ def _wg(flatnumber):
     return " und ".join(".".join(seg.split(".")[:2]) for seg in flatnumber.split(" und "))
 
 
-def _rainbow_rgb(fraction):
-    """Blue->red ramp standing in for matplotlib's 'rainbow' colormap; returns
-    an 'r, g, b' string of 0-1 floats for LaTeX \\definecolor."""
+def _rainbow_hex(fraction):
+    """Blue->red ramp (matplotlib's 'rainbow'), mixed 50% with white like the
+    original's \\cellcolor{...!50}; returns '#rrggbb'."""
     r, g, b = colorsys.hsv_to_rgb((1.0 - fraction) * 2.0 / 3.0, 1.0, 1.0)
-    return f"{r:.2f}, {g:.2f}, {b:.2f}"
+    return "#" + "".join(f"{round((c + 1) / 2 * 255):02x}" for c in (r, g, b))
 
 
-def build_document(rows, updated):
-    """Build the Briefkastenliste LaTeX document. `rows` are opt-in residents,
-    `updated` is the date printed as 'Letzte Aktualisierung'."""
+def build_data(rows, updated):
+    """Sorted, coloured and paginated rows for briefkastenliste.typ. `updated`
+    is the date printed as 'Letzte Aktualisierung'."""
     rows = sorted(rows, key=lambda r: _sort_tail(r["surename"]))
     letters = [_sort_tail(r["surename"])[0] for r in rows]
-    unique_letters = sorted(set(letters))
+    unique = sorted(set(letters))
+    colors = {letter: _rainbow_hex(i / max(len(unique) - 1, 1)) for i, letter in enumerate(unique)}
 
-    doc = Document(
-        default_filepath="briefkastenliste",
-        geometry_options={"paperwidth": "9.9cm", "paperheight": "21cm",
-                          "inner": ".5cm", "outer": ".5cm", "top": ".5cm", "bottom": "2cm"},
-        document_options=["12pt", "twoside", "openleft"],
+    entries, previous = [], None
+    for row, letter in zip(rows, letters):
+        entries.append({
+            "letter": letter, "show_letter": letter != previous, "new_block": letter != previous,
+            "color": colors[letter], "initial": row["forename"][0],
+            "surname": row["surename"].strip(), "wg": _wg(row["flatnumber"]),
+        })
+        previous = letter
+
+    strips, start = [], 0
+    while True:
+        remaining = len(entries) - start
+        if remaining <= ROWS_ON_LAST_STRIP:
+            strips.append({"rows": entries[start:], "last": True})
+            break
+        # Never leave the last strip empty: it carries the closing lines.
+        take = ROWS_PER_STRIP if remaining > ROWS_PER_STRIP else remaining - 1
+        strips.append({"rows": entries[start:start + take], "last": False})
+        start += take
+    for strip in strips:
+        if strip["rows"]:
+            strip["rows"][0] = {**strip["rows"][0], "new_block": False}  # header rule already above
+    return {
+        "updated": updated.strftime("%d.%m.%Y"),
+        "sheets": [strips[i:i + STRIPS_PER_SHEET] for i in range(0, len(strips), STRIPS_PER_SHEET)],
+    }
+
+
+def render_pdf(rows, updated):
+    """The imposed (3-up landscape A4) Briefkastenliste as PDF bytes. Raises
+    typst.TypstError if the template fails to compile."""
+    data = json.dumps(build_data(rows, updated), ensure_ascii=False)
+    return typst.compile(
+        str(TEMPLATE), format="pdf", font_paths=[str(FONTS)], ignore_system_fonts=True,
+        sys_inputs={"data": data},
     )
-    doc.preamble.append(Package("biolinum", options=["sfdefault"]))
-    doc.preamble.append(Package("xcolor", options=["table"]))
-    for i, letter in enumerate(unique_letters):
-        fraction = i / max(len(unique_letters) - 1, 1)
-        doc.preamble.append(Command("definecolor", [f"rainbow{letter}", "rgb", _rainbow_rgb(fraction)]))
-
-    with doc.create(LongTable("||r|ll||", booktabs=False, row_height=1.3)) as table:
-        table.add_hline()
-        table.add_row([bold("Sortierung"), bold("Name"), bold("WG")])
-        table.add_hline()
-        table.end_table_header()
-        table.add_row([MultiColumn(3, align="r", data=italic("Fortführung auf nächster Seite..."))])
-        table.end_table_footer()
-        table.add_row([MultiColumn(3, align="r", data=italic("Auflistung fertig."))])
-        table.add_hline()
-        table.add_hline()
-        table.end_table_last_footer()
-
-        seen = Counter()
-        for row, letter in zip(rows, letters):
-            wg = _wg(row["flatnumber"])
-            initial = row["forename"][0]
-            surname = row["surename"].strip()
-            cell = f"rainbow{letter}!50"
-            if seen[letter] == 0:  # first row of a letter block carries the big letter
-                table.add_hline()
-                table.add_row([
-                    dumps_list([
-                        Command("cellcolor", cell),
-                        Command("parbox", ["16pt", dumps_list([Command("centering"), LargeText(letter)])], ["c"]),
-                    ]),
-                    f"{initial}. {surname}",
-                    wg,
-                ])
-            else:
-                table.add_row([
-                    Command("cellcolor", cell),
-                    dumps_list([Command("parbox", ["16pt", f"{initial}."], "t"), surname]),
-                    wg,
-                ])
-            seen[letter] += 1
-        table.add_hline()
-
-    doc.append(f"Letzte Aktualisierung: {updated.strftime('%d.%m.%Y')}")
-    return doc
-
-
-def render_pdf(rows, directory, updated):
-    """Build and impose (3-up landscape) the Briefkastenliste; return the PDF
-    path. Raises subprocess.CalledProcessError / TimeoutExpired / OSError on
-    toolchain failure, for the caller to translate into a user-facing error."""
-    directory = Path(directory)
-    doc = build_document(rows, updated)
-    base = directory / "briefkastenliste"
-    doc.generate_pdf(filepath=str(base), clean_tex=True, compiler_args=["-f"])
-    imposed = directory / "briefkastenliste-pdfjam.pdf"
-    subprocess.run(
-        ["pdfjam", "--landscape", "--nup", "3x1", f"{base}.pdf", "--outfile", str(imposed)],
-        shell=False, check=True, capture_output=True, text=True, timeout=25,
-    )
-    return imposed
