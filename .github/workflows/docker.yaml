@@ -24,7 +24,12 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             libldap-dev libsasl2-dev libpango-1.0-0 libpangoft2-1.0-0
 
+      # Caches uv's downloads and built wheels (python-ldap compiles from source),
+      # keyed on uv.lock: a dependency change starts a fresh cache.
       - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
 
       - name: Run tests
         run: uv run pytest -q
