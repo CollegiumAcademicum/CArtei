@@ -23,13 +23,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # PyLaTeX adds lastpage.sty from this package.
 RUN apt-get update && apt-get install -y --no-install-recommends texlive-latex-extra && rm -rf /var/lib/apt/lists/*
 
-# Dependencies from the lockfile, without the project itself: this layer is
-# reused until uv.lock changes, however often the app code changes.
-COPY pyproject.toml uv.lock ./
-RUN uv sync --locked --no-dev --no-install-project
+# Dependencies resolved from pyproject.toml (uv.lock is not committed), without
+# the project itself: this layer is reused until pyproject.toml changes.
+COPY pyproject.toml ./
+RUN uv sync --no-dev --no-install-project
 
 COPY . .
-RUN uv sync --locked --no-dev
+RUN uv sync --no-dev
 
 # Commit this image was built from (CI passes the git SHA); see /version/.
 ARG GIT_SHA=dev
