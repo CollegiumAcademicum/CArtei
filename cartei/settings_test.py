@@ -106,3 +106,6 @@ TENANT_ROLE_GROUPS = {
 
 BRIEFKASTENLISTE_IGNORE_ROOMS = False
 CARTEI_VERSION = "dev"
+# Tests create many users with passwords; the production hasher (PBKDF2) is slow
+# on purpose. MD5 is fine for throwaway test users and cuts the suite time a lot.
+PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
