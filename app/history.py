@@ -20,11 +20,12 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection
 from django.utils import timezone
 from django.utils.formats import date_format
-from django.utils.translation import gettext, gettext_lazy as _
+from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
 
 from app.models import EntityHistory, Room, Tenant, TenantRoomAssignment
-from app.tenant_access import SECTIONS
 from app.templatetags.tenant_extras import display
+from app.tenant_access import SECTIONS
 
 ROOM_LABELS = {
     "name": _("Name"), "size_sqm": _("Größe (m²)"), "has_mattress": _("Matratze"),
@@ -198,7 +199,11 @@ def tenant_timeline(tenant, roles, visible, *, assignments=False, assignment_doc
     """Timeline for one tenant. `visible` is visible_fields(roles); the flags
     mirror the tenant detail sections the viewer may see."""
     from app.models import (
-        ASSIGNMENT_DOCUMENT_MODELS, DOCUMENT_MODELS, AssignmentDocumentType, DocumentType, EnrollmentProof,
+        ASSIGNMENT_DOCUMENT_MODELS,
+        DOCUMENT_MODELS,
+        AssignmentDocumentType,
+        DocumentType,
+        EnrollmentProof,
     )
 
     names = _Names("first_name" in visible)
@@ -229,7 +234,12 @@ def wg_timeline(wg, roles, *, may_see_names, assignments=False, assignment_docs=
                 damages=False, own_room_ids=(), own_tenant=None, resident=False):
     """Timeline for one WG: room edits for everyone who sees the page; the other
     sources mirror the WG detail gates (staff, or a resident's own room)."""
-    from app.models import ASSIGNMENT_DOCUMENT_MODELS, AssignmentDocumentType, RoomDamage, WGDamage
+    from app.models import (
+        ASSIGNMENT_DOCUMENT_MODELS,
+        AssignmentDocumentType,
+        RoomDamage,
+        WGDamage,
+    )
 
     names = _Names(may_see_names)
     rooms = {r.pk: r for r in Room.objects.filter(wg=wg)}
