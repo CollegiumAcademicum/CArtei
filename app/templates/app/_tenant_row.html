@@ -7,7 +7,7 @@
     {% if show_documents and row.tenant.preferred_name %}<span class="ca-tl-muted">({{ row.tenant.first_name }} {{ row.tenant.last_name }})</span>{% endif %}
   </td>
   {% if show_room %}
-  <td data-col="room" data-sort="{% for a, sf in row.rooms %}{{ a.room.wg.name|lower }} {{ a.room.name|lower }} {% endfor %}">
+  <td data-col="room" data-label="{% translate "Zimmer / WG" %}" data-sort="{% for a, sf in row.rooms %}{{ a.room.wg.name|lower }} {{ a.room.name|lower }} {% endfor %}">
     {% for a, sf in row.rooms %}
     <div>{{ a.room.name }} · {{ a.room.wg.name }}
       {% if sf %}<div class="ca-sublet-sub">↳ {% blocktranslate with name=sf %}Untermiete von {{ name }}{% endblocktranslate %}</div>{% endif %}
@@ -17,31 +17,31 @@
   </td>
   {% endif %}
   {% if show_cluster and not grouped %}
-  <td data-col="cluster" data-sort="{{ row.cluster|lower }}">{{ row.cluster|default:"—" }}</td>
+  <td data-col="cluster" data-label="Cluster" data-sort="{{ row.cluster|lower }}">{{ row.cluster|default:"—" }}</td>
   {% endif %}
   {% if show_realname %}
-  <td data-col="mailbox" data-value="{% if not row.tenant.profile_setup_completed_at and not row.tenant.mailbox_list_opt_in %}pending{% else %}{{ row.tenant.mailbox_list_opt_in|yesno:'true,false' }}{% endif %}" data-sort="{% if not row.tenant.profile_setup_completed_at and not row.tenant.mailbox_list_opt_in %}-1{% else %}{{ row.tenant.mailbox_list_opt_in|yesno:'1,0' }}{% endif %}">
+  <td data-col="mailbox" data-label="{% translate "Briefkasten" %}" data-value="{% if not row.tenant.profile_setup_completed_at and not row.tenant.mailbox_list_opt_in %}pending{% else %}{{ row.tenant.mailbox_list_opt_in|yesno:'true,false' }}{% endif %}" data-sort="{% if not row.tenant.profile_setup_completed_at and not row.tenant.mailbox_list_opt_in %}-1{% else %}{{ row.tenant.mailbox_list_opt_in|yesno:'1,0' }}{% endif %}">
     {% if not row.tenant.profile_setup_completed_at and not row.tenant.mailbox_list_opt_in %}<span class="ca-pill ca-pill-amber">{% translate "Ausstehend" %}</span>{% elif row.tenant.mailbox_list_opt_in %}<span class="ca-pill ca-pill-yes">{% translate "Ja" %}</span>{% else %}<span class="ca-pill ca-pill-no">{% translate "Nein" %}</span>{% endif %}
   </td>
-  <td data-col="proof" data-value="{{ row.proof.state }}" data-sort="{{ row.proof.state }}">
+  <td data-col="proof" data-label="{% translate "Nachweis" %}" data-value="{{ row.proof.state }}" data-sort="{{ row.proof.state }}">
     {% if row.proof.state == "gueltig" %}<span class="ca-pill ca-pill-green">{% translate "gültig" %}</span>
     {% elif row.proof.state == "pruefung" %}<span class="ca-pill ca-pill-amber">{% blocktranslate with n=row.proof.count %}Prüfung ({{ n }}){% endblocktranslate %}</span>
     {% else %}<span class="ca-pill ca-pill-red">{% translate "fehlt" %}</span>{% endif %}
   </td>
   {% endif %}
   {% if show_documents %}
-  <td data-col="documents" data-value="{% if row.documents_missing %}incomplete{% for d in row.documents %}{% if not d.present %} fehlt-{{ d.short|lower }}{% endif %}{% endfor %}{% else %}complete{% endif %}" data-sort="{{ row.documents_missing }}">
+  <td data-col="documents" data-label="{% translate "Rechtsdok." %}" data-value="{% if row.documents_missing %}incomplete{% for d in row.documents %}{% if not d.present %} fehlt-{{ d.short|lower }}{% endif %}{% endfor %}{% else %}complete{% endif %}" data-sort="{{ row.documents_missing }}">
     {% for d in row.documents %}<span class="ca-pill {% if d.color %}ca-pill-{{ d.color }}{% elif d.present %}ca-pill-green{% else %}ca-pill-red{% endif %}" title="{% if d.color %}{{ d.tooltip }}{% else %}{{ d.label }}{% if not d.present %} {% translate "fehlt" %}{% endif %}{% endif %}">{{ d.short }}</span>{% if not forloop.last %} {% endif %}{% endfor %}
   </td>
   {% endif %}
   {% if show_realname %}
-  <td data-col="flinta" data-value="{{ row.tenant.is_flinta|yesno:'true,false' }}" data-sort="{{ row.tenant.is_flinta|yesno:'1,0' }}">{% if row.tenant.is_flinta %}<span class="ca-pill ca-pill-flinta">{% translate "Ja" %}</span>{% else %}—{% endif %}</td>
-  <td data-col="barrier" data-value="{{ row.tenant.barrier_free_needed|yesno:'true,false' }}" data-sort="{{ row.tenant.barrier_free_needed|yesno:'1,0' }}">{% if row.tenant.barrier_free_needed %}<span class="ca-pill ca-pill-bf">{% translate "Ja" %}</span>{% else %}—{% endif %}</td>
-  <td data-col="email" data-sort="{{ row.tenant.email|lower }}">{{ row.tenant.email|default:"—" }}</td>
-  <td data-col="ersteinzug" data-value="{{ row.tenant.ersteinzug|date:'Y-m-d' }}" data-sort="{{ row.tenant.ersteinzug|date:'Y-m-d' }}">{{ row.tenant.ersteinzug|default:"—" }}</td>
+  <td data-col="flinta" data-label="FLINTA" data-value="{{ row.tenant.is_flinta|yesno:'true,false' }}" data-sort="{{ row.tenant.is_flinta|yesno:'1,0' }}">{% if row.tenant.is_flinta %}<span class="ca-pill ca-pill-flinta">{% translate "Ja" %}</span>{% else %}—{% endif %}</td>
+  <td data-col="barrier" data-label="{% translate "Barrierefrei" %}" data-value="{{ row.tenant.barrier_free_needed|yesno:'true,false' }}" data-sort="{{ row.tenant.barrier_free_needed|yesno:'1,0' }}">{% if row.tenant.barrier_free_needed %}<span class="ca-pill ca-pill-bf">{% translate "Ja" %}</span>{% else %}—{% endif %}</td>
+  <td data-col="email" data-label="{% translate "E-Mail" %}" data-sort="{{ row.tenant.email|lower }}">{{ row.tenant.email|default:"—" }}</td>
+  <td data-col="ersteinzug" data-label="{% translate "Einzug" %}" data-value="{{ row.tenant.ersteinzug|date:'Y-m-d' }}" data-sort="{{ row.tenant.ersteinzug|date:'Y-m-d' }}">{{ row.tenant.ersteinzug|default:"—" }}</td>
   {% endif %}
   {% for a, results, verdict in row.survey_results %}
-  <td data-col="survey_{{ a.pk }}" data-value="{{ verdict|yesno:'flag,ok' }}" data-sort="{{ verdict|yesno:'1,0' }}"
+  <td data-col="survey_{{ a.pk }}" data-label="{{ a }}" data-value="{{ verdict|yesno:'flag,ok' }}" data-sort="{{ verdict|yesno:'1,0' }}"
       title="{% for r in results %}{{ r.ag_name }}: {{ r.get_status_display }}{% if not forloop.last %}, {% endif %}{% empty %}{% translate "kein Ergebnis" %}{% endfor %}">
     {% if verdict %}<span class="ca-pill ca-pill-red verdict-flag">⚠ Flag</span>{% else %}<span class="ca-pill ca-pill-green verdict-ok">✓ {% translate "aktiv" %}</span>{% endif %}
   </td>

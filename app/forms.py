@@ -264,6 +264,7 @@ class StartHandoverForm(forms.Form):
               .select_related("tenant").order_by("-moved_in"))
         for name in ("outgoing_assignment", "incoming_assignment"):
             self.fields[name].queryset = qs
+            self.fields[name].widget.attrs["class"] = "ca-input"
             self.fields[name].label_from_instance = lambda a: (
                 f"{a.tenant.first_name} {a.tenant.last_name} "
                 f"({a.moved_in}–{a.moved_out or '…'})")

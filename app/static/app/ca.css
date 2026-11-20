@@ -102,10 +102,13 @@ body {
   content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
   border: 6px solid transparent; border-top-color: var(--ca-text);
 }
+/* The right-most stat tile's bubble would spill past the viewport: open it leftwards. */
+.ca-stat-card:last-child .ca-hint-bubble { left: auto; right: -0.6rem; transform: none; }
+.ca-stat-card:last-child .ca-hint-bubble::after { left: auto; right: 0.6rem; transform: none; }
 /* Profile sections are <details> with overflow:hidden (.ca-collapse), which clips a
    bubble opening upwards: drop it below the label, spanning the field instead.
-   Phones keep the viewport-pinned toast (max-width: 768px rule below). */
-@media (min-width: 769px) {
+   Phones and touch devices keep the viewport-pinned toast (rule below). */
+@media (min-width: 769px) and (hover: hover) {
   .ca-hint-below { position: static; }
   .ca-hint-below .ca-hint-bubble { top: 1.6rem; bottom: auto; left: 0; right: 0; width: auto; transform: none; }
   .ca-hint-below .ca-hint-bubble::after { display: none; }
@@ -240,6 +243,9 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .ca-button-outline:hover { background: #f0faf9; }
 .ca-button-sm { padding: 0.3rem 0.75rem; font-size: 0.85rem; }
 .ca-input-sm { width: auto; padding: 0.3rem 0.6rem; font-size: 0.85rem; }
+.ca-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ca-rail-toggle { display: none; }
+.ca-inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
 .ca-notes-toggle {
   background: white; color: #555; border: 1px solid #ddd; border-radius: 999px;
   padding: 0.15rem 0.6rem; font-family: inherit; font-size: 0.8rem;
@@ -541,15 +547,20 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   .ca-card .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
+/* Hint bubbles centred on an icon near the edge would spill off-screen: on
+   phones and touch devices (landscape phones, tablets) pin them to the bottom
+   of the viewport like a toast instead. */
+@media (max-width: 768px), (hover: none) {
+  .ca-hint-bubble, .ca-stat-card:last-child .ca-hint-bubble {
+    position: fixed; left: 1rem; right: 1rem; bottom: 1rem; top: auto;
+    width: auto !important; transform: none; font-size: 0.9rem; }
+  .ca-hint-bubble::after { display: none; }
+}
+
 /* Phones + small tablets */
 @media (max-width: 768px) {
   .ca-main { padding: 0 0.75rem 2rem; }
   .ca-card { padding: 1rem; }
-  /* Hint bubbles centred on an icon near the edge would spill off-screen:
-     pin them to the bottom of the viewport like a toast instead. */
-  .ca-hint-bubble { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; top: auto;
-    width: auto !important; transform: none; font-size: 0.9rem; }
-  .ca-hint-bubble::after { display: none; }
 
   .ca-dash { flex-direction: column; align-items: stretch; gap: 0; }
   .ca-dash-profile { width: auto; }
@@ -568,8 +579,10 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   .ca-field-row input[type="checkbox"] { flex-shrink: 0; }
   .ca-field-grid textarea { height: 6rem; min-height: 0; }
 
-  /* .ca-stack-table: one card per row; td[data-label] shows its column name. */
-  .ca-stack-table thead { display: none; }
+  /* .ca-stack-table: one card per row; td[data-label] shows its column name.
+     Column headers go; group headers and a filter row (.ca-filter-row) stay. */
+  .ca-stack-table thead { display: block; }
+  .ca-stack-table thead tr { display: none; }
   .ca-stack-table, .ca-stack-table tbody, .ca-stack-table tr, .ca-stack-table td { display: block; width: 100%; }
   /* Rows and cells fill as blocks: width:100% plus border/padding would overflow. */
   .ca-stack-table tr, .ca-stack-table td { width: auto; box-sizing: border-box; }
@@ -590,6 +603,28 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
   }
   .ca-stack-table td.ca-stack-actions { position: absolute; top: 0.35rem; right: 0; width: auto; padding: 0.25rem 0.75rem; }
   .ca-stack-table td:empty { display: none; }
+  .ca-stack-table tr.cluster-group-header { border: none; border-radius: 6px; margin: 1rem 0 0.5rem; }
+  .ca-stack-table thead tr.cluster-group-header { display: block; }
+  /* Filter row: a two-column grid of labelled filters above the cards. */
+  .ca-stack-table thead tr.ca-filter-row {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 0.75rem;
+    border: 1px solid #ece7dc; padding: 0.6rem 0.75rem; overflow: visible;
+  }
+  .ca-stack-table .ca-filter-row th { padding: 0; border: none; min-width: 0; }
+  .ca-stack-table .ca-filter-row th:empty { display: none; }
+  .ca-stack-table .ca-filter-row th[data-label]::before {
+    content: attr(data-label); display: block; margin-bottom: 0.15rem;
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #999;
+  }
+  .ca-stack-table .ca-filter-row .col-filter, .ca-stack-table .ca-filter-row .select,
+  .ca-stack-table .ca-filter-row select { width: 100%; max-width: none; }
+  /* .ca-stack-inline: one line per field, label left and value right. */
+  .ca-stack-inline td[data-label]:not(:first-child) { display: flow-root; text-align: right; padding-top: 0.2rem; padding-bottom: 0.2rem; }
+  .ca-stack-inline td[data-label]:not(:first-child)::before { float: left; margin: 0 0.75rem 0 0; text-align: left; line-height: 1.6rem; }
+  .ca-stack-inline td:last-child { padding-bottom: 0.6rem; }
+  /* Filter/column rail: collapsed behind a toggle button. */
+  .ca-rail-toggle { display: inline-flex; width: 100%; justify-content: space-between; margin-bottom: 0.75rem; }
+  .ca-tl-rail:not(.is-open) .ca-rail-body { display: none; }
   .ca-stack-table tr:has(.ca-stack-actions button) td:first-child { padding-right: 9rem; }
   .ca-slider input[type=range] { max-width: none; height: 8px; }
   .ca-slider input[type=range]::-webkit-slider-thumb { width: 26px; height: 26px; }

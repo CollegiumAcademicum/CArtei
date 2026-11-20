@@ -9,7 +9,7 @@
 
   {% for u in users %}
   <div style="margin-bottom:1.5rem;border:1px solid #e2e2e2;border-radius:8px;padding:1rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
       <strong style="font-size:1.05rem;">{{ u.username }}</strong>
       <form method="post" action="{% url 'invalidate_user_sessions' u.username %}"
             data-confirm="Alle Sitzungen von {{ u.username }} beenden?">
@@ -17,6 +17,7 @@
         <button type="submit" class="ca-button-outline">Überall abmelden</button>
       </form>
     </div>
+    <div class="ca-scroll-x">
     <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
       <thead>
         <tr style="text-align:left;color:#777;">
@@ -46,6 +47,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
   {% empty %}
   <p style="color:#777;">Keine aktiven Sitzungen.</p>

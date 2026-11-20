@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CArtei\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 17:09-0600\n"
+"POT-Creation-Date: 2026-11-20 07:30-0600\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -478,6 +478,9 @@ msgstr "fixed"
 msgid "Schäden an Gemeinschaftsflächen (WG)"
 msgstr "Common area damages (WG)"
 
+msgid "Zimmer / WG"
+msgstr "Room / WG"
+
 #, python-format
 msgid "Untermiete von %(name)s"
 msgstr "Sublet from %(name)s"
@@ -486,8 +489,14 @@ msgstr "Sublet from %(name)s"
 msgid "Untervermietet an %(name)s"
 msgstr "Sublet to %(name)s"
 
+msgid "Briefkasten"
+msgstr "Mailbox"
+
 msgid "Ausstehend"
 msgstr "Pending"
+
+msgid "Nachweis"
+msgstr "Proof"
 
 msgid "gültig"
 msgstr "valid"
@@ -498,6 +507,15 @@ msgstr "Review (%(n)s)"
 
 msgid "fehlt"
 msgstr "missing"
+
+msgid "Rechtsdok."
+msgstr "Legal docs"
+
+msgid "Barrierefrei"
+msgstr "Accessible"
+
+msgid "Einzug"
+msgstr "Move-in"
 
 msgid "kein Ergebnis"
 msgstr "no result"
@@ -1196,6 +1214,9 @@ msgid_plural "%(n)s Personen"
 msgstr[0] "%(n)s person"
 msgstr[1] "%(n)s people"
 
+msgid "Ansicht & Spalten"
+msgstr "View & columns"
+
 msgid "Aktuelle"
 msgstr "Current"
 
@@ -1220,21 +1241,6 @@ msgstr "Apply"
 msgid "Spalten"
 msgstr "Columns"
 
-msgid "Zimmer / WG"
-msgstr "Room / WG"
-
-msgid "Briefkasten"
-msgstr "Mailbox"
-
-msgid "Nachweis"
-msgstr "Proof"
-
-msgid "Barrierefrei"
-msgstr "Accessible"
-
-msgid "Einzug"
-msgstr "Move-in"
-
 msgid "kein Cluster"
 msgstr "no cluster"
 
@@ -1243,9 +1249,6 @@ msgid "%(n)s Bewohner*in"
 msgid_plural "%(n)s Bewohner*innen"
 msgstr[0] "%(n)s resident"
 msgstr[1] "%(n)s residents"
-
-msgid "Rechtsdok."
-msgstr "Legal docs"
 
 msgid "Filter…"
 msgstr "Filter…"

@@ -30,6 +30,11 @@
       document.getElementById(el.getAttribute("aria-controls")).classList.toggle("is-active", open);
       el.setAttribute("aria-expanded", open);
     }
+    // data-rail-toggle: open/close the filter rail it sits in (phones only; CSS).
+    if ((el = e.target.closest("[data-rail-toggle]"))) {
+      var rail = el.closest(".ca-tl-rail");
+      el.setAttribute("aria-expanded", rail.classList.toggle("is-open"));
+    }
     // data-toggle-password="id": reveal/hide a password input.
     if ((el = e.target.closest("[data-toggle-password]"))) {
       var input = document.getElementById(el.dataset.togglePassword);

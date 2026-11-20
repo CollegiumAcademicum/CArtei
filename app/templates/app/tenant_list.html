@@ -6,7 +6,7 @@
   <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
     <h1 style="font-size:1.4rem;font-weight:700;">{% translate "Bewohner*innen" %}</h1>
     <span style="color:#7a7a7a;font-size:0.9rem;display:flex;align-items:center;gap:1rem;">
-      {% if can_create_tenant %}<a href="{% url 'tenant_create' %}" class="button is-primary is-small">+ {% translate "Neue*r Bewohner*in" %}</a>{% endif %}
+      {% if can_create_tenant %}<a href="{% url 'tenant_create' %}" class="ca-button ca-button-sm">+ {% translate "Neue*r Bewohner*in" %}</a>{% endif %}
       <span><span id="visible-count">{{ total }}</span> / {% blocktranslate count n=total %}{{ n }} Person{% plural %}{{ n }} Personen{% endblocktranslate %}</span>
     </span>
   </div>
@@ -14,6 +14,8 @@
   <div class="ca-tl-layout">
     {# ---------------- LEFT RAIL: view controls (server round-trip) ---------------- #}
     <aside class="ca-tl-rail">
+      <button type="button" class="ca-button-outline ca-button-sm ca-rail-toggle" data-rail-toggle aria-expanded="false">{% translate "Ansicht & Spalten" %} <span aria-hidden="true">▾</span></button>
+      <div class="ca-rail-body">
       <form method="get" id="scope-form">
         <div class="ca-facet">
           <h5>{% translate "Bewohner*innen" %}</h5>
@@ -45,7 +47,7 @@
           {% empty %}
           <span style="color:#7a7a7a;">{% translate "Keine Abfragen vorhanden." %}</span>
           {% endfor %}
-          <button type="submit" class="ca-button" style="margin-top:.5rem;font-size:.8rem;padding:.25rem .7rem;">{% translate "Anwenden" %}</button>
+          <button type="submit" class="ca-button ca-button-sm" style="margin-top:.5rem;">{% translate "Anwenden" %}</button>
         </div>
         {% endif %}
       </form>
@@ -66,6 +68,7 @@
         <label class="ca-facet-line"><input type="checkbox" data-col-toggle="ersteinzug"> {% translate "Einzug" %}</label>
         {% endif %}
         {% for a in selected_abfragen %}<label class="ca-facet-line"><input type="checkbox" data-col-toggle="survey_{{ a.pk }}" checked> {{ a }}</label>{% endfor %}
+      </div>
       </div>
     </aside>
 
@@ -89,7 +92,7 @@
       {% endif %}
 
       <div style="overflow-x:auto;">
-        <table id="tenant-table" class="table is-fullwidth is-hoverable" style="font-size:0.9rem;">
+        <table id="tenant-table" class="table is-fullwidth is-hoverable ca-stack-table ca-stack-inline" style="font-size:0.9rem;">
           <thead>
             <tr>
               <th data-col="name" {% if not grouped %}data-sort-type="text" class="ca-sortable"{% endif %}>Name <span class="sort-ind"></span></th>
@@ -107,19 +110,19 @@
               {% for a in selected_abfragen %}<th data-col="survey_{{ a.pk }}" {% if not grouped %}data-sort-type="text" class="ca-sortable"{% endif %}>{{ a }} <span class="sort-ind"></span></th>{% endfor %}
             </tr>
             <tr class="ca-filter-row">
-              <th data-col="name"><input type="text" class="col-filter input is-small" data-col="name" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>
-              {% if show_room %}<th data-col="room"><input type="text" class="col-filter input is-small" data-col="room" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>{% endif %}
-              {% if show_cluster and not grouped %}<th data-col="cluster"><input type="text" class="col-filter input is-small" data-col="cluster" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>{% endif %}
+              <th data-col="name" data-label="Name"><input type="text" class="col-filter input is-small" data-col="name" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>
+              {% if show_room %}<th data-col="room" data-label="{% translate "Zimmer / WG" %}"><input type="text" class="col-filter input is-small" data-col="room" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>{% endif %}
+              {% if show_cluster and not grouped %}<th data-col="cluster" data-label="Cluster"><input type="text" class="col-filter input is-small" data-col="cluster" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>{% endif %}
               {% if show_realname %}
-              <th data-col="mailbox"><div class="select is-small"><select class="col-filter" data-col="mailbox" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="true">{% translate "Ja" %}</option><option value="false">{% translate "Nein" %}</option></select></div></th>
-              <th data-col="proof"><div class="select is-small"><select class="col-filter" data-col="proof" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="gueltig">{% translate "gültig" %}</option><option value="pruefung">{% translate "Prüfung" %}</option><option value="fehlt">{% translate "fehlt" %}</option></select></div></th>
-{% endif %}{% if show_documents %}<th data-col="documents"><div class="select is-small"><select class="col-filter" data-col="documents" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="complete">{% translate "vollständig" %}</option><option value="incomplete">{% translate "unvollständig" %}</option><option value="fehlt-ds">DS {% translate "fehlt" %}</option><option value="fehlt-foe">FoE {% translate "fehlt" %}</option><option value="fehlt-ve">VE {% translate "fehlt" %}</option><option value="fehlt-mvt">MVt {% translate "fehlt" %}</option><option value="fehlt-amb">AMB {% translate "fehlt" %}</option><option value="fehlt-sepa">SEPA {% translate "fehlt" %}</option><option value="fehlt-bes">Bes {% translate "fehlt" %}</option><option value="fehlt-sve">SVE {% translate "fehlt" %}</option></select></div></th>{% endif %}{% if show_realname %}
-              <th data-col="flinta"><div class="select is-small"><select class="col-filter" data-col="flinta" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="true">{% translate "Ja" %}</option><option value="false">{% translate "Nein" %}</option></select></div></th>
-              <th data-col="barrier"><div class="select is-small"><select class="col-filter" data-col="barrier" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="true">{% translate "Ja" %}</option><option value="false">{% translate "Nein" %}</option></select></div></th>
-              <th data-col="email"><input type="text" class="col-filter input is-small" data-col="email" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>
-              <th data-col="ersteinzug"><input type="date" class="col-filter input is-small" data-col="ersteinzug" data-ftype="date" data-bound="from"><input type="date" class="col-filter input is-small" data-col="ersteinzug" data-ftype="date" data-bound="to"></th>
+              <th data-col="mailbox" data-label="{% translate "Briefkasten" %}"><div class="select is-small"><select class="col-filter" data-col="mailbox" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="true">{% translate "Ja" %}</option><option value="false">{% translate "Nein" %}</option></select></div></th>
+              <th data-col="proof" data-label="{% translate "Nachweis" %}"><div class="select is-small"><select class="col-filter" data-col="proof" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="gueltig">{% translate "gültig" %}</option><option value="pruefung">{% translate "Prüfung" %}</option><option value="fehlt">{% translate "fehlt" %}</option></select></div></th>
+{% endif %}{% if show_documents %}<th data-col="documents" data-label="{% translate "Rechtsdok." %}"><div class="select is-small"><select class="col-filter" data-col="documents" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="complete">{% translate "vollständig" %}</option><option value="incomplete">{% translate "unvollständig" %}</option><option value="fehlt-ds">DS {% translate "fehlt" %}</option><option value="fehlt-foe">FoE {% translate "fehlt" %}</option><option value="fehlt-ve">VE {% translate "fehlt" %}</option><option value="fehlt-mvt">MVt {% translate "fehlt" %}</option><option value="fehlt-amb">AMB {% translate "fehlt" %}</option><option value="fehlt-sepa">SEPA {% translate "fehlt" %}</option><option value="fehlt-bes">Bes {% translate "fehlt" %}</option><option value="fehlt-sve">SVE {% translate "fehlt" %}</option></select></div></th>{% endif %}{% if show_realname %}
+              <th data-col="flinta" data-label="FLINTA"><div class="select is-small"><select class="col-filter" data-col="flinta" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="true">{% translate "Ja" %}</option><option value="false">{% translate "Nein" %}</option></select></div></th>
+              <th data-col="barrier" data-label="{% translate "Barrierefrei" %}"><div class="select is-small"><select class="col-filter" data-col="barrier" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="true">{% translate "Ja" %}</option><option value="false">{% translate "Nein" %}</option></select></div></th>
+              <th data-col="email" data-label="{% translate "E-Mail" %}"><input type="text" class="col-filter input is-small" data-col="email" data-ftype="text" placeholder="{% translate "Filter…" %}"></th>
+              <th data-col="ersteinzug" data-label="{% translate "Einzug" %}"><input type="date" class="col-filter input is-small" data-col="ersteinzug" data-ftype="date" data-bound="from"><input type="date" class="col-filter input is-small" data-col="ersteinzug" data-ftype="date" data-bound="to"></th>
               {% endif %}
-              {% for a in selected_abfragen %}<th data-col="survey_{{ a.pk }}"><div class="select is-small"><select class="col-filter" data-col="survey_{{ a.pk }}" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="flag">⚠ Flag</option><option value="ok">OK</option></select></div></th>{% endfor %}
+              {% for a in selected_abfragen %}<th data-col="survey_{{ a.pk }}" data-label="{{ a }}"><div class="select is-small"><select class="col-filter" data-col="survey_{{ a.pk }}" data-ftype="select"><option value="">{% translate "Alle" %}</option><option value="flag">⚠ Flag</option><option value="ok">OK</option></select></div></th>{% endfor %}
             </tr>
           </thead>
           <tbody>

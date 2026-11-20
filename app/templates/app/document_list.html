@@ -11,7 +11,7 @@
   {% if can_generate_forms %}{% include "app/_document_generators.html" %}{% endif %}
 
   <div style="overflow-x:auto;">
-    <table id="doc-table" class="table is-fullwidth is-hoverable" style="font-size:0.9rem;">
+    <table id="doc-table" class="table is-fullwidth is-hoverable ca-stack-table ca-stack-inline" style="font-size:0.9rem;">
       <thead>
         <tr>
           <th data-col="name" data-sort-type="text" class="ca-sortable">Bewohner*in <span class="sort-ind"></span></th>
@@ -24,13 +24,13 @@
           <th>Details</th>
         </tr>
         <tr class="ca-filter-row">
-          <th data-col="name"><input type="text" class="col-filter input is-small" data-col="name" data-ftype="text" placeholder="Filter…"></th>
-          <th data-col="type"><div class="select is-small"><select class="col-filter" data-col="type" data-ftype="select"><option value="">Alle</option>{% for key, label in doc_types %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div></th>
-          <th data-col="file"><input type="text" class="col-filter input is-small" data-col="file" data-ftype="text" placeholder="Filter…"></th>
+          <th data-col="name" data-label="Bewohner*in"><input type="text" class="col-filter input is-small" data-col="name" data-ftype="text" placeholder="Filter…"></th>
+          <th data-col="type" data-label="Typ"><div class="select is-small"><select class="col-filter" data-col="type" data-ftype="select"><option value="">Alle</option>{% for key, label in doc_types %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div></th>
+          <th data-col="file" data-label="Datei"><input type="text" class="col-filter input is-small" data-col="file" data-ftype="text" placeholder="Filter…"></th>
           <th></th>
-          <th data-col="uploaded"><input type="date" class="col-filter input is-small" data-col="uploaded" data-ftype="date" data-bound="from"><input type="date" class="col-filter input is-small" data-col="uploaded" data-ftype="date" data-bound="to"></th>
-          <th data-col="uploader"><input type="text" class="col-filter input is-small" data-col="uploader" data-ftype="text" placeholder="Filter…"></th>
-          <th data-col="status"><div class="select is-small"><select class="col-filter" data-col="status" data-ftype="select"><option value="active" selected>Aktiv</option><option value="revoked">Widerrufen</option><option value="">Alle</option></select></div></th>
+          <th data-col="uploaded" data-label="Hochgeladen"><input type="date" class="col-filter input is-small" data-col="uploaded" data-ftype="date" data-bound="from"><input type="date" class="col-filter input is-small" data-col="uploaded" data-ftype="date" data-bound="to"></th>
+          <th data-col="uploader" data-label="von"><input type="text" class="col-filter input is-small" data-col="uploader" data-ftype="text" placeholder="Filter…"></th>
+          <th data-col="status" data-label="Status"><div class="select is-small"><select class="col-filter" data-col="status" data-ftype="select"><option value="active" selected>Aktiv</option><option value="revoked">Widerrufen</option><option value="">Alle</option></select></div></th>
           <th></th>
         </tr>
       </thead>
@@ -38,12 +38,12 @@
       {% for r in rows %}
         <tr {% if r.detail or r.revoked %}class="has-detail" style="cursor:pointer;"{% endif %}>
           <td data-col="name" data-sort="{{ r.tenant.last_name|lower }} {{ r.tenant.first_name|lower }}">{% tenant_link r.tenant %}{% if r.tenant.preferred_name %} <span class="ca-tl-muted">({{ r.tenant.first_name }} {{ r.tenant.last_name }})</span>{% endif %}</td>
-          <td data-col="type" data-value="{{ r.type_key }}" data-sort="{{ r.type_label|lower }}">{{ r.type_label }}</td>
-          <td data-col="file" data-sort="{{ r.file_name|lower }}"><a href="{{ r.download_url }}" style="color:var(--ca-teal);">{{ r.file_name }}</a></td>
-          <td data-col="signed" data-sort="{{ r.uploaded_at|date:'Y-m-d' }}">{{ r.signed }}</td>
-          <td data-col="uploaded" data-value="{{ r.uploaded_at|date:'Y-m-d' }}" data-sort="{{ r.uploaded_at|date:'Y-m-d H:i:s' }}">{{ r.uploaded_at|date:"d.m.Y" }}</td>
-          <td data-col="uploader" data-sort="{{ r.uploaded_by|display|lower }}">{% tenant_link r.uploaded_by %}</td>
-          <td data-col="status" data-value="{% if r.revoked %}revoked{% else %}active{% endif %}" data-sort="{{ r.revoked|yesno:'1,0' }}">
+          <td data-col="type" data-label="Typ" data-value="{{ r.type_key }}" data-sort="{{ r.type_label|lower }}">{{ r.type_label }}</td>
+          <td data-col="file" data-label="Datei" data-sort="{{ r.file_name|lower }}"><a href="{{ r.download_url }}" style="color:var(--ca-teal);">{{ r.file_name }}</a></td>
+          <td data-col="signed" data-label="Unterschrieben" data-sort="{{ r.uploaded_at|date:'Y-m-d' }}">{{ r.signed }}</td>
+          <td data-col="uploaded" data-label="Hochgeladen" data-value="{{ r.uploaded_at|date:'Y-m-d' }}" data-sort="{{ r.uploaded_at|date:'Y-m-d H:i:s' }}">{{ r.uploaded_at|date:"d.m.Y" }}</td>
+          <td data-col="uploader" data-label="von" data-sort="{{ r.uploaded_by|display|lower }}">{% tenant_link r.uploaded_by %}</td>
+          <td data-col="status" data-label="Status" data-value="{% if r.revoked %}revoked{% else %}active{% endif %}" data-sort="{{ r.revoked|yesno:'1,0' }}">
             {% if r.revoked %}<span class="ca-pill ca-pill-red" title="Widerrufen am {{ r.revoked_at }}{% if r.revoked_by %} von {{ r.revoked_by|display }}{% endif %}{% if r.revoked_note %}: {{ r.revoked_note }}{% endif %}">Widerrufen</span>{% elif r.pending %}<span class="ca-pill ca-pill-amber" title="Wartet auf Bestätigung der Vertraulichkeitsfreigabe">Ausstehend</span>{% else %}<span class="ca-pill ca-pill-green">Aktiv</span>{% endif %}
           </td>
           <td>{% if r.detail or r.revoked %}<span class="detail-caret" style="color:var(--ca-teal);white-space:nowrap;">▸ Details</span>{% endif %}</td>

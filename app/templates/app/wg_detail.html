@@ -6,9 +6,10 @@
   <h1 style="font-size:1.4rem;font-weight:700;">{{ wg.name }}</h1>
   <p style="color:#666;margin:.2rem 0 1rem;">{% if wg.cluster %}Cluster {{ wg.cluster }}{% endif %}</p>
 
-  <form method="get" style="margin:0 0 1rem;">
-    <label>{% translate "Stichtag" %} <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}"></label>
-    <button type="submit" class="ca-button">{% translate "Anzeigen" %}</button>
+  <form method="get" class="ca-inline-form" style="margin:0 0 1rem;">
+    <label for="as_of" class="ca-field-label" style="margin:0;">{% translate "Stichtag" %}</label>
+    <input type="date" id="as_of" name="as_of" value="{{ as_of|date:'Y-m-d' }}" class="ca-input ca-input-sm">
+    <button type="submit" class="ca-button ca-button-sm">{% translate "Anzeigen" %}</button>
   </form>
 
   {% if show_engagement %}
