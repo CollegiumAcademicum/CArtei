@@ -23,14 +23,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # PyLaTeX adds lastpage.sty from this package.
 RUN apt-get update && apt-get install -y --no-install-recommends texlive-latex-extra && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml .
-RUN uv sync --no-group dev
+# Dependencies from the lockfile, without the project itself: this layer is
+# reused until uv.lock changes, however often the app code changes.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev --no-install-project
 
 COPY . .
+RUN uv sync --locked --no-dev
 
 # Commit this image was built from (CI passes the git SHA); see /version/.
 ARG GIT_SHA=dev
 ENV CARTEI_VERSION=$GIT_SHA
+
+# The environment is complete at build time: keep `uv run` (CMD and ops
+# commands via podman exec) from re-syncing it, which would pull the dev group.
+ENV UV_NO_SYNC=1
 
 EXPOSE 8000
 

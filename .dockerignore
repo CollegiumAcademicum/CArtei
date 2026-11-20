@@ -1,0 +1,14 @@
+# Keep the build context to what the image needs: smaller uploads and fewer
+# needless cache misses on the final COPY.
+.git
+.github
+.venv
+.idea
+.pytest_cache
+.superpowers
+.remember
+**/__pycache__
+tests
+docs
+staticfiles
+.env
