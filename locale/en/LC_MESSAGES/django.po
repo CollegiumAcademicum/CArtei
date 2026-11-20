@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CArtei\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-20 07:30-0600\n"
+"POT-Creation-Date: 2026-11-20 07:54-0600\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -54,6 +54,29 @@ msgstr "Grey"
 
 msgid "Vertraulichkeitserklärung"
 msgstr "Confidentiality agreement"
+
+msgid "eingezogen"
+msgstr "moved in"
+
+msgid "ausgezogen"
+msgstr "moved out"
+
+#, python-format
+msgid "Zimmerwechsel %(old)s → %(new)s"
+msgstr "Room change %(old)s → %(new)s"
+
+msgid "gültig"
+msgstr "valid"
+
+msgid "Prüfung"
+msgstr "Review"
+
+msgid "fehlt"
+msgstr "missing"
+
+#, python-format
+msgid "Nachweis %(old)s → %(new)s"
+msgstr "Proof %(old)s → %(new)s"
 
 msgid "Diese E-Mail-Adresse wird bereits verwendet."
 msgstr "This email address is already in use."
@@ -478,6 +501,9 @@ msgstr "fixed"
 msgid "Schäden an Gemeinschaftsflächen (WG)"
 msgstr "Common area damages (WG)"
 
+msgid "Änderung"
+msgstr "Change"
+
 msgid "Zimmer / WG"
 msgstr "Room / WG"
 
@@ -498,15 +524,9 @@ msgstr "Pending"
 msgid "Nachweis"
 msgstr "Proof"
 
-msgid "gültig"
-msgstr "valid"
-
 #, python-format
 msgid "Prüfung (%(n)s)"
 msgstr "Review (%(n)s)"
-
-msgid "fehlt"
-msgstr "missing"
 
 msgid "Rechtsdok."
 msgstr "Legal docs"
@@ -1226,6 +1246,18 @@ msgstr "Former"
 msgid "Alle"
 msgstr "All"
 
+msgid "Vergleich"
+msgstr "Compare"
+
+msgid "bis (leer: heute)"
+msgstr "to (empty: today)"
+
+msgid "Vergleichen"
+msgstr "Compare"
+
+msgid "Vergleich beenden"
+msgstr "End comparison"
+
 msgid "Ansicht"
 msgstr "View"
 
@@ -1241,6 +1273,14 @@ msgstr "Apply"
 msgid "Spalten"
 msgstr "Columns"
 
+#, python-format
+msgid ""
+"Änderungen zwischen %(a)s und %(b)s: Belegung, Rechtsdokumente und "
+"Nachweise, soweit du sie sehen darfst."
+msgstr ""
+"Changes between %(a)s and %(b)s: occupancy, legal documents and proofs, as "
+"far as you may see them."
+
 msgid "kein Cluster"
 msgstr "no cluster"
 
@@ -1252,9 +1292,6 @@ msgstr[1] "%(n)s residents"
 
 msgid "Filter…"
 msgstr "Filter…"
-
-msgid "Prüfung"
-msgstr "Review"
 
 msgid "vollständig"
 msgstr "complete"
@@ -1371,9 +1408,29 @@ msgid_plural "%(n)s Zimmer"
 msgstr[0] "%(n)s room"
 msgstr[1] "%(n)s rooms"
 
+msgid "Vergleichen mit"
+msgstr "Compare with"
+
+msgid "nur Änderungen"
+msgstr "changes only"
+
+#, python-format
+msgid "Stand %(b)s, markiert ist, was sich seit %(a)s geändert hat."
+msgstr "As of %(b)s, marking what changed since %(a)s."
+
 #, python-format
 msgid "%(n)s WG-Schäden offen"
 msgstr "%(n)s open WG damages"
+
+#, python-format
+msgid "%(n)s Änderung"
+msgid_plural "%(n)s Änderungen"
+msgstr[0] "%(n)s change"
+msgstr[1] "%(n)s changes"
+
+#, python-format
+msgid "WG-Schäden: +%(n)s neu · %(f)s behoben"
+msgstr "WG damages: +%(n)s new · %(f)s fixed"
 
 msgid "Engagement vollständig"
 msgstr "Engagement complete"
@@ -1386,6 +1443,10 @@ msgstr "Damages (open/fixed)"
 
 msgid "freifinanziert"
 msgstr "privately financed"
+
+#, python-format
+msgid "+%(n)s neu · %(f)s behoben"
+msgstr "+%(n)s new · %(f)s fixed"
 
 msgid "Keine Zimmer."
 msgstr "No rooms."

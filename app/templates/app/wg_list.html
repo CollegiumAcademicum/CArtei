@@ -11,11 +11,14 @@
   <div class="ca-tl-layout">
     {# ---------------- LEFT RAIL: view controls (server round-trip) ---------------- #}
     <aside class="ca-tl-rail">
-      <button type="button" class="ca-button-outline ca-button-sm ca-rail-toggle" data-rail-toggle aria-expanded="false">{% translate "Stichtag" %}: {{ as_of|date:"d.m.Y" }} <span aria-hidden="true">▾</span></button>
+      <button type="button" class="ca-button-outline ca-button-sm ca-rail-toggle" data-rail-toggle aria-expanded="false">{% translate "Stichtag" %}: {% if compare %}{{ compare|date:"d.m.Y" }} → {% endif %}{{ as_of|date:"d.m.Y" }} <span aria-hidden="true">▾</span></button>
       <form method="get" class="ca-rail-body">
         <div class="ca-facet">
           <h5>{% translate "Stichtag" %}</h5>
           <input type="date" name="as_of" value="{{ as_of|date:'Y-m-d' }}" class="input is-small" style="width:100%;">
+          <h5 style="margin-top:.6rem;">{% translate "Vergleichen mit" %}</h5>
+          <input type="date" name="compare" value="{{ compare|date:'Y-m-d' }}" class="input is-small" style="width:100%;">
+          <label class="ca-facet-line"><input type="checkbox" name="changed_only" value="1" {% if changed_only %}checked{% endif %}> {% translate "nur Änderungen" %}</label>
           <button type="submit" class="ca-button ca-button-sm" style="margin-top:.5rem;">{% translate "Anzeigen" %}</button>
         </div>
       </form>
@@ -23,6 +26,11 @@
 
     {# ---------------- MAIN: buildings › WGs › rooms ---------------- #}
     <div class="ca-tl-main">
+      {% if compare %}
+      <p class="ca-diff-note">{% blocktranslate trimmed with a=compare|date:"d.m.Y" b=as_of|date:"d.m.Y" %}
+        Stand {{ b }}, markiert ist, was sich seit {{ a }} geändert hat.
+      {% endblocktranslate %}</p>
+      {% endif %}
       {% for b in buildings %}
       <h2 style="font-size:1.1rem;font-weight:700;margin:1.25rem 0 .5rem;">{{ b.building.name }}</h2>
       {% for w in b.wgs %}
@@ -35,6 +43,8 @@
                 <span class="ca-grp-tally">
                   {% if w.wg.cluster %}· Cluster {{ w.wg.cluster }} {% endif %}· {% blocktranslate count n=w.rooms|length %}{{ n }} Zimmer{% plural %}{{ n }} Zimmer{% endblocktranslate %}
                   {% if show_damages and w.damages.0 %}· <span style="color:#b00;">{% blocktranslate with n=w.damages.0 %}{{ n }} WG-Schäden offen{% endblocktranslate %}</span>{% endif %}
+                  {% if compare %}· <strong>{% blocktranslate count n=w.changes %}{{ n }} Änderung{% plural %}{{ n }} Änderungen{% endblocktranslate %}</strong>{% endif %}
+                  {% if w.damage_delta %}· {% blocktranslate trimmed with n=w.damage_delta.0 f=w.damage_delta.1 %}WG-Schäden: +{{ n }} neu · {{ f }} behoben{% endblocktranslate %}{% endif %}
                 </span>
                 {% if show_engagement and w.engagement == "ok" %}<span class="ca-pill ca-pill-green">{% translate "Engagement vollständig" %}</span>
                 {% elif show_engagement and w.engagement == "flag" %}<span class="ca-pill ca-pill-amber">{% translate "Engagement unvollständig" %}</span>{% endif %}
@@ -51,14 +61,16 @@
           </thead>
           <tbody>
           {% for r in w.rooms %}
-            <tr>
+            <tr{% if r.diff.changed %} class="ca-diff-changed"{% endif %}>
               <td>{{ r.room.name }}{% if r.room.freifinanziert %} <span class="ca-room-badge">{% translate "freifinanziert" %}</span>{% endif %}</td>
               <td data-label="m²">{{ r.room.size_sqm }}</td>
               <td data-label="{% translate "Ausstattung" %}">{% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span class="ca-tl-muted">—</span>{% endif %}</td>
               <td data-label="{% translate "Belegung" %}">
                 {% if r.occupants %}
-                  {% if may_see_names %}{% for o in r.occupants %}<a href="{% url 'tenant_detail' o.pk %}" class="ca-tl-name">{{ o.label }}</a>{% if o.realname %} <span class="ca-tl-muted">({{ o.realname }})</span>{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="ca-pill ca-pill-green">{% blocktranslate with n=r.occupants|length %}belegt ({{ n }}){% endblocktranslate %}</span>{% endif %}
+                  {% if may_see_names %}{% for o in r.occupants %}<a href="{% url 'tenant_detail' o.pk %}" class="ca-tl-name{% if o.pk in r.diff.added %} ca-diff-add{% endif %}">{% if o.pk in r.diff.added %}+ {% endif %}{{ o.label }}</a>{% if o.realname %} <span class="ca-tl-muted">({{ o.realname }})</span>{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="ca-pill ca-pill-green">{% blocktranslate with n=r.occupants|length %}belegt ({{ n }}){% endblocktranslate %}</span>{% endif %}
                 {% else %}<span class="ca-tl-muted">{% translate "frei" %}</span>{% endif %}
+                {% for o in r.diff.removed %}<div class="ca-diff-del">– {{ o.label }}</div>{% endfor %}
+                {% if r.diff.count %}<div class="ca-diff-dmg">{{ r.diff.count }}</div>{% endif %}
               </td>
               {% if show_engagement %}<td data-label="Engagement">
                 {% if r.engagement == "ok" %}<span class="ca-pill ca-pill-green">OK</span>
@@ -67,6 +79,7 @@
               </td>{% endif %}
               {% if show_damages %}<td data-label="{% translate "Schäden (offen/behoben)" %}">
                 {% if r.damages.0 %}<span style="color:#b00;">{{ r.damages.0 }}</span>{% else %}0{% endif %}<span class="ca-tl-muted"> / {{ r.damages.1 }}</span>
+                {% if r.diff.damages %}<div class="ca-diff-dmg">{% blocktranslate trimmed with n=r.diff.damages.0 f=r.diff.damages.1 %}+{{ n }} neu · {{ f }} behoben{% endblocktranslate %}</div>{% endif %}
               </td>{% endif %}
             </tr>
           {% empty %}

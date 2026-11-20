@@ -668,6 +668,13 @@ details.is-dirty > summary { border-radius: 6px 6px 0 0; }
 .detail-row.open .detail-body { max-height: 400px; opacity: 1; padding: 0.4rem 0.2rem; }
 /* ponytail: fixed max-height cap for the transition; raise if a detail block grows past it. */
 .ca-tl-muted { color: #7a7a7a; }
+/* Compare two dates (#120) */
+.ca-diff-note { font-size: 0.9rem; color: #555; background: #eef7f5; border-radius: 6px; padding: 0.5rem 0.75rem; margin-bottom: 0.75rem; }
+.ca-diff-item { white-space: nowrap; }
+.ca-diff-add { color: #1c6b3a; }
+.ca-diff-del { color: #a11111; text-decoration: line-through; }
+.ca-diff-dmg { font-size: 0.8rem; color: #555; }
+.ca-diff-changed td:first-child { box-shadow: inset 3px 0 0 var(--ca-teal); }
 .ca-sublet-sub { font-size: 0.78rem; color: #9a5a10; margin-top: 2px; }
 .cluster-group-header td { background: #efeae0; font-weight: 700; padding: 0.35rem 0.6rem; }
 .ca-grp-tally { font-weight: 400; color: #777; font-size: 0.85rem; }
