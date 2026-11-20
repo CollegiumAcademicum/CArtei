@@ -19,6 +19,16 @@
           <h5 style="margin-top:.6rem;">{% translate "Vergleichen mit" %}</h5>
           <input type="date" name="compare" value="{{ compare|date:'Y-m-d' }}" class="input is-small" style="width:100%;">
           <label class="ca-facet-line"><input type="checkbox" name="changed_only" value="1" {% if changed_only %}checked{% endif %}> {% translate "nur Änderungen" %}</label>
+          {% if show_sublet %}
+          <h5 style="margin-top:.6rem;">{% translate "Untermiete" %}</h5>
+          <div class="select is-small" style="width:100%;">
+            <select name="sublet" style="width:100%;">
+              <option value="" {% if not sublet %}selected{% endif %}>{% translate "Alle" %}</option>
+              <option value="only" {% if sublet == "only" %}selected{% endif %}>{% translate "nur Untermiete" %}</option>
+              <option value="exclude" {% if sublet == "exclude" %}selected{% endif %}>{% translate "ohne Untermiete" %}</option>
+            </select>
+          </div>
+          {% endif %}
           <button type="submit" class="ca-button ca-button-sm" style="margin-top:.5rem;">{% translate "Anzeigen" %}</button>
         </div>
       </form>
@@ -67,7 +77,7 @@
               <td data-label="{% translate "Ausstattung" %}">{% if r.ausstattung %}{{ r.ausstattung|join:", " }}{% else %}<span class="ca-tl-muted">—</span>{% endif %}</td>
               <td data-label="{% translate "Belegung" %}">
                 {% if r.occupants %}
-                  {% if may_see_names %}{% for o in r.occupants %}<a href="{% url 'tenant_detail' o.pk %}" class="ca-tl-name{% if o.pk in r.diff.added %} ca-diff-add{% endif %}">{% if o.pk in r.diff.added %}+ {% endif %}{{ o.label }}</a>{% if o.realname %} <span class="ca-tl-muted">({{ o.realname }})</span>{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="ca-pill ca-pill-green">{% blocktranslate with n=r.occupants|length %}belegt ({{ n }}){% endblocktranslate %}</span>{% endif %}
+                  {% if may_see_names %}{% for o in r.occupants %}<a href="{% url 'tenant_detail' o.pk %}" class="ca-tl-name{% if o.pk in r.diff.added %} ca-diff-add{% endif %}">{% if o.pk in r.diff.added %}+ {% endif %}{{ o.label }}</a>{% if show_sublet and o.is_sublet %} <span class="ca-pill ca-pill-sublet">{% translate "Untermiete" %}</span>{% endif %}{% if o.realname %} <span class="ca-tl-muted">({{ o.realname }})</span>{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="ca-pill ca-pill-green">{% blocktranslate with n=r.occupants|length %}belegt ({{ n }}){% endblocktranslate %}</span>{% if show_sublet %}{% for o in r.occupants %}{% if o.is_sublet %} <span class="ca-pill ca-pill-sublet">{% translate "Untermiete" %}</span>{% endif %}{% endfor %}{% endif %}{% endif %}
                 {% else %}<span class="ca-tl-muted">{% translate "frei" %}</span>{% endif %}
                 {% for o in r.diff.removed %}<div class="ca-diff-del">– {{ o.label }}</div>{% endfor %}
                 {% if r.diff.count %}<div class="ca-diff-dmg">{{ r.diff.count }}</div>{% endif %}

@@ -148,6 +148,13 @@ def tenant_list(request: HttpRequest):
             if a.is_sublet and a.sublet_of_tenant_id:
                 reverse_by_tenant.setdefault(a.sublet_of_tenant_id, []).append(display(a.tenant))
 
+    # Untermiete filter (#121): Untermieter*innen = an active assignment with
+    # is_sublet. Gated with the room column, which is where sublets show.
+    sublet = request.GET.get("sublet", "") if show_room else ""
+    if sublet in ("only", "exclude"):
+        subletters = {tid for tid, assigns in assigns_by_tenant.items() if any(a.is_sublet for a in assigns)}
+        tenants = [t for t in tenants if (t.pk in subletters) == (sublet == "only")]
+
     # Proof status per tenant (one bulk query, gated with the personal columns).
     proof_by_tenant = {}
     if show_realname:
@@ -283,6 +290,7 @@ def tenant_list(request: HttpRequest):
         "selected_abfragen": selected_abfragen,
         "summary": _engagement_summary(rows, selected_abfragen) if selected_abfragen else None,
         "residents": residents,
+        "sublet": sublet,
         "can_diff": can_diff,
         "diff_from": diff_from,
         "diff_to": diff_to,
