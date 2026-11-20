@@ -28,6 +28,19 @@
           </div>
         </div>
 
+        {% if show_room %}
+        <div class="ca-facet">
+          <h5>{% translate "Untermiete" %}</h5>
+          <div class="select is-small" style="width:100%;">
+            <select name="sublet" data-autosubmit style="width:100%;">
+              <option value="" {% if not sublet %}selected{% endif %}>{% translate "Alle" %}</option>
+              <option value="only" {% if sublet == "only" %}selected{% endif %}>{% translate "nur Untermiete" %}</option>
+              <option value="exclude" {% if sublet == "exclude" %}selected{% endif %}>{% translate "ohne Untermiete" %}</option>
+            </select>
+          </div>
+        </div>
+        {% endif %}
+
         {% if can_diff %}
         <div class="ca-facet">
           <h5>{% translate "Vergleich" %}</h5>

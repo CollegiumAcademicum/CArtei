@@ -62,7 +62,7 @@ def _occupants_by_room(as_of, may_see_names):
         realname = (f"{a.tenant.first_name} {a.tenant.last_name}".strip()
                     if may_see_names and a.tenant.preferred_name else None)
         out.setdefault(a.room_id, []).append(
-            {"pk": a.tenant_id, "label": label, "realname": realname})
+            {"pk": a.tenant_id, "label": label, "realname": realname, "is_sublet": a.is_sublet})
     return out
 
 
@@ -339,6 +339,11 @@ def wg_list(request: HttpRequest):
     if compare and compare > as_of:
         as_of, compare = compare, as_of
     changed_only = bool(compare) and request.GET.get("changed_only") == "1"
+    # Untermiete (#121): room staff, who see is_sublet on the WG detail cards.
+    show_sublet = bool({"mietverwaltung", "admin", "belegium"} & roles)
+    sublet = request.GET.get("sublet", "") if show_sublet else ""
+    if sublet not in ("only", "exclude"):
+        sublet = ""
     occ = _occupants_by_room(as_of, may_see_names)
     occ_before = _occupants_by_room(compare, may_see_names) if compare else {}
     engaged = _engaged_tenant_ids(as_of) if show_engagement else None
@@ -360,6 +365,8 @@ def wg_list(request: HttpRequest):
                 total_rooms += 1
                 if changed_only and not diff["changed"]:
                     continue
+                if sublet and any(o["is_sublet"] for o in occupants) != (sublet == "only"):
+                    continue
                 rooms.append({
                     "room": room,
                     "occupants": occupants,
@@ -370,7 +377,7 @@ def wg_list(request: HttpRequest):
                 })
             delta = wg_delta.get(wg.id)
             n_changes = sum(1 for r in rooms if r["diff"] and r["diff"]["changed"]) + bool(delta)
-            if changed_only and not n_changes:
+            if (changed_only and not n_changes) or (sublet and not rooms):
                 continue
             wgs.append({
                 "wg": wg, "rooms": rooms,
@@ -378,13 +385,14 @@ def wg_list(request: HttpRequest):
                 "damages": wg_dmg.get(wg.id, (0, 0)),
                 "changes": n_changes, "damage_delta": delta,
             })
-        if wgs or not changed_only:
+        if wgs or not (changed_only or sublet):
             buildings.append({"building": b, "wgs": wgs})
 
     return render(request, "app/wg_list.html", {
         "buildings": buildings, "as_of": as_of, "may_see_names": may_see_names,
         "total_rooms": total_rooms, "show_engagement": show_engagement,
         "compare": compare, "changed_only": changed_only,
+        "show_sublet": show_sublet, "sublet": sublet,
         "show_damages": show_damages,
         # Zimmer, m², Ausstattung, Belegung + optional Engagement/Schäden.
         "col_count": 4 + show_engagement + show_damages,
