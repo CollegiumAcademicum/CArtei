@@ -17,7 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # python-ldap builds against libldap; weasyprint needs pango at runtime.
+      # python-ldap builds against libldap; weasyprint (dev group, seed_dev_data)
+      # needs pango at runtime.
       - name: Install system libraries
         run: |
           sudo apt-get update

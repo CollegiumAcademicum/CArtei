@@ -1,6 +1,4 @@
 from datetime import timedelta
-from pathlib import Path
-import subprocess
 
 import pytest
 from django.conf import settings as django_settings
@@ -135,50 +133,67 @@ def test_generator_failures_return_to_documents_with_message(client, monkeypatch
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("tool_fails", [False, True])
-def test_generate_renders_optins_in_process_and_cleans_tempdir(monkeypatch, tool_fails):
+def test_generate_renders_optins_in_process(monkeypatch, tool_fails):
+    import typst
     today = timezone.localdate()
     building = Building.objects.create(name="Neubau")
     wg = WG.objects.create(building=building, name="1.02")
     room = Room.objects.create(wg=wg, name="1.02.1", size_sqm="12.00")
     _assignment(_tenant("Ada"), room, today)
     _assignment(_tenant("Ben", opt_in=False), room, today)
-    temporary_paths = []
 
-    def fake_render(rows, directory, updated):
-        # Only opted-in residents reach the renderer; no CSV, no python subprocess.
+    def fake_render(rows, updated):
+        # Only opted-in residents reach the renderer.
         assert [r["forename"] for r in rows] == ["Ada"]
         assert updated == today
-        workdir = Path(directory)
-        temporary_paths.append(workdir)
         if tool_fails:
-            raise subprocess.CalledProcessError(1, ["pdfjam"], stderr="boom")
-        out = workdir / "briefkastenliste-pdfjam.pdf"
-        out.write_bytes(b"%PDF-1.5")
-        return out
+            raise typst.TypstError("boom")
+        return b"%PDF-1.7"
 
     monkeypatch.setattr("app.document_generation.mailbox_list.render_pdf", fake_render)
     if tool_fails:
         with pytest.raises(MailboxListGenerationError):
             generate_mailbox_list(today)
     else:
-        assert generate_mailbox_list(today) == b"%PDF-1.5"
-    assert temporary_paths and not temporary_paths[0].exists()
+        assert generate_mailbox_list(today) == b"%PDF-1.7"
 
 
-def test_build_document_sorts_drops_prefix_and_truncates_to_wg():
-    from app.document_generation.create_briefkastenliste import build_document
+def test_build_data_sorts_drops_prefix_and_truncates_to_wg():
     from datetime import date
+    from app.document_generation.create_briefkastenliste import build_data
     rows = [
         {"forename": "Bea", "surename": "von Humboldt", "flatnumber": "3.05.1"},
         {"forename": "Ada", "surename": "Albers", "flatnumber": "0.06.2 und 1.02.3"},
     ]
-    latex = build_document(rows, date(2026, 10, 6)).dumps()
+    data = build_data(rows, date(2026, 10, 6))
+    entries = [r for sheet in data["sheets"] for strip in sheet for r in strip["rows"]]
     # von Humboldt sorts under H, after Albers.
-    assert latex.index("Albers") < latex.index("Humboldt")
+    assert [(r["surname"], r["letter"]) for r in entries] == [("Albers", "A"), ("von Humboldt", "H")]
     # Flat numbers are truncated to the WG (per segment for combined rooms).
-    assert "0.06 und 1.02" in latex and "0.06.2" not in latex
-    assert "3.05" in latex and "3.05.1" not in latex
-    assert "06.10.2026" in latex
+    assert [r["wg"] for r in entries] == ["0.06 und 1.02", "3.05"]
+    assert data["updated"] == "06.10.2026"
+
+
+def test_build_data_paginates_strips_three_per_sheet():
+    from datetime import date
+    from app.document_generation.create_briefkastenliste import ROWS_PER_STRIP, build_data
+    rows = [{"forename": "A", "surename": f"N{i:03d}", "flatnumber": "1.01.1"} for i in range(120)]
+    data = build_data(rows, date(2026, 10, 6))
+    strips = [strip for sheet in data["sheets"] for strip in sheet]
+    assert [len(sheet) for sheet in data["sheets"]] == [3, 2]
+    assert [s["number"] for s in strips] == [1, 2, 3, 4, 5]
+    assert all(len(s["rows"]) == ROWS_PER_STRIP for s in strips[:-1]) and strips[-1]["last"]
+    assert sum(len(s["rows"]) for s in strips) == 120
+    # The letter shows once per block; a continued block shows none on the next strip.
+    assert sum(r["show_letter"] for s in strips for r in s["rows"]) == 1
+
+
+def test_render_pdf_compiles_with_typst():
+    from datetime import date
+    from app.document_generation.create_briefkastenliste import render_pdf
+    rows = [{"forename": "Zoë", "surename": "#Özdemir [x]", "flatnumber": "1.02.1"}]  # markup chars stay text
+    pdf = render_pdf(rows, date(2026, 10, 6))
+    assert pdf.startswith(b"%PDF") and len(pdf) > 1000
 
 
 @pytest.mark.django_db

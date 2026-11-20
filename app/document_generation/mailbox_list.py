@@ -1,9 +1,6 @@
 """Build the Briefkastenliste PDF from current CArtei data (in-process)."""
 
-import subprocess
-import tempfile
-from pathlib import Path
-
+import typst
 from django.conf import settings
 
 from app.document_generation.create_briefkastenliste import render_pdf
@@ -16,7 +13,7 @@ class NoMailboxResidents(Exception):
 
 
 class MailboxListGenerationError(Exception):
-    """The resident data or the external PDF toolchain (latexmk/pdfjam) failed."""
+    """The resident data or the PDF rendering (Typst) failed."""
 
 
 def resident_rows(today):
@@ -85,19 +82,10 @@ def generate_mailbox_list(today):
     if not rows:
         raise NoMailboxResidents
 
-    with tempfile.TemporaryDirectory(prefix="cartei-briefkastenliste-") as directory:
-        try:
-            imposed_pdf = render_pdf(rows, directory, today)
-            if not imposed_pdf.is_file() or imposed_pdf.stat().st_size == 0:
-                raise MailboxListGenerationError("Es wurde kein PDF erzeugt (LaTeX/pdfjam lieferte keine Ausgabe).")
-            return imposed_pdf.read_bytes()
-        except subprocess.CalledProcessError as exc:
-            detail = (exc.stderr or exc.stdout or "").strip().splitlines()
-            tail = " ".join(detail[-3:]) if detail else "keine Ausgabe"
-            raise MailboxListGenerationError(
-                f"PDF-Werkzeug fehlgeschlagen (Exit {exc.returncode}): {tail}"
-            ) from exc
-        except subprocess.TimeoutExpired as exc:
-            raise MailboxListGenerationError("PDF-Erzeugung hat das Zeitlimit überschritten.") from exc
-        except OSError as exc:
-            raise MailboxListGenerationError(f"PDF-Werkzeug nicht ausführbar: {exc}") from exc
+    try:
+        pdf = render_pdf(rows, today)
+    except typst.TypstError as exc:
+        raise MailboxListGenerationError(f"PDF-Erzeugung fehlgeschlagen: {exc}") from exc
+    if not pdf:
+        raise MailboxListGenerationError("Es wurde kein PDF erzeugt.")
+    return pdf
