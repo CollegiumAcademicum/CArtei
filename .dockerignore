@@ -12,3 +12,5 @@ tests
 docs
 staticfiles
 .env
+# Not committed (see .gitignore): local builds resolve from pyproject.toml like CI.
+uv.lock
